@@ -29,6 +29,7 @@ class RequestAllObject(PaginationSchema):
 
 class BaseResponseSchema(BaseModel):
     id: int
+    tenant_id: int
     created_at: datetime
     updated_at: datetime
     created_by: int | str

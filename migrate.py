@@ -77,12 +77,16 @@ def seed_admin_user() -> None:
         "-d", DB_NAME,
         "-c",
         """
+        insert into tenants (name, active)
+        values ('synapse', true);
+
         INSERT INTO staffs
-            (firstname, login, staff_type, active, hashed_password)
+            (firstname, login, tenant_id, staff_type, active, hashed_password)
         VALUES
             (
                 'max',
                 'admin',
+                1,
                 'super administrator',
                 true,
                 '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc'

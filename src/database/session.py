@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from src.core.config import settings
 from contextvars import ContextVar
+from src.core.dependencies.tenantFilter import register_tenant_filter
 
 db_session_ctx: ContextVar[AsyncSession | None] = ContextVar("db_session_ctx", default=None)
 
@@ -28,6 +29,7 @@ SessionLocal = async_sessionmaker(
 @asynccontextmanager
 async def transaction_scope():
     async with SessionLocal() as session:
+        register_tenant_filter(session)
         token = db_session_ctx.set(session)
         try:
             yield session

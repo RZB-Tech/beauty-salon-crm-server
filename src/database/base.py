@@ -1,6 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Boolean, DateTime, ForeignKey, func, text
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, validates
+from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column, validates
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.session import get_repository_db
 

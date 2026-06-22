@@ -10,3 +10,5 @@ from src.repository.material.material_model import Material
 from src.repository.payment.payment_model import Payment, Receipt
 from src.repository.payroll.payroll_model import Payroll
 from src.repository.notification.notification_model import Notification
+from src.repository.system.tenant_model import Tenant, TenantSubscriptions
+from src.repository.system.plan_model import Plan

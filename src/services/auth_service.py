@@ -23,7 +23,8 @@ class AuthService():
         
         tokenPayload = {
             "sub": user.login,
-            "id": user.id
+            "id": user.id,
+            "tenant_id": user.tenant_id
         }
 
         accessToken = create_access_token(tokenPayload)
@@ -81,7 +82,8 @@ class AuthService():
 
         tokenPayload = {
             "sub": user.login,
-            "id": user.id
+            "id": user.id,
+            "tenant_id": user.tenant_id
         }
         newAccessToken = create_access_token(tokenPayload)
         newRefreshToken = create_refresh_token(tokenPayload)
@@ -101,7 +103,6 @@ class AuthService():
             samesite="lax"
         )
 
-    # ─── ADD LOGOUT METHOD ────────────────────────────────────────────
     async def logout(self, response: Response):
         response.delete_cookie(
             key="access_token",
