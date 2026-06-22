@@ -1,0 +1,44 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+from sqlalchemy import (
+    String,
+    Boolean,
+    Integer,Text
+)
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import Enum as SQLEnum
+from enum import Enum
+from src.database.base import BaseFields
+
+class MeasurementUnit(Enum):
+    PCS = "piece"
+    PACK = "pack"
+    BOX = "box"
+    BOTTLE = "bottle"
+    ML = "milliliter"
+    L = "liter"
+    GR = "gramm"
+    KG = "kilogram"
+
+class Material(BaseFields):
+    __tablename__ = "materials"
+    article: Mapped[str] = mapped_column(String(255), unique = True, index = True)
+    name: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable = True)
+
+    quantity: Mapped[int] = mapped_column(Integer, default = 0)
+
+    measurement_unit: Mapped[MeasurementUnit] = mapped_column(SQLEnum(
+        MeasurementUnit, values_callable = lambda e: [m.value for m in e]), 
+        default = MeasurementUnit.PCS)
+    volume: Mapped[int] = mapped_column(Integer, default = 0)
+
+    purchase_price: Mapped[int] = mapped_column(Integer, default = 0)
+    retail_price: Mapped[int] = mapped_column(Integer, default = 0)
+    wholesale_price: Mapped[int] = mapped_column(Integer, default = 0)
+    sell_price: Mapped[int] = mapped_column(Integer, default = 0)
+
+    can_be_product: Mapped[bool] = mapped_column(Boolean, default = False)
+
+    ALLOWED_FILTERS = {"article", "name", "measurement_unit", "volume", 
+            "purchase_price", "retail_price", "wholesale_price", "sell_price", "can_be_product"}

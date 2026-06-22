@@ -1,0 +1,52 @@
+from __future__ import annotations
+from enum import Enum
+from src.database.base import BaseFields
+from sqlalchemy import CheckConstraint, Enum as SQLEnum, Integer, Time, UniqueConstraint
+from typing import TYPE_CHECKING
+from sqlalchemy import (
+    ForeignKey,
+    Date,Text
+)
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+from datetime import date, time
+
+if TYPE_CHECKING:
+    from src.repository.employee.employee_model import Employee
+
+class AbsenceEnum(str, Enum):
+    SICK = "sick"
+    VACATION = "vacation"
+    DAY_OFF = "day off"
+    WEEKEND = "weekend"
+    OTHER = "other"
+
+class EmployeeAbsence(BaseFields):
+    __tablename__ = "employee_absences"
+    
+    employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id", ondelete = "CASCADE"))
+
+    start_date: Mapped[date] = mapped_column(Date)
+    end_date: Mapped[date] = mapped_column(Date)
+
+    absence_type: Mapped[AbsenceEnum] = mapped_column(SQLEnum(
+        AbsenceEnum, values_callable = lambda e: [m.value for m in e]))
+    reason: Mapped[str | None] = mapped_column(Text, nullable = True)
+
+    __table_args__ = (
+        UniqueConstraint("employee_id", "start_date", "end_date", name="uq_employee_absence_days"),
+        CheckConstraint("start_date < end_date", name="chk_start_before_end")
+    )
+
+class WorkSchedule(BaseFields):
+    __tablename__ = "employee_work_schedules"
+
+    employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id", ondelete="CASCADE"))
+    
+    day: Mapped[date] = mapped_column(Date)
+    start_time: Mapped[time] = mapped_column(Time)
+    end_time: Mapped[time] = mapped_column(Time)
+
+    __table_args__ = (
+        UniqueConstraint("employee_id", "day", name="uq_employee_day_of_week"),
+        CheckConstraint("start_time < end_time", name="chk_start_before_end")
+    )

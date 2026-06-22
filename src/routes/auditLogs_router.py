@@ -1,0 +1,22 @@
+from fastapi import APIRouter, Depends, status
+from src.core.dependencies.uow import UnitOfWork, get_uow_with_context
+from src.schemas.auditLogs.request import AuditLogsRequestSchema
+from src.schemas.auditLogs.response import AuditLogsResponseSchema
+from src.schemas.base import PaginatedResponseSchema, PaginationSchema
+from src.services.auditLogs_service import AuditLogsService
+from src.schemas.base import PaginatedResponseSchema
+
+router = APIRouter()
+
+def get_auditLogs_service(uow: UnitOfWork = Depends(get_uow_with_context)) -> AuditLogsService:
+    return AuditLogsService(uow=uow)
+
+@router.get(
+    "/",
+    response_model=PaginatedResponseSchema[AuditLogsResponseSchema], 
+    status_code=status.HTTP_200_OK
+)
+async def get_all(data: AuditLogsRequestSchema = Depends(),
+                params: PaginationSchema = Depends(),
+                  auditLogsService: AuditLogsService = Depends(get_auditLogs_service)):
+    return await auditLogsService.get_all(params, data)

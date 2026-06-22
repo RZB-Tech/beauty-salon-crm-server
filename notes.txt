@@ -1,0 +1,6 @@
+sqlalchemy:
+GET request - if object does not exists, returns None
+UPDATE / DELETE - requires first check if object exists
+
+database commit automatically applied after successfull router <-> service <-> repository
+in case some error: rollbacked
