@@ -7,7 +7,6 @@ from src.database.base import BaseFields
 from src.database.mixins import TenantMixin
 
 class StaffType(Enum):
-    SUPER_ADMIN = "super administrator"
     ADMIN = "administrator"
     EMPLOYEE = "employee"
 
@@ -25,7 +24,8 @@ class Staff(TenantMixin, BaseFields):
     staff_type: Mapped[StaffType] = mapped_column(SQLEnum(
         StaffType, values_callable = lambda e: [m.value for m in e]))
     
-    employee_id: Mapped[int | None] = mapped_column(ForeignKey("employees.id", ondelete = "SET NULL"), nullable = True)
+    employee_id: Mapped[int | None] = mapped_column(ForeignKey("employees.id", ondelete = "SET NULL"), 
+                                                    nullable = True)
  
     @validates("login")
     def validate_login_lowercase(self, key: str, value: str) -> str:

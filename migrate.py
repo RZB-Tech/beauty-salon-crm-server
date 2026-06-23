@@ -87,7 +87,7 @@ def seed_admin_user() -> None:
                 'max',
                 'admin',
                 1,
-                'super administrator',
+                'administrator',
                 true,
                 '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc'
             );

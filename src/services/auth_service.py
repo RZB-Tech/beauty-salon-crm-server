@@ -1,30 +1,36 @@
 from fastapi import HTTPException, Request, Response, status
 from src.core.dependencies.uow import UnitOfWork
-from src.schemas.auth.login import LoginSchema
+from src.schemas.auth.login import LoginResponseSchema, LoginSchema
 from src.core.auth.security import verify_password, create_access_token, create_refresh_token, decode_token
+from src.schemas.employee.response import EmployeeResponseBase
 
 class AuthService():
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
 
-    async def login(self, data: LoginSchema, response: Response):
-        user = await self.uow.staffs.get(data.login)
-        if not user or not verify_password(user.hashed_password, data.password):
+    async def login(self, data: LoginSchema, response: Response) -> LoginResponseSchema:
+        staff = await self.uow.staffs.get(data.login)
+        if not staff or not verify_password(staff.hashed_password, data.password):
             raise HTTPException(
                 status_code = status.HTTP_401_UNAUTHORIZED,
                 detail = "Incorrect login or password",
                 headers = {"WWW-Authenticate": "Bearer"}
             )
-        if not user.active:
+        if not staff.active:
             raise HTTPException(
                 status_code = status.HTTP_401_UNAUTHORIZED,
-                detail = "User is inactive"
+                detail = "Staff is inactive"
             )
         
+        employee = None
+        if staff.employee_id:
+            employee = await self.uow.employees.get(staff.employee_id)
+
+        
         tokenPayload = {
-            "sub": user.login,
-            "id": user.id,
-            "tenant_id": user.tenant_id
+            "sub": staff.login,
+            "id": staff.id,
+            "tenant_id": staff.tenant_id
         }
 
         accessToken = create_access_token(tokenPayload)
@@ -44,6 +50,16 @@ class AuthService():
             httponly = True,
             secure = True,
             samesite = "lax"
+        )
+
+        return LoginResponseSchema(
+            login=staff.login,
+            employee=EmployeeResponseBase.model_validate(employee) if employee else None,
+            firstname=staff.firstname,
+            lastname=staff.lastname,
+            middlename=staff.middlename,
+            active=staff.active,
+            staff_type=staff.staff_type,
         )
 
     async def refresh(self, request: Request, response: Response):
