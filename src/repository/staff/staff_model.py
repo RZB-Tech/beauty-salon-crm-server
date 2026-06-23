@@ -1,6 +1,6 @@
 from enum import Enum
 
-from sqlalchemy import String, Boolean, Enum as SQLEnum
+from sqlalchemy import ForeignKey, String, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from src.database.base import BaseFields
@@ -24,7 +24,9 @@ class Staff(TenantMixin, BaseFields):
 
     staff_type: Mapped[StaffType] = mapped_column(SQLEnum(
         StaffType, values_callable = lambda e: [m.value for m in e]))
-
+    
+    employee_id: Mapped[int | None] = mapped_column(ForeignKey("employees.id", ondelete = "SET NULL"), nullable = True)
+ 
     @validates("login")
     def validate_login_lowercase(self, key: str, value: str) -> str:
         if value is not None: return value.strip().lower()
