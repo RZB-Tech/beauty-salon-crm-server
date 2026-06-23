@@ -5,7 +5,7 @@ _current_tenant_id: ContextVar[int | None] = ContextVar("current_tenant_id", def
 
 def set_current_staff_id(staff_id: int, tenant_id: int) -> None:
     _current_staff_id.set(staff_id)
-    _current_tenant_id.set(tenant_id)
+    # _current_tenant_id.set(tenant_id)
 
 def get_current_staff_id() -> int | None:
     return _current_staff_id.get()

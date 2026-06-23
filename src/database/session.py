@@ -29,7 +29,7 @@ SessionLocal = async_sessionmaker(
 @asynccontextmanager
 async def transaction_scope():
     async with SessionLocal() as session:
-        register_tenant_filter(session)
+        # register_tenant_filter(session)
         token = db_session_ctx.set(session)
         try:
             yield session

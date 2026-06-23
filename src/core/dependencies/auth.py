@@ -24,7 +24,11 @@ async def get_current_staff(request: Request) -> dict:
 
     set_current_staff_id(id, tenant_id)
 
-    return {"id": id, "login": login, "tenant_id": tenant_id}
+    return {
+        "id": id, 
+        "login": login, 
+        "tenant_id": tenant_id
+        }
 
 async def get_current_staff_ws(websocket: WebSocket) -> dict | None:
     print("=== WS Auth Debug ===")
