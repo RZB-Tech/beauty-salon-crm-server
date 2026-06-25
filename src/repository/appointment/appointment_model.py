@@ -18,7 +18,7 @@ from src.database.base import BaseFields
 if TYPE_CHECKING:
     from src.repository import Receipt
 
-class AppointmentStatus(str, Enum):
+class AppointmentStatus(Enum):
     AWAITING = "awaiting"
     CANCELLED = "cancelled"
     STARTED = "started"

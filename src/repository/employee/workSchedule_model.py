@@ -13,7 +13,7 @@ from datetime import date, time
 if TYPE_CHECKING:
     from src.repository.employee.employee_model import Employee
 
-class AbsenceEnum(str, Enum):
+class AbsenceEnum(Enum):
     SICK = "sick"
     VACATION = "vacation"
     DAY_OFF = "day off"

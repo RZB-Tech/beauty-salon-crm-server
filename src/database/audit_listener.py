@@ -3,6 +3,13 @@ from sqlalchemy.orm import Session, RelationshipProperty
 from src.core.dependencies.context import get_current_staff_id
 from src.database.base import BaseFields
 from src.repository.audit.auditLog_model import AuditLogs
+from enum import Enum
+
+def _unwrap(value):
+    """Return the primitive value for enums, str for everything else."""
+    if isinstance(value, Enum):
+        return str(value.value)
+    return str(value) if value is not None else None
 
 def register_audit_listener():
     """Call once during app startup — not at import time."""
@@ -32,9 +39,23 @@ def register_audit_listener():
                         record_id=obj.id,
                         action="UPDATE",
                         field_name=attr.key,
-                        old_value=str(history.deleted[0]) if history.deleted else None,
-                        new_value=str(history.added[0]) if history.added else None,
+                        old_value=_unwrap(history.deleted[0]) if history.deleted else None,
+                        new_value=_unwrap(history.added[0]) if history.added else None,
                         changed_by=staff_id,
                     ))
+
+        for obj in session.deleted:
+            if not isinstance(obj, BaseFields):
+                continue
+            audits.append(AuditLogs(
+                table_name=obj.__tablename__,
+                record_id=obj.id,
+                action="DELETE",
+                field_name=None,
+                old_value=None,
+                new_value=None,
+                changed_by=staff_id,
+            ))
+        
         for audit in audits:
             session.add(audit)

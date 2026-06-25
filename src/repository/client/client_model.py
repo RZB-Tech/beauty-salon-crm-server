@@ -12,7 +12,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 from datetime import date
 from src.database.base import BaseFields
 
-class Sex(str, Enum):
+class Sex(Enum):
     MALE = "male"
     FEMALE = "female"
 

@@ -8,8 +8,6 @@ from src.database.session import get_repository_db
 class Base(DeclarativeBase):
     pass
 
-
-
 class BaseFields(TenantMixin, Base):
     __abstract__ = True
 
