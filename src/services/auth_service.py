@@ -53,6 +53,12 @@ class AuthService():
         )
 
         return LoginResponseSchema(
+            id = staff.id,
+            tenant_id = staff.tenant_id,
+            created_at = staff.created_at,
+            updated_at = staff.updated_at,
+            created_by = staff.created_by,
+            archived = staff.archived,
             login=staff.login,
             employee=EmployeeResponseBase.model_validate(employee) if employee else None,
             firstname=staff.firstname,

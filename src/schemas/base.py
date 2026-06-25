@@ -32,7 +32,7 @@ class BaseResponseSchema(BaseModel):
     tenant_id: int
     created_at: datetime
     updated_at: datetime
-    created_by: int | str
+    created_by: int | None
     archived: bool
 
 class BaseUpdateSchema(BaseModel):
