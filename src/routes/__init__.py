@@ -15,7 +15,6 @@ from src.routes.appointmentServices_router import router as appointmentServicesR
 from src.routes.auditLogs_router import router as auditLogsR
 from src.routes.receipt_router import router as ReceiptR
 from src.routes.payment_router import router as PaymentR
-from src.routes.notification_router import router as NotificationR
 
 open_router = APIRouter(prefix = "/api/v1")
 open_router.include_router(
@@ -113,10 +112,4 @@ protected_router.include_router(
     auditLogsR, 
     prefix="/audit-logs", 
     tags=["Audit logs"]
-)
-
-protected_router.include_router(
-    NotificationR,
-    prefix = "/notifications",
-    tags = ["Notifications"]
 )
