@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from src.core.dependencies.uow import UnitOfWork, get_uow_with_context
+from src.core.dependencies.uow import  make_service_dependency
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.payroll.create import PayrollCreateSchema
 from src.schemas.payroll.response import PayrollResponseSchema
@@ -8,8 +8,7 @@ from src.services.payroll_service import PayrollService
 
 router = APIRouter()
 
-def get_payroll_service(uow: UnitOfWork = Depends(get_uow_with_context)) -> PayrollService:
-    return PayrollService(uow=uow)
+get_payroll_service = make_service_dependency(PayrollService)
 
 @router.post(
     "/", 

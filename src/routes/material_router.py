@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from src.core.dependencies.uow import UnitOfWork, get_uow_with_context
+from src.core.dependencies.uow import make_service_dependency
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.material.create import MaterialCreateSchema
 from src.schemas.material.response import MaterialResponseSchema
@@ -7,9 +7,7 @@ from src.schemas.material.update import MaterialQuantityUpdateSchema, MaterialUp
 from src.services.material_service import MaterialService
 
 router = APIRouter()
-
-def get_material_service(uow: UnitOfWork = Depends(get_uow_with_context)) -> MaterialService:
-    return MaterialService(uow=uow)
+get_material_service = make_service_dependency(MaterialService)
 
 @router.post(
     "/", 

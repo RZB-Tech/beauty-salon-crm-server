@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from src.core.dependencies.uow import UnitOfWork, get_uow_with_context
+from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_service_dependency
 from src.schemas.appointment.create import AppointmentCreateSchema
 from src.schemas.appointment.response import AppointmentResponseSchema
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
@@ -7,8 +7,7 @@ from src.services.appointment_service import AppointmentService
 
 router = APIRouter()
 
-def get_appointment_service(uow: UnitOfWork = Depends(get_uow_with_context)) -> AppointmentService:
-    return AppointmentService(uow=uow)
+get_appointment_service = make_service_dependency(AppointmentService)
 
 @router.post(
     "/", 
@@ -18,14 +17,6 @@ def get_appointment_service(uow: UnitOfWork = Depends(get_uow_with_context)) -> 
 async def create(data: AppointmentCreateSchema,
                  appointmentService: AppointmentService = Depends(get_appointment_service)):
     return await appointmentService.create(data)
-
-# @router.patch(
-#     "/",
-#     response_model=ClientResponseSchema, 
-#     status_code=status.HTTP_200_OK
-# )
-# async def update(data: ClientUpdateSchema):
-#     return await ClientService.update(data)
 
 @router.post(
     "/get-all",
@@ -54,10 +45,19 @@ async def get_many(data: list[int],
                  appointmentService: AppointmentService = Depends(get_appointment_service)):
     return await appointmentService.get_many(data)
 
-@router.delete(
-    "/{id}",
-    status_code = status.HTTP_204_NO_CONTENT
+@router.patch(
+    "/{id}/cancel",
+    response_model = AppointmentResponseSchema,
+    status_code = 200
 )
-async def delete(id: int,
-                 appointmentService: AppointmentService = Depends(get_appointment_service)):
-    return await appointmentService.delete(id)
+async def cancel(id: int, 
+        appointmentService: AppointmentService = Depends(get_appointment_service)):
+    return await appointmentService.cancel(id)
+
+# @router.delete(
+#     "/{id}",
+#     status_code = status.HTTP_204_NO_CONTENT
+# )
+# async def delete(id: int,
+#                  appointmentService: AppointmentService = Depends(get_appointment_service)):
+#     return await appointmentService.delete(id)

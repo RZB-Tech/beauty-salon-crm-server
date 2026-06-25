@@ -35,6 +35,8 @@ class AppointmentRepository(BaseRepository):
         )
 
         self.db.add(db_appointment)
+        await self.db.flush()
+        await self.db.refresh(db_appointment)
 
         stmt = (
             select(Appointment)
@@ -43,8 +45,7 @@ class AppointmentRepository(BaseRepository):
                      .selectinload(AppointmentRecords.services))
         )
 
-        result = await self.db.scalar(stmt)
-        return result
+        return await self.db.scalar(stmt)
     
     async def get_by_ids(self, ids: list[int]) -> list[Appointment]:
         stmt = (
@@ -82,24 +83,13 @@ class AppointmentRepository(BaseRepository):
         result = await self.db.execute(stmt)
         items = list(result.scalars().all())
         return items, total_items
-    
-    # async def update(self, payload: MaterialUpdateSchema) -> Material | None:
-    #     obj = await self.db.get(Material, payload.id)
-    #     if not obj:
-    #         return None
 
-    #     update_data = payload.model_dump(exclude_unset=True)
+    async def cancel(self, appointment: Appointment) -> Appointment:
+        appointment.status = AppointmentStatus.CANCELLED
+        await self.db.flush()
+        await self.db.refresh(appointment)
+        return appointment
 
-    #     update_data.pop("id", None)
-
-    #     for field, value in update_data.items():
-    #         setattr(obj, field, value)
-
-    #     await self.db.commit()
-    #     await self.db.refresh(obj)
-
-    #     return obj
-    
     async def delete(self, id: int) -> bool:
         obj = await self.db.get(Appointment, id)
         if not obj:

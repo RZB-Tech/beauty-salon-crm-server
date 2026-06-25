@@ -4,13 +4,12 @@ from sqlalchemy import ForeignKey, String, Boolean, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, validates
 
 from src.database.base import BaseFields
-from src.database.mixins import TenantMixin
 
 class StaffType(Enum):
     ADMIN = "administrator"
     EMPLOYEE = "employee"
 
-class Staff(TenantMixin, BaseFields):
+class Staff(BaseFields):
     __tablename__ = "staffs"
 
     firstname: Mapped[str] = mapped_column(String(255))

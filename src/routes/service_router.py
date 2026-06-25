@@ -1,14 +1,12 @@
 from fastapi import APIRouter, Depends, File, UploadFile, status
-from src.core.dependencies.uow import UnitOfWork, get_uow_with_context
+from src.core.dependencies.uow import make_service_dependency
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.service import ServiceCreateSchema, ServiceResponseSchema, ServiceUpdateSchema
 from src.services.service_service import ServiceService
 
 router = APIRouter()
 
-def get_service_service(uow: UnitOfWork = Depends(get_uow_with_context)) -> ServiceService:
-    return ServiceService(uow=uow)
-
+get_service_service = make_service_dependency(ServiceService)
 
 @router.post(
     "/", 

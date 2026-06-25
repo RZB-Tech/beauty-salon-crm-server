@@ -44,12 +44,17 @@ class UnitOfWork:
 
 async def get_uow_with_context():
     """Single dependency that provides both session context AND uow."""
-    async with transaction_scope():
-        yield UnitOfWork()
+    yield UnitOfWork()
 
 T = TypeVar("T")
 
 def make_service_dependency(service_cls: Type[T]) -> Callable[..., AsyncGenerator[T, None]]:
-    async def dependency(uow: UnitOfWork = Depends(get_uow_with_context)) -> AsyncGenerator[T, None]:
-        yield service_cls(uow=uow)
+    async def dependency() -> AsyncGenerator[T, None]:
+        # This keeps the transaction open for the ENTIRE duration 
+        # of the router request handling.
+        async with transaction_scope():
+            # Create a clean UnitOfWork instance bound to this specific request transaction context
+            uow = UnitOfWork()
+            yield service_cls(uow=uow)
+            
     return dependency

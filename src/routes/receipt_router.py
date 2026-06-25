@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from src.core.dependencies.uow import UnitOfWork, get_uow_with_context
+from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_service_dependency
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema
 from src.schemas.payment.response import ReceiptResponseSchema
@@ -7,8 +7,7 @@ from src.services.receipt_service import ReceiptService
 
 router = APIRouter()
 
-def get_receipt_service(uow: UnitOfWork = Depends(get_uow_with_context)) -> ReceiptService:
-    return ReceiptService(uow=uow)
+get_receipt_service = make_service_dependency(ReceiptService)
 
 @router.post(
     "/", 

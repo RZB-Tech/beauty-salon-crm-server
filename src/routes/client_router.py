@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from src.core.dependencies.uow import UnitOfWork, get_uow_with_context
+from src.core.dependencies.uow import  make_service_dependency
 from src.schemas.appointment.response import AppointmentResponseSchema
 from src.schemas.base import PaginatedResponseSchema, PaginationSchema, RequestAllObject
 from src.schemas.client.create import ClientCreateSchema
@@ -9,8 +9,7 @@ from src.services.client_service import ClientService
 
 router = APIRouter()
 
-def get_client_service(uow: UnitOfWork = Depends(get_uow_with_context)) -> ClientService:
-    return ClientService(uow=uow)
+get_client_service = make_service_dependency(ClientService)
 
 @router.post(
     "/", 

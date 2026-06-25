@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 class AppointmentStatus(str, Enum):
     AWAITING = "awaiting"
-    CANCELLED = "canceled"
+    CANCELLED = "cancelled"
     STARTED = "started"
     FINISHED = "finished"
 

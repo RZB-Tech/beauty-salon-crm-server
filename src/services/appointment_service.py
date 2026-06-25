@@ -4,7 +4,7 @@ from fastapi import HTTPException, status
 from sqlalchemy import select
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
-from src.repository.appointment.appointment_model import Appointment
+from src.repository.appointment.appointment_model import Appointment, AppointmentStatus
 from src.repository.employee.employee_model import Employee
 from src.repository.service.service_model import Service
 from src.schemas.appointment.create import AppointmentCreateSchema
@@ -53,19 +53,25 @@ class AppointmentService():
             employeeAllowedServices = {i.id for i in employee.services}
             for service in record.services:
                 if service.service_id:
-                    service = await self.uow.services.get(service.service_id)
-                    if not service:
+                    serviceObj = await self.uow.services.get(service.service_id)
+                    if not serviceObj:
                         raise HTTPException(
-                            status_code = status.HTTP_404_NOT_FOUND,
+                            status_code = 404,
                             detail = f"Service with id {data.id} not found"
                         )
                     
-                    if service.id not in employeeAllowedServices:
+                    if serviceObj.id not in employeeAllowedServices:
                         raise HTTPException(
-                            status_code = status.HTTP_404_NOT_FOUND,
+                            status_code = 400,
                             detail = f"Employee {employee.id} does not provide services: {service.id}"
                         )
-
+                    
+                    if service.price is None: service.price = serviceObj.price
+                    if service.price != serviceObj.price and (service.notes is None or len(service.notes.strip()) == 0):
+                        raise HTTPException(
+                            status_code = 400,
+                            detail = f"Необходимо в комментариях указать причину изменения стоимости услуги"
+                        )
         result = await self.uow.appointments.create(data)
         return result
     
@@ -174,6 +180,33 @@ class AppointmentService():
             "totalPages": total_pages
         }
     
-    @require_exists("appointments")
+    async def cancel(self, id: int) -> Appointment:
+        appointment = await self.uow.appointments.get(id)
+        if not appointment:
+            raise HTTPException(
+                status_code = 404,
+                detail = f"Посещение с ID {id} не найден"
+            )
+        
+        if appointment.status == AppointmentStatus.CANCELLED:
+            raise HTTPException(
+                status_code = 400,
+                detail = f"Посещение уже отменено"
+            )
+        
+        if appointment.paid:
+            raise HTTPException(
+                status_code = 400,
+                detail = f"Нельзя отменить оплаченое посещение. Сначало отмените оплату и уже после само посещение"
+            )
+        
+        return await self.uow.appointments.cancel(appointment)
+
     async def delete(self, id: int) -> bool:
-        return await self.uow.appointments.delete(id)
+        result = await self.uow.appointments.delete(id)
+        if not result:
+            raise HTTPException(
+                status_code = 404,
+                detail = f"Посещение с ID {id} не найден"
+            )
+        return result

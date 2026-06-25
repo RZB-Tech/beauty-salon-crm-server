@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from src.core.dependencies.uow import UnitOfWork, get_uow_with_context
+from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_service_dependency
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.work_schedule.create import WorkScheduleCreateSchema
 from src.schemas.work_schedule.response import WorkScheduleResponseSchema
@@ -8,8 +8,7 @@ from src.services.workSchedule_serivce import WorkScheduleService
 
 router = APIRouter()
 
-def get_workSchedule_service(uow: UnitOfWork = Depends(get_uow_with_context)) -> WorkScheduleService:
-    return WorkScheduleService(uow=uow)
+get_workSchedule_service = make_service_dependency(WorkScheduleService)
 
 @router.post(
     "/", 

@@ -8,23 +8,17 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database.base import BaseFields
-from src.database.mixins import TenantMixin
 
 if TYPE_CHECKING:
     from src.repository.employee.employee_model import Employee
     from src.repository.appointment.appointment_model import AppointmentServices
 
-class ServiceCategory(TenantMixin, BaseFields):
+class ServiceCategory(BaseFields):
     __tablename__ = "service_categories"
-    # name: Mapped[str] = mapped_column(String(255), unique=True)
-    name: Mapped[str] = mapped_column(String(255))
+    name: Mapped[str] = mapped_column(String(255), unique = True)
 
     services: Mapped[list["Service"]] = relationship(
         back_populates="category"
-    )
-
-    __table_args__ = (
-        UniqueConstraint("tenant_id", "name", name="uq_tenant_service_category_name"),
     )
 
     ALLOWED_FILTERS = {"name"}
@@ -32,7 +26,7 @@ class ServiceCategory(TenantMixin, BaseFields):
 class Service(BaseFields):
     __tablename__ = "services"
 
-    name: Mapped[str] = mapped_column(String(255), unique=True)
+    name: Mapped[str] = mapped_column(String(255), unique = True)
     price: Mapped[int] = mapped_column(BigInteger, default=0)
 
     category_id: Mapped[int | None] = mapped_column(

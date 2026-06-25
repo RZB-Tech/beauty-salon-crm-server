@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, Request, Response, status
-from src.core.dependencies.uow import UnitOfWork, get_uow_with_context
+from fastapi import APIRouter, Depends, Request, Response
+from src.core.dependencies.uow import make_service_dependency
 from src.schemas.auth.login import LoginResponseSchema, LoginSchema
 from src.services.auth_service import AuthService
 
 router = APIRouter()
 
-def get_auth_service(uow: UnitOfWork = Depends(get_uow_with_context)) -> AuthService:
-    return AuthService(uow=uow)
+get_auth_service = make_service_dependency(AuthService)
 
 @router.post(
     "/login",

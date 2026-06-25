@@ -1,9 +1,11 @@
 import math
 
-from fastapi import HTTPException, UploadFile, status
+from fastapi import HTTPException, Request, UploadFile, status
 from sqlalchemy import select
 
 from src.core.decorators.requireID import require_exists
+from src.core.dependencies.auth import get_current_staff
+from src.core.dependencies.context import get_current_staff_id, get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.service.service_model import Service, ServiceCategory
 from src.schemas.base import RequestAllObject
@@ -62,17 +64,25 @@ class ServiceService():
         db = db_session_ctx.get()
         file_bytes = await file.read()
         df = pd.read_excel(BytesIO(file_bytes))
-
         required_columns = {
             "service_category",
             "service",
-            "price",
+            "price"
         }
 
         if not required_columns.issubset(df.columns):
             raise HTTPException(
                 status_code = 400,
                 detail = f"Excel must contain columns: {required_columns}"
+            )
+        
+        tenant_id = get_current_tenant_id()
+        staff_id = get_current_staff_id()
+
+        if tenant_id is None or staff_id is None:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Контекст авторизации или организации отсутствует."
             )
 
         df = df.dropna(subset=["service"])
@@ -101,7 +111,9 @@ class ServiceService():
         for category_name in category_names:
             if category_name not in existing_categories:
                 category = ServiceCategory(
-                    name=category_name
+                    name=category_name,
+                    created_by = staff_id,
+                    tenant_id = tenant_id
                 )
                 db.add(category)
                 new_categories.append(category)
@@ -134,6 +146,8 @@ class ServiceService():
                 name=service_name,
                 price=int(row["price"] or 0),
                 category_id=category.id,
+                created_by = staff_id,
+                tenant_id = tenant_id
             )
 
             db.add(service)

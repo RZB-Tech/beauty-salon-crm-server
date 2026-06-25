@@ -2,12 +2,15 @@ from datetime import datetime
 from sqlalchemy import Boolean, DateTime, ForeignKey, func, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column, validates
 from sqlalchemy.ext.asyncio import AsyncSession
+from src.database.mixins import TenantMixin
 from src.database.session import get_repository_db
 
 class Base(DeclarativeBase):
     pass
 
-class BaseFields(Base):
+
+
+class BaseFields(TenantMixin, Base):
     __abstract__ = True
 
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)

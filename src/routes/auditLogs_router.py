@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, status
-from src.core.dependencies.uow import UnitOfWork, get_uow_with_context
+from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_service_dependency
 from src.schemas.auditLogs.request import AuditLogsRequestSchema
 from src.schemas.auditLogs.response import AuditLogsResponseSchema
 from src.schemas.base import PaginatedResponseSchema, PaginationSchema
@@ -8,8 +8,7 @@ from src.schemas.base import PaginatedResponseSchema
 
 router = APIRouter()
 
-def get_auditLogs_service(uow: UnitOfWork = Depends(get_uow_with_context)) -> AuditLogsService:
-    return AuditLogsService(uow=uow)
+get_auditLogs_service = make_service_dependency(AuditLogsService)
 
 @router.get(
     "/",
