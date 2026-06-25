@@ -27,7 +27,9 @@ class BaseFields(Base):
         nullable=False,
     )
 
-    created_by: Mapped[int | None] = mapped_column(ForeignKey("staffs.id"), nullable = True) 
+    created_by: Mapped[int | None] = mapped_column(
+        ForeignKey("staffs.id", use_alter=True, name="fk_created_by_staff"), 
+        nullable = True) 
 
     @validates("created_by")
     def validate_created_by(self, key, value):
