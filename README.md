@@ -15,6 +15,8 @@ insert into staffs (firstname, login, active, hashed_password) values ('max', 'a
 
 Docker instruction:
 
+ВАЖНО! Если Docker запускается на Windows, необходимо перевостепенно открыть файл entrypoint.sh через VSCode (или другой редактор кода поддерживающий данную функцию), снизу справа нажать на CRLF и в верхнем модульном окне появится выбор - нужно выбрать LF и сохранить.
+
 1. Настройте .env взяв за пример .env.docker-example
 2. Сделайте build: docker compose build --no-cache
 3. Запустите контейнеры: docker compose up -d
