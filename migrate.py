@@ -99,8 +99,8 @@ def seed_admin_user() -> None:
 
 if __name__ == "__main__":
     delete_migrations()
-    drop_database()
-    create_database()
+    # drop_database()
+    # create_database()
     create_migration()
     apply_migrations()
     seed_admin_user()
