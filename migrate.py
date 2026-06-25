@@ -1,7 +1,11 @@
+import asyncio
 from pathlib import Path
 import shutil
 import subprocess
 import os
+
+from sqlalchemy import text
+from src.database.session import SessionLocal
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -21,7 +25,7 @@ def run(cmd: list[str]) -> None:
     subprocess.run(cmd, check=True, env=env)
 
 
-def delete_migrations() -> None:
+async def delete_migrations() -> None:
     print("Deleting Alembic migration files...")
 
     for item in VERSIONS_DIR.iterdir():
@@ -29,6 +33,15 @@ def delete_migrations() -> None:
             shutil.rmtree(item)
         else:
             item.unlink()
+
+    print("Clearing alembic_version table...")
+    try:
+        async with SessionLocal.begin() as conn:
+            await conn.execute(text("DELETE FROM alembic_version"))
+            print("Deleted alembic_version rows")
+    except Exception as e:
+        print(f"Failed to clear alembic_version: {e}")
+        raise
 
 
 def drop_database() -> None:
@@ -98,7 +111,7 @@ def seed_admin_user() -> None:
 
 
 if __name__ == "__main__":
-    delete_migrations()
+    asyncio.run(delete_migrations())
     # drop_database()
     # create_database()
     create_migration()
