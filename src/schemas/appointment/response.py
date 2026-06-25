@@ -1,5 +1,6 @@
 from pydantic import ConfigDict
 from datetime import datetime
+from src.repository.appointment.appointment_model import AppointmentStatus
 from src.schemas.base import BaseResponseSchema
 
 class ClientNestedResponseSchema(BaseResponseSchema):
@@ -42,6 +43,7 @@ class AppointmentResponseSchema(BaseResponseSchema):
     client: ClientNestedResponseSchema | None = None
     start_time_est: datetime
     end_time_est: datetime
+    status: AppointmentStatus
     paid: bool = False
     total_price: int = 0
     records: list[AppointmentRecordsResponseSchema] | None = None
