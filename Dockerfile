@@ -2,13 +2,15 @@ FROM python:3.14-alpine
 
 WORKDIR /app
 
-COPY pyproject.toml uv.lock ./
+RUN apk add --no-cache postgresql18-client
 
+COPY pyproject.toml uv.lock ./
 RUN pip install uv && uv sync --frozen --no-dev
 
 COPY src ./src
 COPY alembic.ini .
 COPY entrypoint.sh .
+COPY migrate.py .
 
 RUN chmod +x entrypoint.sh
 

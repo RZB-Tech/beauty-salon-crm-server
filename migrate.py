@@ -2,12 +2,14 @@ from pathlib import Path
 import shutil
 import subprocess
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 DB_NAME = "salon"
 DB_USER = "postgres"
 DB_PASSWORD = "postgres"
-DB_HOST = "localhost"
-DB_PORT = "5450"
+DB_HOST = "postgres"
+DB_PORT = "5432"
 
 VERSIONS_DIR = Path("src/database/alembic/versions")
 

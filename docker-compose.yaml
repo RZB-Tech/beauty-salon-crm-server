@@ -16,17 +16,18 @@ services:
       timeout: 5s
       retries: 5
 
-  # app:
-  #   build: .
-  #   env_file:
-  #     - .env
-  #   depends_on:
-  #     postgres:
-  #       condition: service_healthy
-  #   ports:
-  #     - "8000:8000"
-  #   volumes:
-  #     - ./src:/app/src
+  app:
+    build: .
+    container_name: salonBackend
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src
 
 volumes:
   postgres_data_salon:
