@@ -72,6 +72,24 @@ class AppointmentService():
                             status_code = 400,
                             detail = f"Необходимо в комментариях указать причину изменения стоимости услуги"
                         )
+                if service.material_id:
+                    materialObj = await self.uow.materials.get(service.material_id)
+                    if not materialObj:
+                        raise HTTPException(
+                            status_code = 404,
+                            detail = f"Service with id {data.id} not found"
+                        )
+                    if service.quantity > materialObj.quantity:
+                        raise HTTPException(
+                            status_code = 400,
+                            detail = f"Недостаточное количество {materialObj.article} {materialObj.name} на складе, требуется {service.quantity}, на складе: {materialObj.quantity}"
+                        )
+                    if service.price is None: service.price = materialObj.price
+                    if service.price != materialObj.price and (service.notes is None or len(service.notes.strip()) == 0):
+                        raise HTTPException(
+                            status_code = 400,
+                            detail = f"Необходимо в комментариях указать причину изменения стоимости товара"
+                        )
         result = await self.uow.appointments.create(data)
         return result
     
