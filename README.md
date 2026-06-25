@@ -12,3 +12,13 @@ $argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRU
 
 insert into staffs (firstname, login, active, hashed_password) values ('max', 'admin', true, '
 );
+
+Docker instruction:
+
+1. Настройте .env взяв за пример .env.docker-example
+2. Сделайте build: docker compose build --no-cache
+3. Запустите контейнеры: docker compose up -d
+4. Если это первый запуск, требуется сделать миграцию моделей таблиц:
+   4.1 docker exec -it salonBackend uv run migrate.py
+5. Проверьте готовность сервера: docker logs salonBackend
+6. Готово
