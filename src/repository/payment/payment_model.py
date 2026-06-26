@@ -19,14 +19,14 @@ if TYPE_CHECKING:
     from src.repository.appointment.appointment_model import Appointment, AppointmentServices
     from src.repository.material.material_model import Material
 
-class ReceiptStatusEnum(Enum):
+class ReceiptStatus(Enum):
     PENDING = "pending"
     PAID = "paid"
     CANCELLED = "cancelled"
 
 class ReceiptType(Enum):
     APPOINTMENT = "appointment"
-    DIRECT = "direct sale"
+    DIRECT_SALE = "direct sale"
 
 class ReceiptItem(BaseFields):
     __tablename__ = "receipt_items"
@@ -70,9 +70,9 @@ class Receipt(BaseFields):
     items: Mapped[list[ReceiptItem]] = relationship(back_populates = "receipt", cascade = "all, delete-orphan")
 
     total_amount: Mapped[int] = mapped_column(Integer)
-    status: Mapped[ReceiptStatusEnum] = mapped_column(SQLEnum(
-        ReceiptStatusEnum, values_callable = lambda e: [m.value for m in e]),
-        default = ReceiptStatusEnum.PENDING)
+    status: Mapped[ReceiptStatus] = mapped_column(SQLEnum(
+        ReceiptStatus, values_callable = lambda e: [m.value for m in e]),
+        default = ReceiptStatus.PENDING)
     
     change_amount: Mapped[int] = mapped_column(Integer, default = 0)
     change_to_deposit: Mapped[bool] = mapped_column(Boolean, default = False)

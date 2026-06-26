@@ -7,6 +7,7 @@ from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import AppointmentServices
 from src.repository.payment.payment_model import Payment, PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatusEnum, ReceiptType
 from src.repository.payroll.payroll_model import Payroll, PayrollEnum
+from src.repository.transaction.transaction_model import Transaction, TransactionCategory, TransactionMethod, TransactionType
 from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import PaymentCreateSchema
 
@@ -48,9 +49,21 @@ class PaymentService():
 
         new_payment = Payment(amount = data.amount, method = data.method)
         receipt = await self.uow.payments.create(data.receipt_id, new_payment)
-        
+
+        # add overpaid sum to client's deposit
         if receipt.paid_amount >= receipt.total_amount:
             receipt.status = ReceiptStatusEnum.PAID
+
+            # create new transcation for income from receipt payment
+            await self.uow.transactions.create(Transaction(
+                receipt_id = receipt.id,
+                amount = receipt.total_amount,
+                type = TransactionType.INCOME,
+                method = TransactionMethod(new_payment.method.value),
+                category = TransactionCategory(receipt.receipt_type.value),
+                auto_generated = True
+            ))
+
             if receipt.appointment:
                 receipt.appointment.paid = True
             
@@ -61,6 +74,16 @@ class PaymentService():
                 
                 if data.add_change_to_deposit:
                     depositAdjustment += overpayment
+
+                # create new transaction for deposit
+                await self.uow.transactions.create(Transaction(
+                    receipt_id = receipt.id,
+                    amount = receipt.overpayment,
+                    type = TransactionType.INCOME,
+                    method = TransactionMethod.DEPOSIT,
+                    category = TransactionCategory(receipt.receipt_type.value),
+                    auto_generated = True
+                ))
 
             # add commission to employees
             if receipt.receipt_type == ReceiptType.APPOINTMENT:

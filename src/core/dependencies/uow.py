@@ -13,7 +13,9 @@ from src.repository.service.serviceCategory_repository import ServiceCategoryRep
 from src.repository.service.service_repository import ServiceRepository
 from src.repository.staff.staff_repository import StaffRepository
 from src.repository.payroll.payroll_repository import PayrollRepository
+from src.repository.payroll.payout_repository import PayoutRepository
 from src.repository.payment.receipt_repository import ReceiptRepository
+from src.repository.transaction.transaction_repository import TransactionRepository
 from typing import AsyncGenerator, TypeVar, Type, Callable
 from fastapi import Depends
 
@@ -35,8 +37,10 @@ class UnitOfWork:
         self.appointmentServices = AppointmentServicesRepository()
 
         self.payrolls = PayrollRepository()
+        self.payouts = PayoutRepository()
         self.receipts = ReceiptRepository()
         self.payments = PaymentRepository()
+        self.transactions = TransactionRepository()
         
     @property
     def db(self):

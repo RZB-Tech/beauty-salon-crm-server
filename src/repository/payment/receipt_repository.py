@@ -3,7 +3,7 @@ from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
 from src.repository.appointment.appointment_model import Appointment, AppointmentRecords
-from src.repository.payment.payment_model import Receipt, ReceiptItem
+from src.repository.payment.payment_model import Receipt, ReceiptItem, ReceiptStatus
 from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema
 
@@ -23,50 +23,15 @@ class ReceiptRepository(BaseRepository):
 
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+    
+    async def changeStatus(self, id: int, status: ReceiptStatus) -> ReceiptStatus | None:
+        obj = await self.db.get(Receipt, id)
+        if obj is None: return None
 
-        # stmt = (
-        #     select(Appointment)
-        #     .where(Appointment.id == receipt.appointment_id)
-        #     .options(
-        #         selectinload(Appointment.records)
-        #         .selectinload(AppointmentRecords.services)
-        #     )
-        # )
-        # result = await self.db.execute(stmt)
-        # appointment = result.scalar_one_or_none()
-
-        # if not appointment:
-        #     raise ValueError(f"Appointment with id {receipt.appointment_id} not found.")
-
-        # total = 0
-        # receipt_items = []
-        
-        # for record in appointment.records:
-        #     for service in record.services:
-        #         item = ReceiptItem(
-        #             appointment_service_id=service.id,
-        #             price=service.price,
-        #             quantity=service.quantity
-        #         )
-        #         total += (service.price * service.quantity)
-        #         receipt_items.append(item)
-                
-        # receipt.total_amount = total
-        # receipt.items = receipt_items 
-
-        # self.db.add(receipt)
-        # await self.db.commit()
-        
-        # final_stmt = (
-        #     select(Receipt)
-        #     .where(Receipt.id == receipt.id)
-        #     .options(
-        #         selectinload(Receipt.items),
-        #         selectinload(Receipt.payments) # 🌟 Bakes in payments so paid_amount doesn't trigger lazy loading
-        #     )
-        # )
-        # final_result = await self.db.execute(final_stmt)
-        # return final_result.scalar_one()
+        obj.status = status
+        await self.db.flush()
+        await self.db.refresh(obj)
+        return obj
     
     # async def get_by_ids(self, ids: list[int]) -> list[Receipt]:
     #     result = await self.db.execute(

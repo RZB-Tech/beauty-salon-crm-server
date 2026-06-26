@@ -120,15 +120,6 @@ class ReceiptService():
             
             newReceipt.total_amount = runningTotal
 
-        # try:
-        #     await self.uow.receipts.create(newReceipt)
-        #     await self.uow.db.flush()
-        #     return await self.uow.receipts.get(newReceipt.id)
-        # except IntegrityError as exc:
-        #     raise HTTPException(
-        #         status_code= 400,
-        #         detail="Concurrency conflict: An active receipt was just generated for this appointment elsewhere."
-        #     )
         try:
             return await self.uow.receipts.create(newReceipt)
         except IntegrityError as exc:
