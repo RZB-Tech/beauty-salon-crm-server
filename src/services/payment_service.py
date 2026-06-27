@@ -166,10 +166,11 @@ class PaymentService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
-    
-    @require_exists("payments")
+
     async def delete(self, id: int) -> bool:
         return await self.uow.payments.delete(id)
     
     async def cancel(self, id: int) -> bool:
-        return await self.uow.payments.cancel(id)
+        return await self.uow.update_fields(
+            Payment, id, cancelled = True
+        )

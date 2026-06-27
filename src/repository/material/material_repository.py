@@ -7,7 +7,7 @@ from src.schemas.base import RequestAllObject
 from src.schemas.material.create import MaterialCreateSchema
 from src.schemas.material.update import MaterialUpdateSchema
 
-class MaterialRepository(BaseRepository):
+class MaterialRepository(BaseRepository[Material]):
     async def create(self, material: Material) -> Material:
         self.db.add(material)
         # await self.db.commit()
@@ -36,26 +36,18 @@ class MaterialRepository(BaseRepository):
         items = list(result.scalars().all())
         return items, total_items
     
-    async def update(self, payload: MaterialUpdateSchema) -> Material | None:
-        obj = await self.db.get(Material, payload.id)
-        if not obj:
-            return None
+    # async def update(self, payload: MaterialUpdateSchema) -> Material | None:
+    #     obj = await self.db.get(Material, payload.id)
+    #     if not obj:
+    #         return None
 
-        update_data = payload.model_dump(exclude_unset=True)
-        update_data.pop("id", None)
+    #     update_data = payload.model_dump(exclude_unset=True)
+    #     update_data.pop("id", None)
 
-        for field, value in update_data.items():
-            setattr(obj, field, value)
+    #     for field, value in update_data.items():
+    #         setattr(obj, field, value)
 
-        return obj
-    
-    async def delete(self, id: int) -> bool:
-        obj = await self.db.get(Material, id)
-        if not obj:
-            return False
-
-        await self.db.delete(obj)
-        return True
+    #     return obj
     
     async def updateQuantity(self, material: Material, quantity: int) -> Material:
         material.quantity = quantity

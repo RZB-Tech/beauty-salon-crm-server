@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any, Generic, TypeVar, get_args, get_origin
 from sqlalchemy import Boolean, DateTime, ForeignKey, func, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column, validates
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -47,7 +48,41 @@ class BaseFields(TenantMixin, Base):
             if current_val != new_val:
                 raise ValueError("Restricted to change creation date of object")
             
-class BaseRepository:
+T = TypeVar('T')
+
+class BaseRepository(Generic[T]):
+    model: type[T]
+
+    def __init_subclass__(cls):
+        super().__init_subclass__()
+
+        for base in getattr(cls, "__orig_bases__", ()):
+            if get_origin(base) is BaseRepository:
+                cls.model = get_args(base)[0]
+                break
+
     @property
     def db(self) -> AsyncSession:
         return get_repository_db()
+    
+    async def update(self, id: int, **fields: Any) -> T | None:
+        obj = await self.db.get(self.model, id)
+        if not obj: return None
+
+        for name, value in fields.items():
+            if not hasattr(obj, name):
+                raise AttributeError(
+                    f"{self.model.__name__} has no field '{name}'"
+                )
+            setattr(obj, name, value)
+
+        await self.db.flush()
+        await self.db.refresh(obj)
+        return obj
+    
+    async def delete(self, id: int) -> bool:
+        obj = await self.db.get(self.model, id)
+        if not obj: return False
+
+        await self.db.delete(obj)
+        return True

@@ -5,7 +5,7 @@ from src.repository.employee.workSchedule_model import EmployeeAbsence
 from src.schemas.base import RequestAllObject
 from src.schemas.work_schedule.update import AbsenceUpdateSchema
 
-class EmployeeAbsenceRepository(BaseRepository):
+class EmployeeAbsenceRepository(BaseRepository[EmployeeAbsence]):
     async def create(self, absence: EmployeeAbsence) -> EmployeeAbsence:
         self.db.add(absence)
         await self.db.commit()
@@ -50,12 +50,3 @@ class EmployeeAbsenceRepository(BaseRepository):
         await self.db.refresh(obj)
 
         return obj
-    
-    async def delete(self, id: int) -> bool:
-        obj = await self.db.get(EmployeeAbsence, id)
-        if not obj:
-            return False
-
-        await self.db.delete(obj)
-        await self.db.commit()
-        return True

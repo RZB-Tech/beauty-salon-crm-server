@@ -7,7 +7,7 @@ from src.repository.payment.payment_model import Receipt, ReceiptItem, ReceiptSt
 from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema
 
-class ReceiptRepository(BaseRepository):
+class ReceiptRepository(BaseRepository[Receipt]):
     async def create(self, receipt: Receipt) -> Receipt | None:
         self.db.add(receipt)
         await self.db.flush()
@@ -23,15 +23,6 @@ class ReceiptRepository(BaseRepository):
 
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
-    
-    async def changeStatus(self, id: int, status: ReceiptStatus) -> ReceiptStatus | None:
-        obj = await self.db.get(Receipt, id)
-        if obj is None: return None
-
-        obj.status = status
-        await self.db.flush()
-        await self.db.refresh(obj)
-        return obj
     
     # async def get_by_ids(self, ids: list[int]) -> list[Receipt]:
     #     result = await self.db.execute(
@@ -85,15 +76,6 @@ class ReceiptRepository(BaseRepository):
     #     await self.db.refresh(obj)
 
     #     return obj
-    
-    # async def delete(self, id: int) -> bool:
-    #     obj = await self.db.get(Payroll, id)
-    #     if not obj:
-    #         return False
-
-    #     await self.db.delete(obj)
-    #     await self.db.commit()
-    #     return True
     
     # async def get_by_employee(self, id: int) -> list[Payroll] | None:
     #     result =  await self.db.execute(

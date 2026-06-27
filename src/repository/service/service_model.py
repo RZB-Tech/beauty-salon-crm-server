@@ -11,7 +11,6 @@ from src.database.base import BaseFields
 
 if TYPE_CHECKING:
     from src.repository.employee.employee_model import Employee
-    from src.repository.appointment.appointment_model import AppointmentServices
 
 class ServiceCategory(BaseFields):
     __tablename__ = "service_categories"

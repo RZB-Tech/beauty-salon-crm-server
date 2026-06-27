@@ -4,7 +4,7 @@ from src.database.base import BaseRepository
 from src.repository.transaction.transaction_model import Transaction
 from src.schemas.base import RequestAllObject
 
-class TransactionRepository(BaseRepository):
+class TransactionRepository(BaseRepository[Transaction]):
     async def create(self, transaction: Transaction) -> Transaction:
         self.db.add(transaction)
         await self.db.flush()
@@ -43,23 +43,5 @@ class TransactionRepository(BaseRepository):
         # await self.db.refresh(obj)
 
         # return obj
-    
-    async def archive(self, id: int) -> Transaction | None:
-        obj = await self.db.get(Transaction, id)
-        if not obj:
-            return None
-        obj.archived = True
 
-        await self.db.flush()
-        await self.db.refresh(obj)
-        
-        return obj
-
-    async def delete(self, id: int) -> bool:
-        obj = await self.db.get(Transaction, id)
-        if not obj:
-            return False
-
-        await self.db.delete(obj)
-        return True
     

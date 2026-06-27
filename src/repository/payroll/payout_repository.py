@@ -5,7 +5,7 @@ from src.database.base import BaseRepository
 from src.repository.payroll.payroll_model import Payout, PayoutStatus
 from src.schemas.base import PaginationSchema, RequestAllObject
 
-class PayoutRepository(BaseRepository):
+class PayoutRepository(BaseRepository[Payout]):
     async def create(self, payout: Payout) -> Payout:
         self.db.add(payout)
         await self.db.commit()
@@ -33,15 +33,6 @@ class PayoutRepository(BaseRepository):
         items = list(result.scalars().all())
         return items, total_items
     
-    async def changeStatus(self, id: int, status: PayoutStatus) -> Payout | None:
-        obj = await self.db.get(Payout, id)
-        if not obj: return None
-
-        obj.status = status
-        await self.flush()
-        await self.refresh(obj)
-        return obj
-    
     # async def update(self, payload: PayrollUpdateSchema) -> Payout | None:
     #     obj = await self.db.get(Payout, payload.id)
     #     if not obj:
@@ -58,15 +49,6 @@ class PayoutRepository(BaseRepository):
     #     await self.db.refresh(obj)
 
     #     return obj
-    
-    async def delete(self, id: int) -> bool:
-        obj = await self.db.get(Payout, id)
-        if not obj:
-            return False
-
-        await self.db.delete(obj)
-        await self.db.commit()
-        return True
     
     async def get_by_employee(self, data: PaginationSchema, id: int) -> list[Payout] | None:
         count_stmt = (select(func.count())

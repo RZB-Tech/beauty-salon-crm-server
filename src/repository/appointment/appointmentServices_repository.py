@@ -58,14 +58,5 @@ class AppointmentServicesRepository(BaseRepository):
     #     await self.db.refresh(obj)
 
     #     return obj
-    
-    async def delete(self, id: int) -> bool:
-        obj = await self.db.get(AppointmentServices, id)
-        if not obj:
-            return False
-
-        await self.db.delete(obj)
-        await self.db.commit()
-        return True
 
     

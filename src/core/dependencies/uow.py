@@ -46,21 +46,6 @@ class UnitOfWork:
     @property
     def db(self):
         return get_repository_db()
-    
-    async def update_fields(self, model: type[T], id: int, **fields: Any) -> T | None:
-        obj = await self.db.get(model, id)
-        if not obj: return None
-
-        for name, value in fields.items():
-            if not hasattr(obj, name):
-                raise AttributeError(
-                    f"{model.__name__} has no field '{name}'"
-                )
-            setattr(obj, name, value)
-
-        await self.db.flush()
-        await self.db.refresh(obj)
-        return obj
 
 async def get_uow_with_context():
     """Single dependency that provides both session context AND uow."""

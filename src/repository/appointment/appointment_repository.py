@@ -90,14 +90,6 @@ class AppointmentRepository(BaseRepository):
         await self.db.refresh(appointment)
         return appointment
 
-    async def delete(self, id: int) -> bool:
-        obj = await self.db.get(Appointment, id)
-        if not obj:
-            return False
-
-        await self.db.delete(obj)
-        return True
-
     async def client_has_overlap(self, clientID: int, start: datetime, end: datetime) -> bool:
         return await self.db.scalar(
             select(Appointment).where(

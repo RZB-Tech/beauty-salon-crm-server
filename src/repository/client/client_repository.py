@@ -6,7 +6,7 @@ from src.schemas.client.update import ClientDepositUpdateSchema, ClientUpdateSch
 from src.repository.client.client_model import Client
 from src.core.utils.model_filter import apply_dynamic_filters
 
-class ClientRepository(BaseRepository):
+class ClientRepository(BaseRepository[Client]):
 
     async def create(self, client: ClientCreateSchema) -> Client:
         self.db.add(client)
@@ -51,15 +51,6 @@ class ClientRepository(BaseRepository):
         await self.db.refresh(obj)
 
         return obj
-    
-    async def delete(self, id: int) -> bool:
-        obj = await self.db.get(Client, id)
-        if not obj:
-            return False
-
-        await self.db.delete(obj)
-        await self.db.commit()
-        return True
     
     async def updateDeposit(self, client: Client, deposit: int) -> Client:
         client.deposit = deposit

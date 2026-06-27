@@ -7,7 +7,7 @@ from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.payroll.create import PayrollCreateSchema
 from src.schemas.payroll.update import PayrollUpdateSchema
 
-class PayrollRepository(BaseRepository):
+class PayrollRepository(BaseRepository[Payroll]):
     async def create(self, payroll: Payroll) -> Payroll:
         self.db.add(payroll)
         await self.db.commit()
@@ -35,31 +35,22 @@ class PayrollRepository(BaseRepository):
         items = list(result.scalars().all())
         return items, total_items
     
-    async def update(self, payload: PayrollUpdateSchema) -> Payroll | None:
-        obj = await self.db.get(Payroll, payload.id)
-        if not obj:
-            return None
+    # async def update(self, payload: PayrollUpdateSchema) -> Payroll | None:
+    #     obj = await self.db.get(Payroll, payload.id)
+    #     if not obj:
+    #         return None
 
-        update_data = payload.model_dump(exclude_unset=True)
+    #     update_data = payload.model_dump(exclude_unset=True)
 
-        update_data.pop("id", None)
+    #     update_data.pop("id", None)
 
-        for field, value in update_data.items():
-            setattr(obj, field, value)
+    #     for field, value in update_data.items():
+    #         setattr(obj, field, value)
 
-        await self.db.commit()
-        await self.db.refresh(obj)
+    #     await self.db.commit()
+    #     await self.db.refresh(obj)
 
-        return obj
-    
-    async def delete(self, id: int) -> bool:
-        obj = await self.db.get(Payroll, id)
-        if not obj:
-            return False
-
-        await self.db.delete(obj)
-        await self.db.commit()
-        return True
+    #     return obj
     
     async def get_by_employee(self, data: PaginationSchema, id: int) -> list[Payroll] | None:
         count_stmt = select(func.count()).select_from(Payroll)

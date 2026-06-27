@@ -2,6 +2,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
+    Boolean,
     CheckConstraint,
     ForeignKey,
     Enum as SQLEnum,
@@ -39,6 +40,7 @@ class Payout(BaseFields):
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
     payrolls: Mapped[list["Payroll"]] = relationship(back_populates = "payout")
     transactions: Mapped[list["Transaction"]] = relationship(back_populates = "payout")
+    cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
 class Payroll(BaseFields):
     __tablename__ = "payrolls"
@@ -56,6 +58,8 @@ class Payroll(BaseFields):
         ForeignKey("payouts.id", ondelete = "SET NULL"), 
         nullable = True)
     payout: Mapped["Payout"] = relationship(back_populates = "payrolls")
+
+    cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
     __table_args__ = (
         CheckConstraint("amount >= 1", name = "ck_payorll_amount_non_negative"),

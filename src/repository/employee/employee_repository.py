@@ -10,7 +10,7 @@ from src.repository.service.service_model import Service
 from src.schemas.base import RequestAllObject
 from src.schemas.employee.update import EmployeeUpdateSchema
 
-class EmployeeRepository(BaseRepository):
+class EmployeeRepository(BaseRepository[Employee]):
     async def create(self, employee: Employee) -> Employee:
         self.db.add(employee)
         await self.db.commit()
@@ -70,12 +70,3 @@ class EmployeeRepository(BaseRepository):
         await self.db.refresh(obj)
 
         return obj
-    
-    async def delete(self, id: int) -> bool:
-        obj = await self.db.get(Employee, id)
-        if not obj:
-            return False
-
-        await self.db.delete(obj)
-        await self.db.commit()
-        return True

@@ -6,7 +6,7 @@ from src.schemas.service_category.create import ServiceCategoryCreateSchema
 from src.schemas.service_category.update import ServiceCategoryUpdateSchema
 from src.schemas.base import RequestAllObject
 
-class ServiceCategoryRepository(BaseRepository):
+class ServiceCategoryRepository(BaseRepository[ServiceCategory]):
     async def create(self, serviceCategory: ServiceCategory) -> ServiceCategory:
         self.db.add(serviceCategory)
         await self.db.flush()
@@ -34,33 +34,14 @@ class ServiceCategoryRepository(BaseRepository):
         items = list(result.scalars().all())
         return items, total_items
     
-    async def update(self, payload: ServiceCategoryUpdateSchema) -> ServiceCategory | None:
-        obj = await self.db.get(ServiceCategory, payload.id)
-        if not obj:
-            return None
+    # async def update(self, payload: ServiceCategoryUpdateSchema) -> ServiceCategory | None:
+    #     obj = await self.db.get(ServiceCategory, payload.id)
+    #     if not obj:
+    #         return None
 
-        obj.name = payload.name
+    #     obj.name = payload.name
         
-        await self.db.flush()
-        await self.db.refresh(obj)
+    #     await self.db.flush()
+    #     await self.db.refresh(obj)
 
-        return obj
-    
-    async def archive(self, id: int) -> ServiceCategory | None:
-        obj = await self.db.get(ServiceCategory, id)
-        if not obj:
-            return None
-        obj.archived = True
-
-        await self.db.flush()
-        await self.db.refresh(obj)
-        
-        return obj
-    
-    async def delete(self, id: int) -> bool:
-        obj = await self.db.get(ServiceCategory, id)
-        if not obj:
-            return False
-
-        await self.db.delete(obj)
-        return True
+    #     return obj

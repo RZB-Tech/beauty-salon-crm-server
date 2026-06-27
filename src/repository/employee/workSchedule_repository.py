@@ -7,7 +7,7 @@ from src.database.base import BaseRepository
 from src.repository.employee.workSchedule_model import WorkSchedule, EmployeeAbsence
 from src.schemas.base import RequestAllObject
 
-class WorkScheduleRepository(BaseRepository):
+class WorkScheduleRepository(BaseRepository[WorkSchedule]):
     async def create(self, workSchedule: WorkSchedule) -> WorkSchedule:
         self.db.add(workSchedule)
         await self.db.commit()
@@ -56,15 +56,6 @@ class WorkScheduleRepository(BaseRepository):
     #     await self.db.refresh(obj)
 
     #     return obj
-    
-    async def delete(self, id: int) -> bool:
-        obj = await self.db.get(WorkSchedule, id)
-        if not obj:
-            return False
-
-        await self.db.delete(obj)
-        await self.db.commit()
-        return True
     
     async def is_employee_working(self, employee_id: int, start: datetime, end: datetime) -> bool:
         appointment_date = start.date()
