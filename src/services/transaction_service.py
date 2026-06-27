@@ -13,10 +13,6 @@ class TransactionService():
         transactionData = data.model_dump()
         newTransaction = Transaction(**transactionData)
         return await self.uow.transactions.create(newTransaction)
-
-    # @require_exists("transaction")
-    # async def update(self, data: ServiceCategoryUpdateSchema) -> ServiceCategory:
-    #     return await self.uow.serviceCategory.update(data)
     
     async def get(self, id: int) -> Transaction:
         result = await self.uow.transactions.get(id)
@@ -44,8 +40,12 @@ class TransactionService():
         }
     
     async def archive(self, id: int) -> Transaction:
-        return await self.uow.transactions.archive(id)
-
-    async def delete(self, id: int) -> bool:
-        return await self.uow.serviceCategory.delete(id)
+        return await self.uow.update_fields(
+            Transaction, id, archived = True 
+        )
+    
+    async def cancel(self, id: int) -> Transaction | None:
+        return await self.uow.update_fields(
+            Transaction, id, cancelled = True 
+        )
     

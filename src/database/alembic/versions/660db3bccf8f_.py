@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 8d689a41bdf6
+Revision ID: 660db3bccf8f
 Revises: 
-Create Date: 2026-06-25 13:43:40.983168
+Create Date: 2026-06-27 23:29:16.787011
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '8d689a41bdf6'
+revision: str = '660db3bccf8f'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -255,32 +255,29 @@ def upgrade() -> None:
     sa.UniqueConstraint('employee_id', 'day', name='uq_employee_day_of_week')
     )
     op.create_index(op.f('ix_employee_work_schedules_tenant_id'), 'employee_work_schedules', ['tenant_id'], unique=False)
-    op.create_table('payrolls',
+    op.create_table('payouts',
     sa.Column('employee_id', sa.Integer(), nullable=False),
     sa.Column('amount', sa.Integer(), nullable=False),
-    sa.Column('type', sa.Enum('salary', 'bonus', 'penalty', 'commission', name='payrollenum'), nullable=False),
+    sa.Column('status', sa.Enum('pending', 'partial', 'paid', 'cancelled', name='payoutstatus'), nullable=False),
     sa.Column('notes', sa.Text(), nullable=True),
-    sa.Column('appointment_id', sa.Integer(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.CheckConstraint('amount >= 1', name='ck_payorll_amount_non_negative'),
-    sa.ForeignKeyConstraint(['appointment_id'], ['appointments.id'], ),
     sa.ForeignKeyConstraint(['created_by'], ['staffs.id'], name='fk_created_by_staff', use_alter=True),
     sa.ForeignKeyConstraint(['employee_id'], ['employees.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_payrolls_tenant_id'), 'payrolls', ['tenant_id'], unique=False)
+    op.create_index(op.f('ix_payouts_tenant_id'), 'payouts', ['tenant_id'], unique=False)
     op.create_table('receipts',
     sa.Column('receipt_type', sa.Enum('appointment', 'direct sale', name='receipttype'), nullable=False),
     sa.Column('appointment_id', sa.Integer(), nullable=True),
     sa.Column('client_id', sa.Integer(), nullable=True),
     sa.Column('total_amount', sa.Integer(), nullable=False),
-    sa.Column('status', sa.Enum('pending', 'paid', 'cancelled', name='receiptstatusenum'), nullable=False),
+    sa.Column('status', sa.Enum('pending', 'paid', 'cancelled', name='receiptstatus'), nullable=False),
     sa.Column('change_amount', sa.Integer(), nullable=False),
     sa.Column('change_to_deposit', sa.Boolean(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -359,6 +356,7 @@ def upgrade() -> None:
     sa.Column('receipt_id', sa.Integer(), nullable=False),
     sa.Column('amount', sa.Integer(), nullable=False),
     sa.Column('method', sa.Enum('cash', 'card', 'deposit', name='paymentmethodsenum'), nullable=False),
+    sa.Column('cancelled', sa.Boolean(), server_default='false', nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -371,6 +369,51 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_payments_tenant_id'), 'payments', ['tenant_id'], unique=False)
+    op.create_table('payrolls',
+    sa.Column('employee_id', sa.Integer(), nullable=False),
+    sa.Column('amount', sa.Integer(), nullable=False),
+    sa.Column('type', sa.Enum('salary', 'advance salary', 'bonus', 'penalty', 'commission', name='payrollenum'), nullable=False),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('appointment_id', sa.Integer(), nullable=True),
+    sa.Column('payout_id', sa.Integer(), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by', sa.Integer(), nullable=True),
+    sa.Column('tenant_id', sa.Integer(), nullable=False),
+    sa.CheckConstraint('amount >= 1', name='ck_payorll_amount_non_negative'),
+    sa.ForeignKeyConstraint(['appointment_id'], ['appointments.id'], ),
+    sa.ForeignKeyConstraint(['created_by'], ['staffs.id'], name='fk_created_by_staff', use_alter=True),
+    sa.ForeignKeyConstraint(['employee_id'], ['employees.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['payout_id'], ['payouts.id'], ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_payrolls_tenant_id'), 'payrolls', ['tenant_id'], unique=False)
+    op.create_table('transactions',
+    sa.Column('amount', sa.Integer(), nullable=False),
+    sa.Column('type', sa.Enum('income', 'expense', name='transactiontype'), nullable=False),
+    sa.Column('method', sa.Enum('card', 'cash', 'bank transfer', 'deposit', name='transactionmethod'), nullable=False),
+    sa.Column('category', sa.Enum('appointment', 'direct sale', 'salary', 'utility', 'internet', 'telephone', 'other', name='transactioncategory'), nullable=False),
+    sa.Column('receipt_id', sa.Integer(), nullable=True),
+    sa.Column('payout_id', sa.Integer(), nullable=True),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('cancelled', sa.Boolean(), server_default='false', nullable=False),
+    sa.Column('auto_generated', sa.Boolean(), server_default='false', nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by', sa.Integer(), nullable=True),
+    sa.Column('tenant_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['created_by'], ['staffs.id'], name='fk_created_by_staff', use_alter=True),
+    sa.ForeignKeyConstraint(['payout_id'], ['payouts.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['receipt_id'], ['receipts.id'], ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_transactions_tenant_id'), 'transactions', ['tenant_id'], unique=False)
     op.create_table('receipt_items',
     sa.Column('receipt_id', sa.Integer(), nullable=False),
     sa.Column('material_id', sa.Integer(), nullable=True),
@@ -401,6 +444,10 @@ def downgrade() -> None:
     # ### commands auto generated by Alembic - please adjust! ###
     op.drop_index(op.f('ix_receipt_items_tenant_id'), table_name='receipt_items')
     op.drop_table('receipt_items')
+    op.drop_index(op.f('ix_transactions_tenant_id'), table_name='transactions')
+    op.drop_table('transactions')
+    op.drop_index(op.f('ix_payrolls_tenant_id'), table_name='payrolls')
+    op.drop_table('payrolls')
     op.drop_index(op.f('ix_payments_tenant_id'), table_name='payments')
     op.drop_table('payments')
     op.drop_table('audit_logs')
@@ -412,8 +459,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_receipts_tenant_id'), table_name='receipts')
     op.drop_index('idx_unique_active_receipt_per_appointment', table_name='receipts', postgresql_where=sa.text("status IN ('pending', 'paid') AND appointment_id IS NOT NULL"))
     op.drop_table('receipts')
-    op.drop_index(op.f('ix_payrolls_tenant_id'), table_name='payrolls')
-    op.drop_table('payrolls')
+    op.drop_index(op.f('ix_payouts_tenant_id'), table_name='payouts')
+    op.drop_table('payouts')
     op.drop_index(op.f('ix_employee_work_schedules_tenant_id'), table_name='employee_work_schedules')
     op.drop_table('employee_work_schedules')
     op.drop_table('employee_services')

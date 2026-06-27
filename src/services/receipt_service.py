@@ -2,10 +2,8 @@ import math
 from fastapi import HTTPException, status
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
-from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
-from src.repository.appointment.appointment_model import AppointmentStatus
-from src.repository.payment.payment_model import PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatusEnum, ReceiptType
+from src.repository.payment.payment_model import PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatus, ReceiptType
 from src.repository.payroll.payroll_model import Payroll, PayrollEnum
 from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema
@@ -20,7 +18,7 @@ class ReceiptService():
                 select(Receipt)
                     .where(
                         Receipt.appointment_id == data.appointment_id,
-                        Receipt.status.in_([ReceiptStatusEnum.PENDING, ReceiptStatusEnum.PAID])
+                        Receipt.status.in_([ReceiptStatus.PENDING, ReceiptStatus.PAID])
                     )
             )
             active_result = await self.uow.db.execute(active_stmt)
@@ -146,7 +144,7 @@ class ReceiptService():
                 detail = f"Receipt with id {id} not found"
             )
         
-        if receipt.status == ReceiptStatusEnum.CANCELLED:
+        if receipt.status == ReceiptStatus.CANCELLED:
             raise HTTPException(
                 status_code = status.HTTP_400_BAD_REQUEST,
                 detail = f"Receipt has already cancelled"
@@ -156,6 +154,7 @@ class ReceiptService():
         for payment in receipt.payments:
             if payment.method == PaymentMethodsEnum.DEPOSIT:
                 deposit_to_refund += payment.amount
+            await self.uow.payments.cancel(payment.id)
 
         if receipt.change_to_deposit and receipt.change_amount > 0:
             deposit_to_refund -= receipt.change_amount
@@ -184,7 +183,7 @@ class ReceiptService():
                 newQuantity = material.quantity + receiptItem.quantity
                 await self.uow.materials.updateQuantity(material, newQuantity)
 
-        receipt.status = ReceiptStatusEnum.CANCELLED
+        receipt.status = ReceiptStatus.CANCELLED
         if receipt.appointment:
             receipt.appointment.paid = False
 

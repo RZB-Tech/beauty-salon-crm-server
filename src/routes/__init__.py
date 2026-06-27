@@ -15,6 +15,7 @@ from src.routes.appointmentServices_router import router as appointmentServicesR
 from src.routes.auditLogs_router import router as auditLogsR
 from src.routes.receipt_router import router as ReceiptR
 from src.routes.payment_router import router as PaymentR
+from src.routes.transaction_router import router as TransactionR
 
 open_router = APIRouter(prefix = "/api/v1")
 open_router.include_router(
@@ -63,6 +64,12 @@ protected_router.include_router(
     absenceR, 
     prefix="/absences", 
     tags=["Absences"]
+)
+
+protected_router.include_router(
+    TransactionR, 
+    prefix="/transactions", 
+    tags=["Transactions"]
 )
 
 protected_router.include_router(

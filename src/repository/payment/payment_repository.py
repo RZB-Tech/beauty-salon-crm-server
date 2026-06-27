@@ -2,7 +2,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
-from src.repository.payment.payment_model import Payment, Receipt, ReceiptStatusEnum
+from src.repository.payment.payment_model import Payment, Receipt
 from src.schemas.base import RequestAllObject
 
 class PaymentRepository(BaseRepository):
@@ -81,3 +81,11 @@ class PaymentRepository(BaseRepository):
         await self.db.delete(obj)
         await self.db.commit()
         return True
+    
+    async def cancel(self, id: int) -> Payment | None:
+        obj = await self.db.get(Payment, id)
+        if not obj: return None
+
+        await self.db.flush()
+        await self.db.refresh(obj)
+        return obj

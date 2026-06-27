@@ -12,8 +12,8 @@ load_dotenv()
 DB_NAME = "salon"
 DB_USER = "postgres"
 DB_PASSWORD = "postgres"
-DB_HOST = "postgres"
-DB_PORT = "5432"
+DB_HOST = "localhost"
+DB_PORT = "5450"
 
 VERSIONS_DIR = Path("src/database/alembic/versions")
 
@@ -49,6 +49,7 @@ def drop_database() -> None:
 
     run([
         "dropdb",
+        "--force",
         "-h", DB_HOST,
         "-p", DB_PORT,
         "-U", DB_USER,
@@ -112,8 +113,8 @@ def seed_admin_user() -> None:
 
 if __name__ == "__main__":
     asyncio.run(delete_migrations())
-    # drop_database()
-    # create_database()
+    drop_database()
+    create_database()
     create_migration()
     apply_migrations()
     seed_admin_user()

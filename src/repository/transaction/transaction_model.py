@@ -54,5 +54,6 @@ class Transaction(BaseFields):
     
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
 
+    cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
     auto_generated: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
  

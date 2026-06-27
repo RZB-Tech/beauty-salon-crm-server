@@ -1,6 +1,6 @@
 from pydantic import ConfigDict
 
-from src.repository.payment.payment_model import PaymentMethodsEnum, ReceiptStatusEnum, ReceiptType
+from src.repository.payment.payment_model import PaymentMethodsEnum, ReceiptStatus, ReceiptType
 from src.schemas.base import BaseResponseSchema
 
 class ReceiptItemResponseSchema(BaseResponseSchema):
@@ -22,7 +22,7 @@ class ReceiptResponseSchema(BaseResponseSchema):
 
     paid_amount: int
     remaining_amount: int
-    status: ReceiptStatusEnum
+    status: ReceiptStatus
     change_amount: int = 0
     change_to_deposit: bool = False
     

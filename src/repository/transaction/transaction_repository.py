@@ -54,7 +54,7 @@ class TransactionRepository(BaseRepository):
         await self.db.refresh(obj)
         
         return obj
-    
+
     async def delete(self, id: int) -> bool:
         obj = await self.db.get(Transaction, id)
         if not obj:
@@ -62,3 +62,4 @@ class TransactionRepository(BaseRepository):
 
         await self.db.delete(obj)
         return True
+    

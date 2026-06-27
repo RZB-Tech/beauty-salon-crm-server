@@ -5,7 +5,7 @@ from sqlalchemy import select
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import AppointmentServices
-from src.repository.payment.payment_model import Payment, PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatusEnum, ReceiptType
+from src.repository.payment.payment_model import Payment, PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatus, ReceiptType
 from src.repository.payroll.payroll_model import Payroll, PayrollEnum
 from src.repository.transaction.transaction_model import Transaction, TransactionCategory, TransactionMethod, TransactionType
 from src.schemas.base import RequestAllObject
@@ -52,7 +52,7 @@ class PaymentService():
 
         # add overpaid sum to client's deposit
         if receipt.paid_amount >= receipt.total_amount:
-            receipt.status = ReceiptStatusEnum.PAID
+            receipt.status = ReceiptStatus.PAID
 
             # create new transcation for income from receipt payment
             await self.uow.transactions.create(Transaction(
@@ -170,3 +170,6 @@ class PaymentService():
     @require_exists("payments")
     async def delete(self, id: int) -> bool:
         return await self.uow.payments.delete(id)
+    
+    async def cancel(self, id: int) -> bool:
+        return await self.uow.payments.cancel(id)

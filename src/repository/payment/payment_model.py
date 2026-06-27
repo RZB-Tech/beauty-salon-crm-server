@@ -120,5 +120,7 @@ class Payment(BaseFields):
     amount: Mapped[int] = mapped_column(Integer)
     method: Mapped[PaymentMethodsEnum] = mapped_column(SQLEnum(
         PaymentMethodsEnum, values_callable = lambda e: [m.value for m in e]))
+    
+    cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
     ALLOWED_FILTERS = {"receipt_id", "method"}
