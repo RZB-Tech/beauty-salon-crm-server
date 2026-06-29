@@ -12,10 +12,8 @@ class MaterialUpdateSchema(BaseUpdateSchema):
     description: str | None = None
 
     measurement_unit: MeasurementUnit | None = None
-    volume: int | None = None
-    sell_price: int | None = None 
-
-    can_be_product: bool | None = None
+    volume: int | None = Field(None, ge = 0)
+    sell_price: int | None = Field(None, ge = 0)
 
 class MaterialOperation(IntEnum):
     INCREMENT = 1

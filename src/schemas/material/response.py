@@ -11,9 +11,4 @@ class MaterialResponseSchema(BaseResponseSchema):
     measurement_unit: MeasurementUnit
     volume: int
 
-    purchase_price: int
-    retail_price: int 
-    wholesale_price: int 
-    sell_price: int 
-
-    can_be_product: bool
+    sell_price: int

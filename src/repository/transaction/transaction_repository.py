@@ -32,4 +32,8 @@ class TransactionRepository(BaseRepository[Transaction]):
         items = list(result.scalars().all())
         return items, total_items
 
-    
+    async def get_by_receipt(self, receipt_id: int) -> list[Transaction]:
+        result = await self.db.execute(
+            select(Transaction).where(Transaction.receipt_id == receipt_id)
+        )
+        return list(result.scalars().all())

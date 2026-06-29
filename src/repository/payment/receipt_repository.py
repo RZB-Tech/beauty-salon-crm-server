@@ -24,12 +24,6 @@ class ReceiptRepository(BaseRepository[Receipt]):
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
     
-    # async def get_by_ids(self, ids: list[int]) -> list[Receipt]:
-    #     result = await self.db.execute(
-    #         select(Receipt).where(Receipt.id.in_(ids))
-    #     )
-    #     return list(result.scalars().all())
-    
     async def get(self, id: int) -> Receipt:
         result = await self.db.execute(
             select(Receipt)
@@ -59,27 +53,3 @@ class ReceiptRepository(BaseRepository[Receipt]):
         result = await self.db.execute(stmt)
         items = list(result.scalars().all())
         return items, total_items
-    
-    # async def update(self, payload: PayrollUpdateSchema) -> Payroll | None:
-    #     obj = await self.db.get(Payroll, payload.id)
-    #     if not obj:
-    #         return None
-
-    #     update_data = payload.model_dump(exclude_unset=True)
-
-    #     update_data.pop("id", None)
-
-    #     for field, value in update_data.items():
-    #         setattr(obj, field, value)
-
-    #     await self.db.commit()
-    #     await self.db.refresh(obj)
-
-    #     return obj
-    
-    # async def get_by_employee(self, id: int) -> list[Payroll] | None:
-    #     result =  await self.db.execute(
-    #         select(Payroll)
-    #         .where(Payroll.employee_id == id)
-    #     )
-    #     return result.scalars().all()

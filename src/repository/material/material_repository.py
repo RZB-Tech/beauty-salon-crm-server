@@ -10,9 +10,8 @@ from src.schemas.material.update import MaterialUpdateSchema
 class MaterialRepository(BaseRepository[Material]):
     async def create(self, material: Material) -> Material:
         self.db.add(material)
-        # await self.db.commit()
-        # await self.db.refresh(material)
         await self.db.flush()
+        await self.db.refresh(material)
         return material
     
     async def get_by_ids(self, ids: list[int]) -> list[Material]:

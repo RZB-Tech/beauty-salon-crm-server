@@ -62,23 +62,6 @@ class AppointmentRecordsRepository(BaseRepository):
         result = await self.db.execute(stmt)
         items = list(result.scalars().all())
         return items, total_items
-    
-    # async def update(self, payload: MaterialUpdateSchema) -> Material | None:
-    #     obj = await self.db.get(Material, payload.id)
-    #     if not obj:
-    #         return None
-
-    #     update_data = payload.model_dump(exclude_unset=True)
-
-    #     update_data.pop("id", None)
-
-    #     for field, value in update_data.items():
-    #         setattr(obj, field, value)
-
-    #     await self.db.commit()
-    #     await self.db.refresh(obj)
-
-    #     return obj
 
     async def employee_has_overlap(self, employeeID: int, start: datetime, end: datetime) -> bool:
         stmt = (

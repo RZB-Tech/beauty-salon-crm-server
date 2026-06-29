@@ -4,7 +4,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.payment.payment_model import PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatus, ReceiptType
-from src.repository.payroll.payroll_model import Payroll, PayrollType
+from src.repository.payroll.payroll_model import Payroll, PayrollStatus, PayrollType
 from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema
 
@@ -84,7 +84,7 @@ class ReceiptService():
             if not data.receipt_items:
                 raise HTTPException(
                     status_code= 400, 
-                    detail="Items list is required for direct sales."
+                    detail="Для прямой продажи необходимо указать список из одного и более товаров"
                 )
             
             runningTotal = 0
@@ -94,12 +94,12 @@ class ReceiptService():
                 if not material:
                     raise HTTPException(
                         status_code=status.HTTP_404_NOT_FOUND, 
-                        detail=f"Material with ID {item_data.material_id} not found."
+                        detail=f"Материал с ID {item_data.material_id} не найден."
                     )
                 if material.quantity < item_data.quantity:
                     raise HTTPException(
                         status_code= 400, 
-                        detail=f"Not enough stock for material {material.id}. Available: {material.quantity}, Requested: {item_data.quantity}."
+                        detail=f"Не достаточное количество материала ID {material.id}, {material.article}. Доступо: {material.quantity}, запрашивается: {item_data.quantity}."
                     )
                 
                 newQuantity = material.quantity - item_data.quantity
@@ -141,13 +141,13 @@ class ReceiptService():
         if not receipt:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Receipt with id {id} not found"
+                detail = f"Чек с ID {id} не найден"
             )
         
         if receipt.status == ReceiptStatus.CANCELLED:
             raise HTTPException(
                 status_code = status.HTTP_400_BAD_REQUEST,
-                detail = f"Receipt has already cancelled"
+                detail = f"Чек уже отменен"
             )
         
         deposit_to_refund = 0
@@ -166,16 +166,25 @@ class ReceiptService():
                 new_deposit_balance = client.deposit + deposit_to_refund
                 await self.uow.clients.updateDeposit(client, new_deposit_balance)
 
+        # cancel payments and payrolls
         if receipt.appointment_id:
-            payroll_delete_stmt = (
-                delete(Payroll)
+            stmt = await self.db.execute(
+                select(Payroll)
                 .where( 
                     Payroll.appointment_id == receipt.appointment_id,
                     Payroll.type == PayrollType.COMMISSION
                 )
             )
-            await self.uow.db.execute(payroll_delete_stmt)
+            payrolls = stmt.scalars().all()
+            # cancel payrolls
+            for payroll in payrolls:
+                payroll.status = PayrollStatus.CANCELLED
 
+            # cancel payments
+            for payment in receipt.payments:
+                payment.cancelled = True
+
+        # return used materials to stock
         if receipt.receipt_type == ReceiptType.DIRECT:
             for receiptItem in receipt.items:
                 material = await self.uow.materials.get(receiptItem.material_id)
@@ -190,23 +199,13 @@ class ReceiptService():
         receipt.change_amount = 0
         receipt.change_to_deposit = False
 
+        transactions = await self.uow.transactions.get_by_receipt(receipt.id)
+        for transaction in transactions: transaction.cancelled = True
+            
         return await self.uow.receipts.get(id)
     
-    # @require_exists("materials")
-    # async def update(self, data: MaterialUpdateSchema) -> Material:
-    #     return await self.uow.materials.update(data)
-    
-    # async def get(self, id: int) -> Material:
-    #     result = await self.uow.materials.get(id)
-    #     if not result:
-    #         raise HTTPException(
-    #             status_code = status.HTTP_404_NOT_FOUND,
-    #             detail = f"Material with id {id} not found"
-    #         )
-    #     return result
-    
-    # async def get_many(self, ids: list[int]) -> list[Material]:
-    #     return await self.uow.materials.get_by_ids(ids)
+    async def get_many(self, ids: list[int]) -> list[Receipt]:
+        return await self.uow.receipts.get_by_ids(ids)
     
     async def get_all(self, data: RequestAllObject) -> dict:
         items, total_items = await self.uow.receipts.get_all(data)
