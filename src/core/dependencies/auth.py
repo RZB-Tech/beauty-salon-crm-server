@@ -25,7 +25,7 @@ async def get_current_staff(request: Request) -> dict:
     set_current_staff_id(id, tenant_id)
 
     return {
+        "sub": login, 
         "id": id, 
-        "login": login, 
         "tenant_id": tenant_id
         }

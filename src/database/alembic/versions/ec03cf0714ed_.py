@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: de20692f4ab6
+Revision ID: ec03cf0714ed
 Revises: 
-Create Date: 2026-06-29 12:04:50.479204
+Create Date: 2026-06-29 18:25:17.586377
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'de20692f4ab6'
+revision: str = 'ec03cf0714ed'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -72,11 +72,7 @@ def upgrade() -> None:
     sa.Column('quantity', sa.Integer(), nullable=False),
     sa.Column('measurement_unit', sa.Enum('piece', 'pack', 'box', 'bottle', 'milliliter', 'liter', 'gramm', 'kilogram', name='measurementunit'), nullable=False),
     sa.Column('volume', sa.Integer(), nullable=False),
-    sa.Column('purchase_price', sa.Integer(), nullable=False),
-    sa.Column('retail_price', sa.Integer(), nullable=False),
-    sa.Column('wholesale_price', sa.Integer(), nullable=False),
     sa.Column('sell_price', sa.Integer(), nullable=False),
-    sa.Column('can_be_product', sa.Boolean(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -378,6 +374,7 @@ def upgrade() -> None:
     sa.Column('appointment_id', sa.Integer(), nullable=True),
     sa.Column('payout_id', sa.Integer(), nullable=True),
     sa.Column('status', sa.Enum('pending', 'paid', 'cancelled', name='payrollstatus'), nullable=False),
+    sa.Column('auto_genereted', sa.Boolean(), server_default='false', nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),

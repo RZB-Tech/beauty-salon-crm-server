@@ -42,7 +42,6 @@ class EmployeeService():
             )
         return result
     
-    @require_exists("employees")
     async def update(self, data: EmployeeUpdateSchema) -> Employee:
         services = None
         if data.services is not None and len(data.services) >= 1:
@@ -50,11 +49,10 @@ class EmployeeService():
             if len(services) != len(data.services):
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="One or more provided service_ids do not exist."
+                    detail="Один или более из указанных услуг не найден"
                 )
 
-        result = await self.uow.employees.update(data, services)
-        return result
+        return await self.uow.employees.update(data, services)
     
     async def get_many(self, ids: list[int]) -> list[Employee]:
         return await self.uow.employees.get_by_ids(ids)
@@ -72,7 +70,6 @@ class EmployeeService():
             "totalPages": total_pages
         }
     
-    @require_exists("employees")
     async def delete(self, id: int) -> bool:
         return await self.uow.employees.delete(id)
     

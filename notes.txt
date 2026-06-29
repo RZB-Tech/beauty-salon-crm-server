@@ -7,6 +7,4 @@ in case some error: rollbacked
 
 --------------
 
-TRANSACTIONS
-
-need to add its routes
+need to fix auth/change-password

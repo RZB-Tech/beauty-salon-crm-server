@@ -20,13 +20,13 @@ def verify_password(hashed_password: str, password: str) -> bool:
 def create_access_token(data: dict) -> str:
     toEncode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(seconds = settings.ACCESS_TOKEN_EXPIRE_SECONDS)
-    toEncode.update({"exp": expire})
+    toEncode.update({"exp": expire, "type": "access"})
     return jwt.encode(toEncode, settings.PRIVATE_KEY, algorithm = settings.ALGORITHM)
 
 def create_refresh_token(data: dict) -> str:
     toEncode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(seconds = settings.REFRESH_TOKEN_EXPIRE_SECONDS)
-    toEncode.update({"exp": expire})
+    toEncode.update({"exp": expire, "type": "refresh"})
     return jwt.encode(toEncode, settings.PRIVATE_KEY, algorithm = settings.ALGORITHM)
 
 def decode_token(token: str) -> dict | None:

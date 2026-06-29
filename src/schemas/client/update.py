@@ -7,9 +7,9 @@ from datetime import date
 
 class ClientUpdateSchema(BaseUpdateSchema):
     id: int = Field(ge = 1)
-    firstname: str | None = None
-    lastname: str | None = None
-    middlename: str | None = None
+    firstname: str | None = Field(None, max_length = 255)
+    lastname: str | None = Field(None, max_length = 255)
+    middlename: str | None = Field(None, max_length = 255)
     phone: str | None = None
     birth_date: date | None = None
     sex: Sex | None = None
