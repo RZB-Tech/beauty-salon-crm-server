@@ -117,6 +117,15 @@ class PaymentService():
             receipt.change_amount = 0
             receipt.change_to_deposit = False
 
+            await self.uow.transactions.create(Transaction(
+                receipt_id = receipt.id,
+                amount = data.amount,
+                type = TransactionType.INCOME,
+                method = TransactionMethod(new_payment.method.value),
+                category = TransactionCategory(receipt.receipt_type.value),
+                auto_generated = True
+            ))
+
         # substract payment sum from client's deposit
         if depositAdjustment != 0:
             client_id: int

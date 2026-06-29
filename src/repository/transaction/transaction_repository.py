@@ -31,17 +31,5 @@ class TransactionRepository(BaseRepository[Transaction]):
         result = await self.db.execute(stmt)
         items = list(result.scalars().all())
         return items, total_items
-    
-    # async def update(self, payload: ServiceCategoryUpdateSchema) -> Transaction | None:
-        # obj = await self.db.get(Transaction, payload.id)
-        # if not obj:
-        #     return None
-
-        # obj.name = payload.name
-        
-        # await self.db.flush()
-        # await self.db.refresh(obj)
-
-        # return obj
 
     

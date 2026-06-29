@@ -1,6 +1,6 @@
 from typing import Self
 
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, Field, field_validator
 
 from src.repository.transaction.transaction_model import TransactionCategory, TransactionMethod, TransactionType
 
