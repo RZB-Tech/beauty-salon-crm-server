@@ -15,9 +15,4 @@ class EmployeeUpdateSchema(BaseUpdateSchema):
     salary_fixed: int | None = Field(default = None, ge = 1)
     percent_from_services: int | None = Field(default = None, ge = 1)
     percent_from_sales: int | None = Field(default = None, ge = 1)
-    percent_from_self_services: int | None = Field(default = None, ge = 1)
-    percent_from_self_sales: int | None = Field(default = None, ge = 1)
-    percent_from_attract_client: int | None = Field(default = None, ge = 1)
-    percent_from_develop_client: int | None = Field(default = None, ge = 1)
-
     notes: str | None = None

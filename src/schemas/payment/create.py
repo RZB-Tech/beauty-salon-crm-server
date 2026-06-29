@@ -1,3 +1,5 @@
+from typing import Self
+
 from pydantic import BaseModel, Field, model_validator
 
 from src.repository.payment.payment_model import PaymentMethodsEnum, ReceiptType

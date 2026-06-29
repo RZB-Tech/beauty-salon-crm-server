@@ -9,13 +9,14 @@ from src.routes.material_router import router as materialR
 from src.routes.workSchedule_router import router as workScheduleR
 from src.routes.absence_router import router as absenceR
 from src.routes.appointment_router import router as appointmentR
-from src.routes.payroll_router import router as payrollR
+from src.routes.payroll_router import router as PayrollR
 from src.routes.appointmentRecords_router import router as appointmentRecordsR
 from src.routes.appointmentServices_router import router as appointmentServicesR
 from src.routes.auditLogs_router import router as auditLogsR
 from src.routes.receipt_router import router as ReceiptR
 from src.routes.payment_router import router as PaymentR
 from src.routes.transaction_router import router as TransactionR
+from src.routes.payout_router import router as PayoutR
 
 open_router = APIRouter(prefix = "/api/v1")
 open_router.include_router(
@@ -85,9 +86,15 @@ protected_router.include_router(
 )
 
 protected_router.include_router(
-    payrollR, 
+    PayrollR, 
     prefix="/payrolls", 
     tags=["Payrolls"]
+)
+
+protected_router.include_router(
+    PayoutR,
+    prefix = "/payouts",
+    tags = ["Payouts"]
 )
 
 protected_router.include_router(

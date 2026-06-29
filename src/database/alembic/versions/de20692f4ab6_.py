@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 591cdc0c7b1b
+Revision ID: de20692f4ab6
 Revises: 
-Create Date: 2026-06-28 00:12:31.688506
+Create Date: 2026-06-29 12:04:50.479204
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '591cdc0c7b1b'
+revision: str = 'de20692f4ab6'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -257,8 +257,8 @@ def upgrade() -> None:
     op.create_index(op.f('ix_employee_work_schedules_tenant_id'), 'employee_work_schedules', ['tenant_id'], unique=False)
     op.create_table('payouts',
     sa.Column('employee_id', sa.Integer(), nullable=False),
-    sa.Column('amount', sa.Integer(), nullable=False),
-    sa.Column('status', sa.Enum('pending', 'partial', 'paid', 'cancelled', name='payoutstatus'), nullable=False),
+    sa.Column('type', sa.Enum('salary', 'advance salary', 'other', name='payouttype'), nullable=False),
+    sa.Column('method', sa.Enum('cash', 'card', name='payoutmethod'), nullable=False),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('cancelled', sa.Boolean(), server_default='false', nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -373,11 +373,11 @@ def upgrade() -> None:
     op.create_table('payrolls',
     sa.Column('employee_id', sa.Integer(), nullable=False),
     sa.Column('amount', sa.Integer(), nullable=False),
-    sa.Column('type', sa.Enum('salary', 'advance salary', 'bonus', 'penalty', 'commission', name='payrollenum'), nullable=False),
+    sa.Column('type', sa.Enum('bonus', 'penalty', 'commission', name='payrolltype'), nullable=False),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('appointment_id', sa.Integer(), nullable=True),
     sa.Column('payout_id', sa.Integer(), nullable=True),
-    sa.Column('cancelled', sa.Boolean(), server_default='false', nullable=False),
+    sa.Column('status', sa.Enum('pending', 'paid', 'cancelled', name='payrollstatus'), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -397,7 +397,7 @@ def upgrade() -> None:
     sa.Column('amount', sa.Integer(), nullable=False),
     sa.Column('type', sa.Enum('income', 'expense', name='transactiontype'), nullable=False),
     sa.Column('method', sa.Enum('card', 'cash', 'bank transfer', 'deposit', name='transactionmethod'), nullable=False),
-    sa.Column('category', sa.Enum('appointment', 'direct sale', 'salary', 'utility', 'internet', 'telephone', 'other', name='transactioncategory'), nullable=False),
+    sa.Column('category', sa.Enum('receipt', 'employee payment', 'utility', 'internet', 'telephone', 'other', name='transactioncategory'), nullable=False),
     sa.Column('receipt_id', sa.Integer(), nullable=True),
     sa.Column('payout_id', sa.Integer(), nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),

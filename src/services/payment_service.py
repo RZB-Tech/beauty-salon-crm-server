@@ -6,7 +6,7 @@ from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import AppointmentServices
 from src.repository.payment.payment_model import Payment, PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatus, ReceiptType
-from src.repository.payroll.payroll_model import Payroll, PayrollEnum
+from src.repository.payroll.payroll_model import Payroll, PayrollType
 from src.repository.transaction.transaction_model import Transaction, TransactionCategory, TransactionMethod, TransactionType
 from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import PaymentCreateSchema
@@ -60,7 +60,7 @@ class PaymentService():
                 amount = receipt.total_amount,
                 type = TransactionType.INCOME,
                 method = TransactionMethod(new_payment.method.value),
-                category = TransactionCategory(receipt.receipt_type.value),
+                category = TransactionCategory.RECEIPT,
                 auto_generated = True
             ))
 
@@ -81,7 +81,7 @@ class PaymentService():
                     amount = receipt.overpayment,
                     type = TransactionType.INCOME,
                     method = TransactionMethod.DEPOSIT,
-                    category = TransactionCategory(receipt.receipt_type.value),
+                    category = TransactionCategory.RECEIPT,
                     auto_generated = True
                 ))
 
@@ -108,9 +108,9 @@ class PaymentService():
                             payroll_record = Payroll(
                                 employee_id = employee.id,
                                 appointment_id = appointment_record.appointment_id,
-                                type = PayrollEnum.COMMISSION,
+                                type = PayrollType.COMMISSION,
                                 amount = commission_earned,
-                                notes = f"Automatic commission from appointment ID: {appointment_record.appointment_id}"
+                                notes = f"Автоматическая коммиссия из посещения ID: {appointment_record.appointment_id}"
                             )
                             await self.uow.payrolls.create(payroll_record)
         else:
@@ -122,7 +122,7 @@ class PaymentService():
                 amount = data.amount,
                 type = TransactionType.INCOME,
                 method = TransactionMethod(new_payment.method.value),
-                category = TransactionCategory(receipt.receipt_type.value),
+                category = TransactionCategory.RECEIPT,
                 auto_generated = True
             ))
 

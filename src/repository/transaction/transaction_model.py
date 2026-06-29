@@ -20,10 +20,8 @@ class TransactionType(Enum):
     EXPENSE = "expense"
 
 class TransactionCategory(Enum):
-    APPOINTMENT = "appointment"
-    DIRECT_SALE = "direct sale"
-    SALARY = "salary"
-    ADVANCE_SALARY = "salary"
+    RECEIPT = "receipt"
+    EMPLOYEE_PAYMENT = "employee payment"
     UTILITY = "utility"
     INTERNET = "internet"
     TELEPHONE = "telephone"
@@ -57,3 +55,4 @@ class Transaction(BaseFields):
     cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
     auto_generated: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
  
+    ALLOWED_FILTERS = {"type", "method", "category", "cancelled", "auto_generated"}

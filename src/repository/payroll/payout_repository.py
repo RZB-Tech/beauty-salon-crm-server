@@ -2,13 +2,13 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
-from src.repository.payroll.payroll_model import Payout, PayoutStatus
+from src.repository.payroll.payroll_model import Payout
 from src.schemas.base import PaginationSchema, RequestAllObject
 
 class PayoutRepository(BaseRepository[Payout]):
     async def create(self, payout: Payout) -> Payout:
         self.db.add(payout)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(payout)
         return payout
     
@@ -19,7 +19,9 @@ class PayoutRepository(BaseRepository[Payout]):
         return list(result.scalars().all())
     
     async def get(self, id: int) -> Payout | None:
-        return await self.db.get(Payout, id)
+        stmt = select(Payout).where(Payout.id == id).options(selectinload(Payout.payrolls))
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[Payout], int]:
         count_stmt = select(func.count()).select_from(Payout)
@@ -32,23 +34,6 @@ class PayoutRepository(BaseRepository[Payout]):
         result = await self.db.execute(stmt)
         items = list(result.scalars().all())
         return items, total_items
-    
-    # async def update(self, payload: PayrollUpdateSchema) -> Payout | None:
-    #     obj = await self.db.get(Payout, payload.id)
-    #     if not obj:
-    #         return None
-
-    #     update_data = payload.model_dump(exclude_unset=True)
-
-    #     update_data.pop("id", None)
-
-    #     for field, value in update_data.items():
-    #         setattr(obj, field, value)
-
-    #     await self.db.commit()
-    #     await self.db.refresh(obj)
-
-    #     return obj
     
     async def get_by_employee(self, data: PaginationSchema, id: int) -> list[Payout] | None:
         count_stmt = (select(func.count())

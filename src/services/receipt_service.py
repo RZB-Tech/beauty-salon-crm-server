@@ -4,7 +4,7 @@ from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.payment.payment_model import PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatus, ReceiptType
-from src.repository.payroll.payroll_model import Payroll, PayrollEnum
+from src.repository.payroll.payroll_model import Payroll, PayrollType
 from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema
 
@@ -171,7 +171,7 @@ class ReceiptService():
                 delete(Payroll)
                 .where( 
                     Payroll.appointment_id == receipt.appointment_id,
-                    Payroll.type == PayrollEnum.COMMISSION
+                    Payroll.type == PayrollType.COMMISSION
                 )
             )
             await self.uow.db.execute(payroll_delete_stmt)

@@ -15,32 +15,50 @@ from src.database.base import BaseFields
 if TYPE_CHECKING: 
     from src.repository.transaction.transaction_model import Transaction
 
-class PayrollEnum(Enum):
-    SALARY = "salary"
-    ADVANCE_SALARY = "advance salary"
+class PayrollType(Enum):
     BONUS = "bonus"
     PENALTY = "penalty"
     COMMISSION = "commission"
 
-class PayoutStatus(Enum):
+class PayrollStatus(Enum):
     PENDING = "pending"
-    PARTIAL = "partial"
     PAID = "paid"
     CANCELLED = "cancelled"
+
+class PayoutType(Enum):
+    SALARY = "salary"
+    ADVANCE_SALARY = "advance salary"
+    OTHER = "other"
+
+class PayoutMethod(Enum):
+    CASH = "cash"
+    CARD = "card"
 
 class Payout(BaseFields):
     __tablename__ = "payouts"
 
     employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id",
                                             ondelete = "CASCADE"))
-    amount: Mapped[int] = mapped_column(Integer)
-    status: Mapped[PayoutStatus] = mapped_column(SQLEnum(
-        PayoutStatus, values_callable = lambda e: [m.value for m in e]
-    ), default = PayoutStatus.PENDING)
+    type: Mapped[PayoutType] = mapped_column(SQLEnum(
+        PayoutType, values_callable = lambda e: [m.value for m in e]
+    ))
+    method: Mapped[PayoutType] = mapped_column(SQLEnum(
+        PayoutMethod, values_callable = lambda e: [m.value for m in e]
+    ))
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
     payrolls: Mapped[list["Payroll"]] = relationship(back_populates = "payout")
     transactions: Mapped[list["Transaction"]] = relationship(back_populates = "payout")
     cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
+
+    @property
+    def total_amount(self) -> int:
+        if not self.payrolls: return 0
+        total = 0
+        for payroll in self.payrolls:
+            if payroll.type == PayrollType.PENALTY:
+                total -= payroll.amount
+            else: total += payroll.amount
+        return total
 
 class Payroll(BaseFields):
     __tablename__ = "payrolls"
@@ -48,8 +66,8 @@ class Payroll(BaseFields):
     employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id", ondelete = "CASCADE"))
 
     amount: Mapped[int] = mapped_column(Integer, default = 0)
-    type: Mapped[PayrollEnum] = mapped_column(SQLEnum(
-        PayrollEnum, values_callable = lambda e: [m.value for m in e]))
+    type: Mapped[PayrollType] = mapped_column(SQLEnum(
+        PayrollType, values_callable = lambda e: [m.value for m in e]))
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
 
     appointment_id: Mapped[int | None] = mapped_column(ForeignKey("appointments.id"))
@@ -58,8 +76,8 @@ class Payroll(BaseFields):
         ForeignKey("payouts.id", ondelete = "SET NULL"), 
         nullable = True)
     payout: Mapped["Payout"] = relationship(back_populates = "payrolls")
-
-    cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
+    status: Mapped[PayrollStatus] = mapped_column(SQLEnum(
+        PayrollStatus, values_callable = lambda e: [m.value for m in e]), default = PayrollStatus.PENDING)
 
     __table_args__ = (
         CheckConstraint("amount >= 1", name = "ck_payorll_amount_non_negative"),

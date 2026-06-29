@@ -5,8 +5,8 @@ from pydantic import BaseModel, Field, field_validator
 from src.repository.transaction.transaction_model import TransactionCategory, TransactionMethod, TransactionType
 
 NOT_ALLOWED_CATEGORIES = {
-    TransactionCategory.APPOINTMENT,
-    TransactionCategory.DIRECT_SALE
+    TransactionCategory.RECEIPT,
+    TransactionCategory.EMPLOYEE_PAYMENT
 }
 
 class TransactionCreateSchema(BaseModel):

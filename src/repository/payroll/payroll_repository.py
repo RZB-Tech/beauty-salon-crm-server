@@ -1,8 +1,10 @@
+from datetime import date
+
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
-from src.repository.payroll.payroll_model import Payroll
+from src.repository.payroll.payroll_model import Payroll, PayrollStatus
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.payroll.create import PayrollCreateSchema
 from src.schemas.payroll.update import PayrollUpdateSchema
@@ -66,3 +68,19 @@ class PayrollRepository(BaseRepository[Payroll]):
         items = list(result.scalars().all())
 
         return items, total_items
+    
+    async def get_pendings(self, employee_id: int, start_date: date | None = None, end_date: date | None = None) -> list[Payroll]:
+        stmt = (select(Payroll)
+            .where(
+                Payroll.employee_id == employee_id,
+                Payroll.status == PayrollStatus.PENDING
+            ))
+        
+        if start_date and end_date:
+            stmt = stmt.where(
+                func.date(Payroll.created_at) >= start_date,
+                func.date(Payroll.created_at) <= end_date
+            )
+
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
