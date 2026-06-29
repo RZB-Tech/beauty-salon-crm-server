@@ -16,9 +16,9 @@ class ClientService():
         newObject = Client(**clientData)
         return await self.uow.clients.create(newObject)
 
-    @require_exists("clients")
     async def update(self, data: ClientUpdateSchema) -> Client:
-        return await self.uow.clients.update(data)
+        dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
+        return await self.uow.clients.update(data.id, **dataDict)
     
     async def get(self, id: int) -> Client:
         result = await self.uow.clients.get(id)
@@ -70,7 +70,7 @@ class ClientService():
                 detail = "Deposit cannot be negative"
             )
         
-        return await self.uow.clients.updateDeposit(client, newDeposit)
+        return await self.uow.clients.update(client.id, deposit = newDeposit)
     
     @require_exists("clients")
     async def get_appointments(self, data: PaginationSchema, id: int) -> dict:

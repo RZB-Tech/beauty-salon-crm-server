@@ -9,7 +9,7 @@ class TransactionRepository(BaseRepository[Transaction]):
         self.db.add(transaction)
         await self.db.flush()
         await self.db.refresh(transaction)
-        return (transaction)
+        return transaction
     
     async def get(self, id: int) -> Transaction:
         return await self.db.get(Transaction, id)

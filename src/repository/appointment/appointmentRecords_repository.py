@@ -8,7 +8,7 @@ from src.repository.appointment.appointment_model import Appointment, Appointmen
 from src.schemas.appointment.create import AppointmentRecordsCreateSchema
 from src.schemas.base import RequestAllObject
 
-class AppointmentRecordsRepository(BaseRepository):
+class AppointmentRecordsRepository(BaseRepository[AppointmentRecords]):
     async def create(self, appointmentRecord: AppointmentRecordsCreateSchema) -> AppointmentRecords:
         db_services = [
             AppointmentServices(
@@ -29,7 +29,7 @@ class AppointmentRecordsRepository(BaseRepository):
         )
 
         self.db.add(db_appointmentRecord)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(db_appointmentRecord)
         return db_appointmentRecord
     

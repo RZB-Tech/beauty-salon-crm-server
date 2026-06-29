@@ -13,7 +13,7 @@ from src.schemas.employee.update import EmployeeUpdateSchema
 class EmployeeRepository(BaseRepository[Employee]):
     async def create(self, employee: Employee) -> Employee:
         self.db.add(employee)
-        await self.db.commit()
+        await self.db.flush()
         stmt = (
             select(Employee)
             .where(Employee.id == employee.id)
@@ -50,23 +50,3 @@ class EmployeeRepository(BaseRepository[Employee]):
             .options(selectinload(Employee.services))
         )
         return list(result.scalars().all())
-    
-    async def update(self, data: EmployeeUpdateSchema, services: list[Service] | None = None) -> Employee | None:
-        obj = await self.db.get(Employee, data.id)
-        if not obj:
-            return None
-
-        update_data = data.model_dump(exclude_unset=True)
-        update_data.pop("id", None)
-        update_data.pop("services", None)
-
-        for field, value in update_data.items():
-            setattr(obj, field, value)
-
-        if services is not None:
-            obj.services = services 
-
-        await self.db.commit()
-        await self.db.refresh(obj)
-
-        return obj

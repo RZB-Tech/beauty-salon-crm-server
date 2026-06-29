@@ -1,7 +1,9 @@
+from pydantic import Field
 from src.schemas.base import BaseUpdateSchema
 
 class ServiceUpdateSchema(BaseUpdateSchema):
     id: int
-    name: str | None = None
-    price: int | None = None
-    category_id: int | None = None
+    name: str | None = Field(None, max_length = 255)
+    price: int | None = Field(None, ge = 1)
+    category_id: int | None = Field(None, ge = 1)
+    archived: bool | None = None

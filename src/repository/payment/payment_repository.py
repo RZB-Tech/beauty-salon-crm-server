@@ -19,12 +19,13 @@ class PaymentRepository(BaseRepository[Payment]):
         receipt = result.scalar_one_or_none()
 
         if not receipt:
-            raise ValueError(f"Receipt with id {receipt_id} not found.")
+            raise ValueError(f"Чек с ID {receipt_id} не найден.")
 
         receipt.payments.append(payment)
-        self.db.add(payment)
 
+        self.db.add(payment)
         await self.db.flush()
+        await self.db.refresh(payment)
         return receipt
     
     async def get(self, id: int) -> Payment | None:
@@ -57,18 +58,3 @@ class PaymentRepository(BaseRepository[Payment]):
         result = await self.db.execute(stmt)
         items = list(result.scalars().all())
         return items, total_items
-
-    # async def update(self, payload: PaymentUpdateSchema) -> Payment | None:
-    #     obj = await self.db.get(Payment, payload.id)
-    #     if not obj:
-    #         return None
-
-    #     update_data = payload.model_dump(exclude_unset=True)
-    #     update_data.pop("id", None)
-
-    #     for field, value in update_data.items():
-    #         setattr(obj, field, value)
-
-    #     await self.db.commit()
-    #     await self.db.refresh(obj)
-    #     return obj

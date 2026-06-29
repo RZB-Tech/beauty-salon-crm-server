@@ -7,10 +7,10 @@ from src.repository.appointment.appointment_model import AppointmentServices
 from src.schemas.appointment.create import AppointmentServicesCreateSchema
 from src.schemas.base import RequestAllObject
 
-class AppointmentServicesRepository(BaseRepository):
+class AppointmentServicesRepository(BaseRepository[AppointmentServices]):
     async def create(self, appointmentService: AppointmentServicesCreateSchema) -> AppointmentServices:
         self.db.add(appointmentService)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(appointmentService)
         return appointmentService
     
@@ -41,22 +41,5 @@ class AppointmentServicesRepository(BaseRepository):
         result = await self.db.execute(stmt)
         items = list(result.scalars().all())
         return items, total_items
-    
-    # async def update(self, payload: MaterialUpdateSchema) -> Material | None:
-    #     obj = await self.db.get(Material, payload.id)
-    #     if not obj:
-    #         return None
-
-    #     update_data = payload.model_dump(exclude_unset=True)
-
-    #     update_data.pop("id", None)
-
-    #     for field, value in update_data.items():
-    #         setattr(obj, field, value)
-
-    #     await self.db.commit()
-    #     await self.db.refresh(obj)
-
-    #     return obj
 
     

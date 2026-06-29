@@ -11,7 +11,7 @@ class ServiceRepository(BaseRepository[Service]):
 
     async def create(self, service: ServiceCreateSchema) -> Service:
         self.db.add(service)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(service)
         return service
     
@@ -35,20 +35,3 @@ class ServiceRepository(BaseRepository[Service]):
         result = await self.db.execute(stmt)
         items = list(result.scalars().all())
         return items, total_items
-    
-    # async def update(self, payload: ServiceUpdateSchema) -> Service | None:
-    #     obj = await self.db.get(Service, payload.id)
-    #     if not obj:
-    #         return None
-
-    #     update_data = payload.model_dump(exclude_unset=True)
-
-    #     update_data.pop("id", None)
-
-    #     for field, value in update_data.items():
-    #         setattr(obj, field, value)
-
-    #     await self.db.commit()
-    #     await self.db.refresh(obj)
-
-    #     return obj

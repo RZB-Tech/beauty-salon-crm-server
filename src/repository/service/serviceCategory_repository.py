@@ -11,7 +11,7 @@ class ServiceCategoryRepository(BaseRepository[ServiceCategory]):
         self.db.add(serviceCategory)
         await self.db.flush()
         await self.db.refresh(serviceCategory)
-        return (serviceCategory)
+        return serviceCategory
     
     async def get(self, id: int) -> ServiceCategory:
         return await self.db.get(ServiceCategory, id)
@@ -33,15 +33,3 @@ class ServiceCategoryRepository(BaseRepository[ServiceCategory]):
         result = await self.db.execute(stmt)
         items = list(result.scalars().all())
         return items, total_items
-    
-    # async def update(self, payload: ServiceCategoryUpdateSchema) -> ServiceCategory | None:
-    #     obj = await self.db.get(ServiceCategory, payload.id)
-    #     if not obj:
-    #         return None
-
-    #     obj.name = payload.name
-        
-    #     await self.db.flush()
-    #     await self.db.refresh(obj)
-
-    #     return obj

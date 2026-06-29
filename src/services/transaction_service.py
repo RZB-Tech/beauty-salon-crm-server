@@ -4,6 +4,7 @@ from src.core.dependencies.uow import UnitOfWork
 from src.schemas.base import RequestAllObject
 from src.repository.transaction.transaction_model import Transaction
 from src.schemas.transaction.create import TransactionCreateSchema
+from src.schemas.transaction.update import TransactionUpdateSchema
 
 class TransactionService():
     def __init__(self, uow: UnitOfWork):
@@ -13,6 +14,10 @@ class TransactionService():
         transactionData = data.model_dump()
         newTransaction = Transaction(**transactionData)
         return await self.uow.transactions.create(newTransaction)
+    
+    async def update(self, data: TransactionUpdateSchema) -> Transaction:
+        dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
+        await self.uow.transactions.update(data.id, **dataDict)
     
     async def get(self, id: int) -> Transaction:
         result = await self.uow.transactions.get(id)
@@ -39,13 +44,11 @@ class TransactionService():
             "totalPages": total_pages
         }
     
-    async def archive(self, id: int) -> Transaction:
-        return await self.uow.update_fields(
-            Transaction, id, archived = True 
-        )
-    
     async def cancel(self, id: int) -> Transaction | None:
-        return await self.uow.update_fields(
-            Transaction, id, cancelled = True 
-        )
+        transaction = await self.uow.transactions.get(id)
+        if transaction is None:
+            raise HTTPException(404, f"Транзакции с ID {id} не найден")
+        if transaction.auto_generated:
+            raise HTTPException(400, "Нельзя отменять автоматически сгенерированные транзакции, отмените связанные счета.")
+        return await self.uow.transactions.update(id, cancelled = True)
     

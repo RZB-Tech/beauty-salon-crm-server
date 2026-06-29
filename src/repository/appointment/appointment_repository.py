@@ -8,7 +8,7 @@ from src.repository.appointment.appointment_model import Appointment, Appointmen
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.appointment.create import AppointmentCreateSchema
 
-class AppointmentRepository(BaseRepository):
+class AppointmentRepository(BaseRepository[Appointment]):
     async def create(self, appointment: AppointmentCreateSchema) -> Appointment:
         db_appointment = Appointment(
             client_id=appointment.client_id,

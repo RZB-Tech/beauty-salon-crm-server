@@ -17,9 +17,9 @@ class ServiceCategoryService():
         newServiceCategory = ServiceCategory(**serviceData)
         return await self.uow.serviceCategory.create(newServiceCategory)
     
-    @require_exists("serviceCategory")
     async def update(self, data: ServiceCategoryUpdateSchema) -> ServiceCategory:
-        return await self.uow.serviceCategory.update(data)
+        dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
+        return await self.uow.serviceCategory.update(data, **dataDict)
     
     async def get(self, id: int) -> ServiceCategory:
         result = await self.uow.serviceCategory.get(id)
@@ -45,9 +45,6 @@ class ServiceCategoryService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
-    
-    async def archive(self, id: int) -> ServiceCategory:
-        return await self.uow.serviceCategory.archive(id)
 
     async def delete(self, id: int) -> bool:
         return await self.uow.serviceCategory.delete(id)

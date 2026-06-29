@@ -17,16 +17,16 @@ class WorkScheduleService():
         newObject = WorkSchedule(**workScheduleData)
         return await self.uow.work_schedules.create(newObject)
 
-    @require_exists("workSchedules")
     async def update(self, data: WorkScheduleUpdateSchema) -> WorkSchedule:
-        return await self.uow.work_schedules.update(data)
+        dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
+        return await self.uow.work_schedules.update(data, **dataDict)
     
     async def get(self, id: int) -> WorkSchedule:
         result = await self.uow.work_schedules.get(id)
         if not result:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Work schedule with id {id} not found"
+                detail = f"Рабочее время в ID {id} не найден"
             )
         return result
     
@@ -46,6 +46,6 @@ class WorkScheduleService():
             "totalPages": total_pages
         }
     
-    @require_exists("workSchedules")
-    async def delete(self, id: int) -> bool:
-        return await self.uow.work_schedules.delete(id)
+    # @require_exists("workSchedules")
+    # async def delete(self, id: int) -> bool:
+    #     return await self.uow.work_schedules.delete(id)

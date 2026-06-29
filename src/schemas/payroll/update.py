@@ -1,5 +1,4 @@
 from pydantic import Field
-
 from src.repository.payroll.payroll_model import PayrollType
 from src.schemas.base import BaseUpdateSchema
 

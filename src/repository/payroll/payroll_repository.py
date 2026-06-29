@@ -12,7 +12,7 @@ from src.schemas.payroll.update import PayrollUpdateSchema
 class PayrollRepository(BaseRepository[Payroll]):
     async def create(self, payroll: Payroll) -> Payroll:
         self.db.add(payroll)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(payroll)
         return payroll
     
@@ -36,23 +36,6 @@ class PayrollRepository(BaseRepository[Payroll]):
         result = await self.db.execute(stmt)
         items = list(result.scalars().all())
         return items, total_items
-    
-    # async def update(self, payload: PayrollUpdateSchema) -> Payroll | None:
-    #     obj = await self.db.get(Payroll, payload.id)
-    #     if not obj:
-    #         return None
-
-    #     update_data = payload.model_dump(exclude_unset=True)
-
-    #     update_data.pop("id", None)
-
-    #     for field, value in update_data.items():
-    #         setattr(obj, field, value)
-
-    #     await self.db.commit()
-    #     await self.db.refresh(obj)
-
-    #     return obj
     
     async def get_by_employee(self, data: PaginationSchema, id: int) -> list[Payroll] | None:
         count_stmt = select(func.count()).select_from(Payroll)

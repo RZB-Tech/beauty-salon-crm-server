@@ -10,7 +10,7 @@ from src.schemas.base import RequestAllObject
 class WorkScheduleRepository(BaseRepository[WorkSchedule]):
     async def create(self, workSchedule: WorkSchedule) -> WorkSchedule:
         self.db.add(workSchedule)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(workSchedule)
         return workSchedule
 
@@ -36,26 +36,6 @@ class WorkScheduleRepository(BaseRepository[WorkSchedule]):
             .where(WorkSchedule.id.in_(ids))
         )
         return list(result.scalars().all())
-    
-    # async def update(self, data: AbsenceUpdateSchema, services: list[Service] | None = None) -> WorkSchedule | None:
-    #     obj = await self.db.get(WorkSchedule, data.id)
-    #     if not obj:
-    #         return None
-
-    #     update_data = data.model_dump(exclude_unset=True)
-    #     update_data.pop("id", None)
-    #     update_data.pop("services", None)
-
-    #     for field, value in update_data.items():
-    #         setattr(obj, field, value)
-
-    #     if services is not None:
-    #         obj.services = services 
-
-    #     await self.db.commit()
-    #     await self.db.refresh(obj)
-
-    #     return obj
     
     async def is_employee_working(self, employee_id: int, start: datetime, end: datetime) -> bool:
         appointment_date = start.date()

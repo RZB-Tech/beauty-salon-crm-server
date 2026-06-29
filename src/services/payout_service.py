@@ -69,10 +69,6 @@ class PayoutService():
         ))
 
         return result
-
-    # @require_exists("payrolls")
-    # async def update(self, data: PayrollUpdateSchema) -> PaPayoutyroll:
-    #     return await self.uow.payrolls.update(data)
     
     async def get(self, id: int) -> Payout:
         result = await self.uow.payoutss.get(id)

@@ -24,9 +24,13 @@ class ServiceService():
         newService = Service(**serviceData)
         return await self.uow.services.create(newService)
 
-    @require_exists("services")
     async def update(self, data: ServiceUpdateSchema) -> Service:
-        return await self.uow.services.update(data)
+        if data.category_id:
+            checkCategory = await self.uow.serviceCategory.get(data.category_id)
+            if checkCategory is None: raise HTTPException(404, f"Категория с ID {data.category_id} не найден")
+
+        dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
+        return await self.uow.services.update(data.id, **dataDict)
     
     async def get(self, id: int) -> Service:
         result = await self.uow.services.get(id)
@@ -52,8 +56,7 @@ class ServiceService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
-    
-    @require_exists("services")
+
     async def delete(self, id: int) -> bool:
         return await self.uow.services.delete(id)
     

@@ -8,7 +8,7 @@ from src.schemas.work_schedule.update import AbsenceUpdateSchema
 class EmployeeAbsenceRepository(BaseRepository[EmployeeAbsence]):
     async def create(self, absence: EmployeeAbsence) -> EmployeeAbsence:
         self.db.add(absence)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(absence)
         return absence
 
@@ -34,19 +34,3 @@ class EmployeeAbsenceRepository(BaseRepository[EmployeeAbsence]):
             .where(EmployeeAbsence.id.in_(ids))
         )
         return list(result.scalars().all())
-    
-    async def update(self, data: AbsenceUpdateSchema) -> EmployeeAbsence | None:
-        obj = await self.db.get(EmployeeAbsence, data.id)
-        if not obj:
-            return None
-
-        update_data = data.model_dump(exclude_unset=True)
-        update_data.pop("id", None)
-
-        for field, value in update_data.items():
-            setattr(obj, field, value) 
-
-        await self.db.commit()
-        await self.db.refresh(obj)
-
-        return obj

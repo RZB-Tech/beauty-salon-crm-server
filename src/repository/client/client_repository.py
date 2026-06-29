@@ -10,7 +10,7 @@ class ClientRepository(BaseRepository[Client]):
 
     async def create(self, client: ClientCreateSchema) -> Client:
         self.db.add(client)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(client)
         return client
         
@@ -34,24 +34,3 @@ class ClientRepository(BaseRepository[Client]):
         result = await self.db.execute(stmt)
         items = list(result.scalars().all())
         return items, total_items
-    
-    async def update(self, payload: ClientUpdateSchema) -> Client | None:
-        obj = await self.db.get(Client, payload.id)
-        if not obj:
-            return None
-
-        update_data = payload.model_dump(exclude_unset=True)
-
-        update_data.pop("id", None)
-
-        for field, value in update_data.items():
-            setattr(obj, field, value)
-
-        await self.db.commit()
-        await self.db.refresh(obj)
-
-        return obj
-    
-    async def updateDeposit(self, client: Client, deposit: int) -> Client:
-        client.deposit = deposit
-        return client

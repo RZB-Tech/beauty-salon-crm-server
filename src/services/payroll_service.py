@@ -16,10 +16,14 @@ class PayrollService():
         payrollData = data.model_dump()
         newObject = Payroll(**payrollData)
         return await self.uow.payrolls.create(newObject)
-
-    @require_exists("payrolls")
+    
     async def update(self, data: PayrollUpdateSchema) -> Payroll:
-        return await self.uow.payrolls.update(data)
+        payroll = await self.uow.payrolls.get(data.id)
+        if payroll is None: raise HTTPException(404, f"Выплата с ID {data.id} не найден")
+        if payroll.payout_id: raise HTTPException(400, "Нельзя изменить выплаченную заработную плату / коммисию / бонусы, сначало отмените связанную выплату")
+
+        dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
+        return await self.uow.payrolls.update(data, **dataDict)
     
     async def get(self, id: int) -> Payroll:
         result = await self.uow.payrolls.get(id)

@@ -35,19 +35,6 @@ class MaterialRepository(BaseRepository[Material]):
         items = list(result.scalars().all())
         return items, total_items
     
-    # async def update(self, payload: MaterialUpdateSchema) -> Material | None:
-    #     obj = await self.db.get(Material, payload.id)
-    #     if not obj:
-    #         return None
-
-    #     update_data = payload.model_dump(exclude_unset=True)
-    #     update_data.pop("id", None)
-
-    #     for field, value in update_data.items():
-    #         setattr(obj, field, value)
-
-    #     return obj
-    
     async def updateQuantity(self, material: Material, quantity: int) -> Material:
         material.quantity = quantity
         return material

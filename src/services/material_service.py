@@ -74,4 +74,4 @@ class MaterialService():
                 detail = "Количество материала не может быть негативным"
             )
         
-        return await self.uow.materials.updateQuantity(material, newQuantity)
+        return await self.uow.materials.update(material.id, quantity = newQuantity)

@@ -11,6 +11,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
     async def create(self, receipt: Receipt) -> Receipt | None:
         self.db.add(receipt)
         await self.db.flush()
+        await self.db.refresh(receipt)
 
         stmt = (
             select(Receipt)
