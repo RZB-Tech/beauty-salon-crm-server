@@ -66,19 +66,23 @@ class BaseRepository(Generic[T]):
         return get_repository_db()
     
     async def update(self, id: int, **fields: Any) -> T | None:
-        obj = await self.db.get(self.model, id)
-        if not obj: return None
+        try:
+            obj = await self.db.get(self.model, id)
+            if not obj: return None
 
-        for name, value in fields.items():
-            if not hasattr(obj, name):
-                raise AttributeError(
-                    f"{self.model.__name__} has no field '{name}'"
-                )
-            setattr(obj, name, value)
+            for name, value in fields.items():
+                if not hasattr(obj, name):
+                    raise AttributeError(
+                        f"{self.model.__name__} has no field '{name}'"
+                    )
+                setattr(obj, name, value)
 
-        await self.db.flush()
-        await self.db.refresh(obj)
-        return obj
+            await self.db.flush()
+            await self.db.refresh(obj)
+            return obj
+        except Exception as e:
+            print(f"Database integrity error: {e}")
+            raise
     
     async def delete(self, id: int) -> bool:
         obj = await self.db.get(self.model, id)

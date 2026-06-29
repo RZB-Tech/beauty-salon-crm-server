@@ -7,16 +7,12 @@ from src.schemas.base import BaseUpdateSchema
 class MaterialUpdateSchema(BaseUpdateSchema):
     id: int
 
-    article: str | None = Field(default = None, max_digits = 255)
-    name: str | None = Field(default = None, max_digits = 255)
+    article: str | None = Field(default = None, max_length = 255)
+    name: str | None = Field(default = None, max_length = 255)
     description: str | None = None
 
     measurement_unit: MeasurementUnit | None = None
     volume: int | None = None
-
-    purchase_price: int | None = None
-    retail_price: int | None = None 
-    wholesale_price: int | None = None 
     sell_price: int | None = None 
 
     can_be_product: bool | None = None

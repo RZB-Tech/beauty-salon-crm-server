@@ -78,6 +78,7 @@ class Payroll(BaseFields):
     payout: Mapped["Payout"] = relationship(back_populates = "payrolls")
     status: Mapped[PayrollStatus] = mapped_column(SQLEnum(
         PayrollStatus, values_callable = lambda e: [m.value for m in e]), default = PayrollStatus.PENDING)
+    auto_genereted: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
     __table_args__ = (
         CheckConstraint("amount >= 1", name = "ck_payorll_amount_non_negative"),

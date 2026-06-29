@@ -32,10 +32,6 @@ class Material(BaseFields):
         MeasurementUnit, values_callable = lambda e: [m.value for m in e]), 
         default = MeasurementUnit.PCS)
     volume: Mapped[int] = mapped_column(Integer, default = 0)
-
-    purchase_price: Mapped[int] = mapped_column(Integer, default = 0)
-    retail_price: Mapped[int] = mapped_column(Integer, default = 0)
-    wholesale_price: Mapped[int] = mapped_column(Integer, default = 0)
     sell_price: Mapped[int] = mapped_column(Integer, default = 0)
 
     can_be_product: Mapped[bool] = mapped_column(Boolean, default = False)

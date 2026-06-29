@@ -16,9 +16,14 @@ class MaterialService():
         newMaterial = Material(**materialData)
         return await self.uow.materials.create(newMaterial)
 
-    @require_exists("materials")
     async def update(self, data: MaterialUpdateSchema) -> Material:
-        return await self.uow.materials.update(data)
+        dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
+        
+        for key in ["article", "name"]:
+            if key in dataDict and not dataDict[key]:
+                raise HTTPException(400, f"{key} не может быть пустым")
+
+        return await self.uow.materials.update(data.id, **dataDict)
     
     async def get(self, id: int) -> Material:
         result = await self.uow.materials.get(id)
@@ -44,8 +49,7 @@ class MaterialService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
-    
-    @require_exists("materials")
+
     async def delete(self, id: int) -> bool:
         return await self.uow.materials.delete(id)
     
@@ -54,20 +58,20 @@ class MaterialService():
         if not material:
             raise HTTPException(
                 status_code = status.HTTP_404_BAD_REQUEST,
-                detail = f"material with id {data.id} not found"
+                detail = f"Материал с ID {data.id} не найден"
             )
         
         if data.operation not in MaterialOperation:
             raise HTTPException(
                 status_code = status.HTTP_400_BAD_REQUEST,
-                detail = "Operation has to be 1 (increment) or -1 (decrement)"
+                detail = "Операция должна быть 1 (прибавить) или -1 (убавить)"
             )
         
         newQuantity = material.quantity + (data.operation * data.quantity)
         if newQuantity < 0:
             raise HTTPException(
                 status_code = status.HTTP_400_BAD_REQUEST,
-                detail = "Quantity cannot be negative"
+                detail = "Количество материала не может быть негативным"
             )
         
         return await self.uow.materials.updateQuantity(material, newQuantity)
