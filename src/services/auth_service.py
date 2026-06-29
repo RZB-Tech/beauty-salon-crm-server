@@ -114,24 +114,28 @@ class AuthService():
                 detail="Пользователь неактивен"
             )
 
-        tokenPayload = {
+        accessTokenPayload = {
             "sub": user.login,
             "id": user.id,
-            "tenant_id": user.tenant_id
+            "tenant_id": user.tenant_id,
+            "type": "access"
         }
-        newAccessToken = create_access_token(tokenPayload)
-        newRefreshToken = create_refresh_token(tokenPayload)
+        refreshTokenPayload = accessTokenPayload.copy()
+        refreshTokenPayload["type"] = "refresh"
+
+        accessToken = create_access_token(accessTokenPayload)
+        refreshToken = create_refresh_token(refreshTokenPayload)
 
         response.set_cookie(
             key="access_token", 
-            value=newAccessToken, 
+            value=accessToken, 
             httponly=True, 
             secure=True, 
             samesite="lax"
         )
         response.set_cookie(
             key="refresh_token", 
-            value=newRefreshToken, 
+            value=refreshToken, 
             httponly=True, 
             secure=True, 
             samesite="lax"
@@ -156,6 +160,7 @@ class AuthService():
         if user is None: raise HTTPException(404)
 
         verify = verify_password(user.hashed_password, data.oldPassword)
+        print("reached service")
         if not verify: raise HTTPException(401)
 
         hashed = hash_password(data.newPassword)

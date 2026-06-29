@@ -34,14 +34,14 @@ async def logout_user(
 ):
     return await authService.logout(response)
 
-# @router.post(
-#     "/change-password",
-#     status_code = 204)
-# async def change_password(
-#         data: StaffUpdatePasswordSchema,
-#         authService: AuthService = Depends(get_auth_service),
-#         current_staff: dict = Depends(get_current_staff)):
-#     return await authService.change_password(data = data)
+@router.post(
+    "/change-password",
+    status_code = 204)
+async def change_password(
+        data: StaffUpdatePasswordSchema,
+        authService: AuthService = Depends(get_auth_service),
+        current_staff: dict = Depends(get_current_staff)):
+    return await authService.change_password(data = data)
 
 @router.patch(
     "/reset-password",
