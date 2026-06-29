@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: d0bf201e493c
+Revision ID: 21213cdc6c8f
 Revises: 
-Create Date: 2026-06-29 18:43:28.436602
+Create Date: 2026-06-27 18:48:57.797012
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'd0bf201e493c'
+revision: str = '21213cdc6c8f'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -172,6 +172,25 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_employees_tenant_id'), 'employees', ['tenant_id'], unique=False)
+    op.create_table('notifications',
+    sa.Column('client_id', sa.Integer(), nullable=True),
+    sa.Column('title', sa.String(length=50), nullable=True),
+    sa.Column('body', sa.Text(), nullable=False),
+    sa.Column('type', sa.Enum('reminder', 'other', name='notificationtype'), nullable=False),
+    sa.Column('scheduled_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('delivered_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by', sa.Integer(), nullable=True),
+    sa.Column('tenant_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['client_id'], ['clients.id'], ),
+    sa.ForeignKeyConstraint(['created_by'], ['staffs.id'], name='fk_created_by_staff', use_alter=True),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_notifications_tenant_id'), 'notifications', ['tenant_id'], unique=False)
     op.create_table('services',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('price', sa.BigInteger(), nullable=False),
@@ -469,6 +488,8 @@ def downgrade() -> None:
     op.drop_table('appointment_records')
     op.drop_index(op.f('ix_services_tenant_id'), table_name='services')
     op.drop_table('services')
+    op.drop_index(op.f('ix_notifications_tenant_id'), table_name='notifications')
+    op.drop_table('notifications')
     op.drop_index(op.f('ix_employees_tenant_id'), table_name='employees')
     op.drop_table('employees')
     op.drop_index(op.f('ix_appointments_tenant_id'), table_name='appointments')

@@ -16,6 +16,16 @@ services:
       timeout: 5s
       retries: 5
 
+  redis:
+    image: redis:7-alpine
+    container_name: redis_salon_crm
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+
   app:
     build: .
     container_name: salonBackend
@@ -31,3 +41,4 @@ services:
 
 volumes:
   postgres_data_salon:
+  redis_data:
