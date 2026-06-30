@@ -4,7 +4,9 @@ set -e
 echo "Waiting for postgres"
 sleep 10
 
+
 echo "Running migrations"
+uv run alembic revision --autogenerate
 uv run alembic upgrade head
 
 echo "Starting server"
