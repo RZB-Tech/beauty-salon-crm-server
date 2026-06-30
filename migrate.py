@@ -14,7 +14,7 @@ from src.repository.employee.workSchedule_model import WorkSchedule
 from src.repository.material.material_model import Material, MeasurementUnit
 from sqlalchemy import select, text
 
-from src.repository.payroll.payroll_model import Payroll, PayrollEnum
+from src.repository.payroll.payroll_model import Payroll, PayrollType
 
 fake = Faker("ru_RU")
 
@@ -46,7 +46,7 @@ async def delete_migrations() -> None:
     print("Clearing alembic_version table...")
     try:
         async with SessionLocal.begin() as conn:
-            await conn.execute(text("DELETE FROM alembic_version"))
+            await conn.execute(text("DROP TABLE IF EXISTS alembic_version;"))
             print("Deleted alembic_version rows")
     except Exception as e:
         print(f"Failed to clear alembic_version: {e}")
@@ -243,28 +243,10 @@ async def seed_materials(count: int = 100) -> None:
 
                 volume=random.randint(1, 1000),
 
-                purchase_price=purchase_price,
-
-                retail_price=purchase_price + random.randint(
-                    10_000,
-                    50_000
-                ),
-
-                wholesale_price=purchase_price + random.randint(
-                    5_000,
-                    20_000
-                ),
-
                 sell_price=purchase_price + random.randint(
                     20_000,
                     100_000
                 ),
-
-                can_be_product=random.choice([
-                    True,
-                    False,
-                    False,
-                ]),
                 created_by = 1,
                 tenant_id = 1
             )
@@ -346,27 +328,19 @@ async def seed_payrolls(count_per_employee: int = 3) -> None:
             for _ in range(count_per_employee):
 
                 payroll_type = random.choice([
-                    PayrollEnum.SALARY,
-                    PayrollEnum.BONUS,
-                    PayrollEnum.COMMISSION,
-                    PayrollEnum.PENALTY,
+                    PayrollType.BONUS,
+                    PayrollType.COMMISSION,
+                    PayrollType.PENALTY,
                 ])
 
-                if payroll_type == PayrollEnum.SALARY:
-                    amount = random.randint(
-                        3_000_000,
-                        15_000_000
-                    )
-                    note = "Monthly salary"
-
-                elif payroll_type == PayrollEnum.BONUS:
+                if payroll_type == PayrollType.BONUS:
                     amount = random.randint(
                         100_000,
                         2_000_000
                     )
                     note = fake.sentence()
 
-                elif payroll_type == PayrollEnum.COMMISSION:
+                elif payroll_type == PayrollType.COMMISSION:
                     amount = random.randint(
                         50_000,
                         1_000_000
@@ -397,9 +371,9 @@ async def seed_payrolls(count_per_employee: int = 3) -> None:
     print(f"Created {len(payrolls)} payroll records")
 
 async def main():
-    delete_migrations()
     drop_database()
     create_database()
+    await delete_migrations()
     create_migration()
     apply_migrations()
     seed_admin_user()
