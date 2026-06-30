@@ -12,3 +12,4 @@ from src.repository.payroll.payroll_model import Payroll, Payout
 from src.repository.system.tenant_model import Tenant, TenantSubscriptions
 from src.repository.system.plan_model import Plan
 from src.repository.transaction.transaction_model import Transaction
+from src.repository.notification.notification_model import Notification

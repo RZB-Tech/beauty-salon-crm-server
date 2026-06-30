@@ -7,7 +7,8 @@ class Settings(BaseSettings):
     ALGORITHM: str
     ACCESS_TOKEN_EXPIRE_SECONDS: int
     REFRESH_TOKEN_EXPIRE_SECONDS: int
-    WEB_SOCKET_TIMEOUT_SECONDS: int
+    REDIS_BROKER: str
+    REDIS_BACKEND: str
 
     @property
     def PRIVATE_KEY(self) -> str:

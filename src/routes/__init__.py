@@ -17,6 +17,7 @@ from src.routes.receipt_router import router as ReceiptR
 from src.routes.payment_router import router as PaymentR
 from src.routes.transaction_router import router as TransactionR
 from src.routes.payout_router import router as PayoutR
+from src.routes.notification_router import router as notificationR
 
 open_router = APIRouter(prefix = "/api/v1")
 open_router.include_router(
@@ -120,6 +121,12 @@ protected_router.include_router(
     serviceCategoryR, 
     prefix="/service-categories", 
     tags=["Service categories"]
+)
+
+protected_router.include_router(
+    notificationR,
+    prefix = "/notifications",
+    tags = ["Notifications"]
 )
 
 protected_router.include_router(
