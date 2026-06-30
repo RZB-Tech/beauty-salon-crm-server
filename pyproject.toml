@@ -10,6 +10,7 @@ dependencies = [
     "asyncpg>=0.31.0",
     "celery>=5.6.3",
     "dotenv>=0.9.9",
+    "faker>=40.23.0",
     "fastapi[logger]>=0.136.3",
     "httpx>=0.28.1",
     "openpyxl>=3.1.5",

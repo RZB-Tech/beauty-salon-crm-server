@@ -60,7 +60,7 @@ async def _poll_and_deliver():
                     "type": notification.type.value,
                     "scheduled_at": notification.scheduled_at.isoformat(),
                 }
-                subscribers = await publish_notification(1, payload)
+                subscribers = await publish_notification(notification.created_by, payload)
 
                 if not subscribers:  # catches both 0 and None
                     failed_ids.append(notification.id)
