@@ -23,14 +23,20 @@ class PayrollService():
         if payroll.payout_id: raise HTTPException(400, "Нельзя изменить выплаченную заработную плату / коммисию / бонусы, сначало отмените связанную выплату")
 
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
-        return await self.uow.payrolls.update(data, **dataDict)
+        result = await self.uow.payrolls.update(data, **dataDict)
+        if not result:
+            raise HTTPException(
+                status_code = status.HTTP_404_NOT_FOUND,
+                detail = f"Выплата с ID {data.id} не найден"
+            )
+        return result
     
     async def get(self, id: int) -> Payroll:
         result = await self.uow.payrolls.get(id)
         if not result:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Payroll with id {id} not found"
+                detail = f"Выплата с ID {id} не найден"
             )
         return result
     
@@ -49,8 +55,3 @@ class PayrollService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
-    
-    @require_exists("payrolls")
-    async def delete(self, id: int) -> bool:
-        return await self.uow.payrolls.delete(id)
-    

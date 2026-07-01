@@ -23,7 +23,7 @@ class NotificationService():
         if not result:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Notification category with id {id} not found"
+                detail = f"Уведомление с ID {id} не найден"
             )
         return result
     

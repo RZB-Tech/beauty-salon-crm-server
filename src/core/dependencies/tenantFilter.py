@@ -23,18 +23,7 @@ def register_tenant_filter(session: AsyncSession) -> None:
             if execute_state.is_delete or execute_state.is_update:
                 raise PermissionError("Database mutation attempted without a valid tenant context.")
             return  
-
-        # Apply isolation filter dynamically to SELECT, UPDATE, and DELETE operations
-        # execute_state.statement = execute_state.statement.options(
-        #     *[
-        #         with_loader_criteria(
-        #             entity_cls,
-        #             lambda alias, tid=tenant_id: alias.tenant_id == tid,
-        #             include_aliases=True,
-        #         )
-        #         for entity_cls in _collect_tenant_entities(execute_state)
-        #     ]
-        # )
+        
         for entity_cls in _collect_tenant_entities(execute_state):
             execute_state.statement = execute_state.statement.options(
                 with_loader_criteria(

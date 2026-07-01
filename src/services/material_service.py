@@ -23,14 +23,20 @@ class MaterialService():
             if key in dataDict and not dataDict[key]:
                 raise HTTPException(400, f"{key} не может быть пустым")
 
-        return await self.uow.materials.update(data.id, **dataDict)
+        result = await self.uow.materials.update(data.id, **dataDict)
+        if result is None:
+            raise HTTPException(
+                status_code = status.HTTP_404_NOT_FOUND,
+                detail = f"Товар с ID {data.id} не найден"
+            )
+        return result
     
     async def get(self, id: int) -> Material:
         result = await self.uow.materials.get(id)
-        if not result:
+        if result is None:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Material with id {id} not found"
+                detail = f"Товар с ID {id} не найден"
             )
         return result
     
@@ -55,7 +61,7 @@ class MaterialService():
     
     async def updateQuantity(self, data: MaterialQuantityUpdateSchema) -> Material:
         material = await self.uow.materials.get(data.id)
-        if not material:
+        if material is None:
             raise HTTPException(
                 status_code = status.HTTP_404_BAD_REQUEST,
                 detail = f"Материал с ID {data.id} не найден"

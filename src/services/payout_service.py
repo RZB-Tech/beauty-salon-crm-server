@@ -74,8 +74,7 @@ class PayoutService():
         result = await self.uow.payoutss.get(id)
         if not result:
             raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Payout with id {id} not found"
+                status_code = 404
             )
         return result
     

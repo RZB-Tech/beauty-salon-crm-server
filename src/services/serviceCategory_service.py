@@ -19,14 +19,20 @@ class ServiceCategoryService():
     
     async def update(self, data: ServiceCategoryUpdateSchema) -> ServiceCategory:
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
-        return await self.uow.serviceCategory.update(data, **dataDict)
+        result = await self.uow.serviceCategory.update(data, **dataDict)
+        if result is None:
+            raise HTTPException(
+                status_code = 404,
+                detail = f"Категория услуги с ID {data.id} не найден"
+            )
+        return result
     
     async def get(self, id: int) -> ServiceCategory:
         result = await self.uow.serviceCategory.get(id)
-        if not result:
+        if result is None:
             raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Service category with id {id} not found"
+                status_code = 404,
+                detail = f"Категория услуги с ID {id} не найден"
             )
         return result
     
@@ -45,7 +51,4 @@ class ServiceCategoryService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
-
-    async def delete(self, id: int) -> bool:
-        return await self.uow.serviceCategory.delete(id)
     

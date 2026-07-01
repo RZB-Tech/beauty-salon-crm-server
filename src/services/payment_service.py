@@ -153,10 +153,10 @@ class PaymentService():
     
     async def get(self, id: int) -> Payment:
         result = await self.uow.payments.get(id)
-        if not result:
+        if result is None:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Payment with id {id} not found"
+                detail = f"Оплата с ID {id} не найден"
             )
         return result
     
@@ -175,9 +175,6 @@ class PaymentService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
-
-    async def delete(self, id: int) -> bool:
-        return await self.uow.payments.delete(id)
     
     async def cancel(self, id: int) -> bool:
         return await self.uow.update_fields(

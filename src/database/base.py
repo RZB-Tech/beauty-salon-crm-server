@@ -91,7 +91,7 @@ class BaseRepository(Generic[T]):
             raise
     
     async def delete(self, id: int) -> bool:
-        obj = await self._get_scoped(id)
+        obj = await self.get(id)
         if not obj: return False
 
         await self.db.delete(obj)

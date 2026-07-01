@@ -35,10 +35,10 @@ class EmployeeService():
     
     async def get(self, id: int) -> Employee:
         result = await self.uow.employees.get(id)
-        if not result:
+        if result is None:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Employee with id {id} not found"
+                detail = f"Сотрудник с ID {id} не найден"
             )
         return result
     
@@ -52,7 +52,13 @@ class EmployeeService():
                     detail="Один или более из указанных услуг не найден"
                 )
 
-        return await self.uow.employees.update(data, services)
+        result = await self.uow.employees.update(data, services)
+        if result is None:
+            raise HTTPException(
+                status_code = status.HTTP_404_NOT_FOUND,
+                detail = f"Сотрудник с ID {id} не найден"
+            )
+        return result
     
     async def get_many(self, ids: list[int]) -> list[Employee]:
         return await self.uow.employees.get_by_ids(ids)

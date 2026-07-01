@@ -204,6 +204,11 @@ class ReceiptService():
             
         return await self.uow.receipts.get(id)
     
+    async def get(self, id: int) -> Receipt:
+        result = await self.uow.receipts.get(id)
+        if result is None: raise HTTPException(404, f"Чек с ID {id} не найден")
+        return result
+
     async def get_many(self, ids: list[int]) -> list[Receipt]:
         return await self.uow.receipts.get_by_ids(ids)
     
@@ -219,7 +224,3 @@ class ReceiptService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
-    
-    # @require_exists("materials")
-    # async def delete(self, id: int) -> bool:
-    #     return await self.uow.materials.delete(id)

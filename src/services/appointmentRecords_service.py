@@ -75,10 +75,10 @@ class AppointmentRecordsService():
     
     async def get(self, id: int) -> AppointmentRecords:
         result = await self.uow.appointmentRecords.get(id)
-        if not result:
+        if result is None:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Appointment record with id {id} not found"
+                detail = f"Запись из посещения с ID {id} не найдена"
             )
         return result
     

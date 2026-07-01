@@ -17,11 +17,17 @@ class TransactionService():
     
     async def update(self, data: TransactionUpdateSchema) -> Transaction:
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
-        await self.uow.transactions.update(data.id, **dataDict)
+        result = await self.uow.transactions.update(data.id, **dataDict)
+        if result is None:
+            raise HTTPException(
+                status_code = 404,
+                detail = f"Транзакции с ID {data.id} не найден"
+            )
+        return result
     
     async def get(self, id: int) -> Transaction:
         result = await self.uow.transactions.get(id)
-        if not result:
+        if result is None:
             raise HTTPException(
                 status_code = 404,
                 detail = f"Транзакции с ID {id} не найден"
@@ -44,7 +50,7 @@ class TransactionService():
             "totalPages": total_pages
         }
     
-    async def cancel(self, id: int) -> Transaction | None:
+    async def cancel(self, id: int) -> Transaction:
         transaction = await self.uow.transactions.get(id)
         if transaction is None:
             raise HTTPException(404, f"Транзакции с ID {id} не найден")

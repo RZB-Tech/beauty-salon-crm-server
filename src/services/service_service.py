@@ -30,14 +30,17 @@ class ServiceService():
             if checkCategory is None: raise HTTPException(404, f"Категория с ID {data.category_id} не найден")
 
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
-        return await self.uow.services.update(data.id, **dataDict)
+        result = await self.uow.services.update(data.id, **dataDict)
+
+        if result is None: raise HTTPException(404, detail = f"Услуга с ID {id} не найдена")
+        return result
     
     async def get(self, id: int) -> Service:
         result = await self.uow.services.get(id)
         if not result:
             raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Service with id {id} not found"
+                status_code = 404,
+                detail = f"Услуга с ID {id} не найдена"
             )
         return result
     
@@ -56,9 +59,6 @@ class ServiceService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
-
-    async def delete(self, id: int) -> bool:
-        return await self.uow.services.delete(id)
     
     async def import_excel(
         self, 

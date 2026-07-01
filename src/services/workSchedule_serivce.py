@@ -19,11 +19,17 @@ class WorkScheduleService():
 
     async def update(self, data: WorkScheduleUpdateSchema) -> WorkSchedule:
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
-        return await self.uow.work_schedules.update(data, **dataDict)
+        result = await self.uow.work_schedules.update(data, **dataDict)
+        if result is None:
+            raise HTTPException(
+                status_code = status.HTTP_404_NOT_FOUND,
+                detail = f"Рабочее время в ID {data.id} не найден"
+            )
+        return result
     
     async def get(self, id: int) -> WorkSchedule:
         result = await self.uow.work_schedules.get(id)
-        if not result:
+        if result is None:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
                 detail = f"Рабочее время в ID {id} не найден"
@@ -45,7 +51,3 @@ class WorkScheduleService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
-    
-    # @require_exists("workSchedules")
-    # async def delete(self, id: int) -> bool:
-    #     return await self.uow.work_schedules.delete(id)
