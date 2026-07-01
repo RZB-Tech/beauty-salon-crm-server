@@ -12,12 +12,15 @@ class Tables(Enum):
     materials = "materials"
     payments = "payments"
     payrolls = "payrolls"
+    payouts = "payouts"
+    transactions = "transactions"
     receipt_items = "receipt_items"
     receipts = "receipts"
     service_categories = "service_categories"
     services = "services"
     specializations = "specializations"
     staffs = "staffs"
+    notifications = "notifications"
 
 class AuditLogsRequestSchema(BaseModel):
     table_name: Tables
