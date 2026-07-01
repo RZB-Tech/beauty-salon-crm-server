@@ -34,7 +34,6 @@ class AppointmentServicesService():
         newData = data.model_dump()
         newObject = AppointmentServices(**newData)
         return await self.uow.appointmentServices.create(newObject)
-
     
     # async def update(data: ClientUpdateSchema) -> Client:
     #     check = await appointmentRepository.get(data.id)

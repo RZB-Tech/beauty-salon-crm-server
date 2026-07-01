@@ -51,8 +51,8 @@ class EmployeeService():
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Один или более из указанных услуг не найден"
                 )
-
-        result = await self.uow.employees.update(data, services)
+        dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
+        result = await self.uow.employees.update(data.id, **dataDict)
         if result is None:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,

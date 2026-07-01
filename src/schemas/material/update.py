@@ -5,7 +5,7 @@ from src.repository.material.material_model import MeasurementUnit
 from src.schemas.base import BaseUpdateSchema
 
 class MaterialUpdateSchema(BaseUpdateSchema):
-    id: int
+    id: int = Field(..., ge = 1)
 
     article: str | None = Field(default = None, max_length = 255)
     name: str | None = Field(default = None, max_length = 255)
