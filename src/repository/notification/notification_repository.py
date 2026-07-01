@@ -16,9 +16,6 @@ class NotificationRepository(BaseRepository[Notification]):
         await self.db.refresh(notification)
         return notification
     
-    async def get(self, id: int) -> Notification | None:
-        return await self.db.get(Notification, id)
-    
     async def get_all(self, data: RequestAllObject) -> tuple[list[Notification], int]:
         count_stmt = select(func.count()).select_from(Notification)
         stmt = select(Notification)
@@ -28,11 +25,11 @@ class NotificationRepository(BaseRepository[Notification]):
         offset_value = (data.page - 1) * data.pageSize
         stmt = stmt.offset(offset_value).limit(data.pageSize)
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items
     
     async def deliver(self, id: int, delivered_at: datetime) -> Notification:
-        obj = await self.db.get(Notification, id)
+        obj = await self.get(id)
         if not obj: return None
 
         obj.delivered_at = delivered_at
@@ -57,7 +54,7 @@ class NotificationRepository(BaseRepository[Notification]):
             .execution_options(synchronize_session=False)
         )
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items
     
     async def revert_claim(self, ids: list[int]) -> None:

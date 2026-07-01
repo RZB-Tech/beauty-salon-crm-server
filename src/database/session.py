@@ -18,7 +18,7 @@ def get_repository_db() -> AsyncSession:
 
 DATABASE_URL = settings.DATABASE_URL
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+engine = create_async_engine(DATABASE_URL, echo=False, query_cache_size = 0)
 
 SessionLocal = async_sessionmaker(
     bind=engine,

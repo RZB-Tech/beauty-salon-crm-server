@@ -20,10 +20,7 @@ class PayrollRepository(BaseRepository[Payroll]):
         result = await self.db.execute(
             select(Payroll).where(Payroll.id.in_(ids))
         )
-        return list(result.scalars().all())
-    
-    async def get(self, id: int) -> Payroll | None:
-        return await self.db.get(Payroll, id)
+        return result.scalars().all()
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[Payroll], int]:
         count_stmt = select(func.count()).select_from(Payroll)
@@ -34,7 +31,7 @@ class PayrollRepository(BaseRepository[Payroll]):
         offset_value = (data.page - 1) * data.pageSize
         stmt = stmt.offset(offset_value).limit(data.pageSize)
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items
     
     async def get_by_employee(self, data: PaginationSchema, id: int) -> list[Payroll] | None:
@@ -48,7 +45,7 @@ class PayrollRepository(BaseRepository[Payroll]):
             .limit(data.pageSize)
         )
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
 
         return items, total_items
     
@@ -66,4 +63,4 @@ class PayrollRepository(BaseRepository[Payroll]):
             )
 
         result = await self.db.execute(stmt)
-        return list(result.scalars().all())
+        return result.scalars().all()

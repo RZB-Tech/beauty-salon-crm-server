@@ -16,7 +16,7 @@ class PayoutRepository(BaseRepository[Payout]):
         result = await self.db.execute(
             select(Payout).where(Payout.id.in_(ids))
         )
-        return list(result.scalars().all())
+        return result.scalars().all()
     
     async def get(self, id: int) -> Payout | None:
         stmt = select(Payout).where(Payout.id == id).options(selectinload(Payout.payrolls))
@@ -48,6 +48,6 @@ class PayoutRepository(BaseRepository[Payout]):
             .limit(data.pageSize)
         )
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
 
         return items, total_items

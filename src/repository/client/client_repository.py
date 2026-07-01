@@ -7,7 +7,6 @@ from src.repository.client.client_model import Client
 from src.core.utils.model_filter import apply_dynamic_filters
 
 class ClientRepository(BaseRepository[Client]):
-
     async def create(self, client: ClientCreateSchema) -> Client:
         self.db.add(client)
         await self.db.flush()
@@ -18,10 +17,7 @@ class ClientRepository(BaseRepository[Client]):
         result = await self.db.execute(
             select(Client).where(Client.id.in_(ids))
         )
-        return list(result.scalars().all())
-    
-    async def get(self, id: int) -> Client | None:
-        return await self.db.get(Client, id)
+        return result.scalars().all()
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[Client], int]:
         count_stmt = select(func.count()).select_from(Client)
@@ -32,5 +28,5 @@ class ClientRepository(BaseRepository[Client]):
         offset_value = (data.page - 1) * data.pageSize
         stmt = stmt.offset(offset_value).limit(data.pageSize)
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items

@@ -11,14 +11,11 @@ class TransactionRepository(BaseRepository[Transaction]):
         await self.db.refresh(transaction)
         return transaction
     
-    async def get(self, id: int) -> Transaction:
-        return await self.db.get(Transaction, id)
-    
     async def get_by_ids(self, ids: list[int]) -> list[Transaction]:
         result = await self.db.execute(
             select(Transaction).where(Transaction.id.in_(ids))
         )
-        return list(result.scalars().all())
+        return result.scalars().all()
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[Transaction], int]:
         count_stmt = select(func.count()).select_from(Transaction)
@@ -29,11 +26,11 @@ class TransactionRepository(BaseRepository[Transaction]):
         offset_value = (data.page - 1) * data.pageSize
         stmt = stmt.offset(offset_value).limit(data.pageSize)
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items
 
     async def get_by_receipt(self, receipt_id: int) -> list[Transaction]:
         result = await self.db.execute(
             select(Transaction).where(Transaction.receipt_id == receipt_id)
         )
-        return list(result.scalars().all())
+        return result.scalars().all()

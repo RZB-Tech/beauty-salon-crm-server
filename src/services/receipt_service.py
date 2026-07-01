@@ -103,7 +103,7 @@ class ReceiptService():
                     )
                 
                 newQuantity = material.quantity - item_data.quantity
-                await self.uow.materials.updateQuantity(material, newQuantity)
+                await self.uow.materials.update(material.id, newQuantity)
                 
                 item_price = material.sell_price
                 runningTotal += item_price * item_data.quantity
@@ -190,7 +190,7 @@ class ReceiptService():
                 material = await self.uow.materials.get(receiptItem.material_id)
                 if not material: continue
                 newQuantity = material.quantity + receiptItem.quantity
-                await self.uow.materials.updateQuantity(material, newQuantity)
+                await self.uow.materials.update(material.id, newQuantity)
 
         receipt.status = ReceiptStatus.CANCELLED
         if receipt.appointment:

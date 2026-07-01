@@ -13,14 +13,11 @@ class ServiceCategoryRepository(BaseRepository[ServiceCategory]):
         await self.db.refresh(serviceCategory)
         return serviceCategory
     
-    async def get(self, id: int) -> ServiceCategory:
-        return await self.db.get(ServiceCategory, id)
-    
     async def get_by_ids(self, ids: list[int]) -> list[ServiceCategory]:
         result = await self.db.execute(
             select(ServiceCategory).where(ServiceCategory.id.in_(ids))
         )
-        return list(result.scalars().all())
+        return result.scalars().all()
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[ServiceCategory], int]:
         count_stmt = select(func.count()).select_from(ServiceCategory)
@@ -31,5 +28,5 @@ class ServiceCategoryRepository(BaseRepository[ServiceCategory]):
         offset_value = (data.page - 1) * data.pageSize
         stmt = stmt.offset(offset_value).limit(data.pageSize)
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items

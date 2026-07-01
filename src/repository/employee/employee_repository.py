@@ -40,7 +40,7 @@ class EmployeeRepository(BaseRepository[Employee]):
         offset_value = (data.page - 1) * data.pageSize
         stmt = stmt.options(selectinload(Employee.services)).offset(offset_value).limit(data.pageSize)
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items
 
     async def get_by_ids(self, ids: list[int]) -> list[Employee]:
@@ -49,4 +49,4 @@ class EmployeeRepository(BaseRepository[Employee]):
             .where(Employee.id.in_(ids))
             .options(selectinload(Employee.services))
         )
-        return list(result.scalars().all())
+        return result.scalars().all()

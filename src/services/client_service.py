@@ -16,9 +16,15 @@ class ClientService():
         newObject = Client(**clientData)
         return await self.uow.clients.create(newObject)
 
-    async def update(self, data: ClientUpdateSchema) -> Client:
+    async def update(self, data: ClientUpdateSchema) -> Client | None:
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
-        return await self.uow.clients.update(data.id, **dataDict)
+        result = await self.uow.clients.update(data.id, **dataDict)
+        if result is None:
+            raise HTTPException(
+                status_code = status.HTTP_404_NOT_FOUND,
+                detail = f"Клиент с ID {data.id} не найден"
+            )
+        return result
     
     async def get(self, id: int) -> Client:
         result = await self.uow.clients.get(id)

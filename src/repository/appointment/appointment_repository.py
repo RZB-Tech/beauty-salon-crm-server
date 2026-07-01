@@ -44,8 +44,8 @@ class AppointmentRepository(BaseRepository[Appointment]):
             .options(selectinload(Appointment.records)
                      .selectinload(AppointmentRecords.services))
         )
-
-        return await self.db.scalar(stmt)
+        result = await self.db.execute(stmt)
+        return result.scalar()
     
     async def get_by_ids(self, ids: list[int]) -> list[Appointment]:
         stmt = (
@@ -54,7 +54,8 @@ class AppointmentRepository(BaseRepository[Appointment]):
             .options(selectinload(Appointment.records)
                      .selectinload(AppointmentRecords.services))
         )
-        return list(stmt.scalars().all())
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
     
     async def get(self, id: int) -> Appointment | None:
         stmt = (
@@ -64,8 +65,8 @@ class AppointmentRepository(BaseRepository[Appointment]):
                      .selectinload(AppointmentRecords.services))
         )
 
-        result = await self.db.scalar(stmt)
-        return result
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[Appointment], int]:
         count_stmt = select(func.count()).select_from(Appointment)
@@ -81,7 +82,7 @@ class AppointmentRepository(BaseRepository[Appointment]):
                 .offset(offset_value)
                 .limit(data.pageSize))
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items
 
     async def cancel(self, appointment: Appointment) -> Appointment:
@@ -91,13 +92,13 @@ class AppointmentRepository(BaseRepository[Appointment]):
         return appointment
 
     async def client_has_overlap(self, clientID: int, start: datetime, end: datetime) -> bool:
-        return await self.db.scalar(
-            select(Appointment).where(
+        stmt = select(Appointment).where(
                 Appointment.client_id == clientID,
-                Appointment.start_time_est == start,
-                Appointment.end_time_est == end
+                Appointment.start_time_est > start,
+                Appointment.end_time_est < end
             )
-        )
+        result = await self.db.execute(stmt)
+        return result is not None
     
     async def get_by_client(self, data: PaginationSchema, id: int) -> tuple[list[Appointment], int]:
         count_stmt = (select(func.count())
@@ -116,7 +117,7 @@ class AppointmentRepository(BaseRepository[Appointment]):
             .limit(data.pageSize)
         )
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items
     
     async def get_by_employee(self, data: PaginationSchema, id: int) -> tuple[list[Appointment], int]:
@@ -146,5 +147,5 @@ class AppointmentRepository(BaseRepository[Appointment]):
         )
 
         result = await self.db.execute(stmt)
-        items = list(result.scalars().unique().all())
+        items = result.scalars().unique().all()
         return items, total_items

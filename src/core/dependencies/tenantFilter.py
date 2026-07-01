@@ -13,7 +13,6 @@ def register_tenant_filter(session: AsyncSession) -> None:
     """
     @event.listens_for(session.sync_session, "do_orm_execute")
     def _apply_tenant_filter(execute_state):
-        # Skip if explicitly opted out (for cross-tenant admin operations)
         if execute_state.execution_options.get("skip_tenant_filter", False):
             return
 
@@ -26,16 +25,24 @@ def register_tenant_filter(session: AsyncSession) -> None:
             return  
 
         # Apply isolation filter dynamically to SELECT, UPDATE, and DELETE operations
-        execute_state.statement = execute_state.statement.options(
-            *[
+        # execute_state.statement = execute_state.statement.options(
+        #     *[
+        #         with_loader_criteria(
+        #             entity_cls,
+        #             lambda alias, tid=tenant_id: alias.tenant_id == tid,
+        #             include_aliases=True,
+        #         )
+        #         for entity_cls in _collect_tenant_entities(execute_state)
+        #     ]
+        # )
+        for entity_cls in _collect_tenant_entities(execute_state):
+            execute_state.statement = execute_state.statement.options(
                 with_loader_criteria(
                     entity_cls,
-                    lambda alias, tid=tenant_id: alias.tenant_id == tid,
+                    lambda cls: cls.tenant_id == tenant_id,  # true closure over tenant_id
                     include_aliases=True,
                 )
-                for entity_cls in _collect_tenant_entities(execute_state)
-            ]
-        )
+            )
 
     @event.listens_for(session.sync_session, "before_flush")
     def _evict_or_inject_tenant_id(sync_session, flush_context, instances):
@@ -57,6 +64,9 @@ def register_tenant_filter(session: AsyncSession) -> None:
                 if sync_session.is_modified(obj, include_collections=False):
                     state = sqlalchemy.inspect(obj)
                     history = state.get_history("tenant_id", passive=True)
+                    original_tenant_id = history.unchanged[0] if history.unchanged else getattr(obj, "tenant_id")
+                    if original_tenant_id != tenant_id:
+                        raise PermissionError("Attempted to modify a record outside your tenant.")
                     if history.has_changes():
                         raise PermissionError("Altering the tenant_id of an existing record is prohibited.")
 

@@ -1,5 +1,3 @@
-from datetime import datetime
-
 from sqlalchemy import func, select
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
@@ -19,16 +17,8 @@ class AppointmentServicesRepository(BaseRepository[AppointmentServices]):
             select(AppointmentServices)
             .where(AppointmentServices.id.in_(ids))
         )
-        return list(stmt.scalars().all())
-    
-    async def get(self, id: int) -> AppointmentServices | None:
-        stmt = (
-            select(AppointmentServices)
-            .where(AppointmentServices.id == id)
-        )
-
-        result = await self.db.scalar(stmt)
-        return result
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[AppointmentServices], int]:
         count_stmt = select(func.count()).select_from(AppointmentServices)
@@ -39,7 +29,5 @@ class AppointmentServicesRepository(BaseRepository[AppointmentServices]):
         offset_value = (data.page - 1) * data.pageSize
         stmt = stmt.offset(offset_value).limit(data.pageSize)
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items
-
-    

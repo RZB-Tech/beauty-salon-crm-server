@@ -27,21 +27,18 @@ class PaymentRepository(BaseRepository[Payment]):
         await self.db.flush()
         await self.db.refresh(payment)
         return receipt
-    
-    async def get(self, id: int) -> Payment | None:
-        return await self.db.get(Payment, id)
 
     async def get_by_ids(self, ids: list[int]) -> list[Payment]:
         result = await self.db.execute(
             select(Payment).where(Payment.id.in_(ids))
         )
-        return list(result.scalars().all())
+        return result.scalars().all()
 
     async def get_by_receipt_id(self, receipt_id: int) -> list[Payment]:
         result = await self.db.execute(
             select(Payment).where(Payment.receipt_id == receipt_id)
         )
-        return list(result.scalars().all())
+        return result.scalars().all()
 
     async def get_all(self, data: RequestAllObject) -> tuple[list[Payment], int]:
         count_stmt = select(func.count()).select_from(Payment)
@@ -56,5 +53,5 @@ class PaymentRepository(BaseRepository[Payment]):
         stmt = stmt.order_by(Payment.id.desc()).offset(offset_value).limit(data.pageSize)
 
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items

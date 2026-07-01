@@ -19,7 +19,7 @@ class Plan(Base):
 
     price: Mapped[int] = mapped_column(Integer)
 
-    max_employee: Mapped[int] = mapped_column(Integer)
+    max_employees: Mapped[int] = mapped_column(Integer)
     max_clients: Mapped[int] = mapped_column(Integer)
     max_services: Mapped[int] = mapped_column(Integer)
     max_materials: Mapped[int] = mapped_column(Integer)

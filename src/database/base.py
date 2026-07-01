@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Any, Generic, TypeVar, get_args, get_origin
-from sqlalchemy import Boolean, DateTime, ForeignKey, func, text
+from sqlalchemy import Boolean, DateTime, ForeignKey, func, select, text
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column, validates
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.mixins import TenantMixin
@@ -64,10 +64,16 @@ class BaseRepository(Generic[T]):
     @property
     def db(self) -> AsyncSession:
         return get_repository_db()
+
+    async def get(self, id: int) -> T | None:
+        result = await self.db.execute(
+            select(self.model).where(self.model.id == id)
+        )
+        return result.scalar_one_or_none()
     
     async def update(self, id: int, **fields: Any) -> T | None:
         try:
-            obj = await self.db.get(self.model, id)
+            obj = await self.get(id)
             if not obj: return None
 
             for name, value in fields.items():
@@ -85,7 +91,7 @@ class BaseRepository(Generic[T]):
             raise
     
     async def delete(self, id: int) -> bool:
-        obj = await self.db.get(self.model, id)
+        obj = await self._get_scoped(id)
         if not obj: return False
 
         await self.db.delete(obj)

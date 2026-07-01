@@ -21,5 +21,5 @@ class AuditLogsRepository(BaseRepository):
             .limit(params.pageSize)
         )
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items

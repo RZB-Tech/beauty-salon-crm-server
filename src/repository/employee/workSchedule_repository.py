@@ -13,9 +13,6 @@ class WorkScheduleRepository(BaseRepository[WorkSchedule]):
         await self.db.flush()
         await self.db.refresh(workSchedule)
         return workSchedule
-
-    async def get(self, id: int) -> WorkSchedule | None:
-        return await self.db.get(WorkSchedule, id)
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[WorkSchedule], int]:
         count_stmt = select(func.count()).select_from(WorkSchedule)
@@ -27,7 +24,7 @@ class WorkScheduleRepository(BaseRepository[WorkSchedule]):
             .limit(data.pageSize)
         )
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items
 
     async def get_by_ids(self, ids: list[int]) -> list[WorkSchedule]:
@@ -35,7 +32,7 @@ class WorkScheduleRepository(BaseRepository[WorkSchedule]):
             select(WorkSchedule)
             .where(WorkSchedule.id.in_(ids))
         )
-        return list(result.scalars().all())
+        return result.scalars().all()
     
     async def is_employee_working(self, employee_id: int, start: datetime, end: datetime) -> bool:
         appointment_date = start.date()

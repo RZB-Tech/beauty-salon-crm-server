@@ -18,10 +18,7 @@ class MaterialRepository(BaseRepository[Material]):
         result = await self.db.execute(
             select(Material).where(Material.id.in_(ids))
         )
-        return list(result.scalars().all())
-    
-    async def get(self, id: int) -> Material | None:
-        return await self.db.get(Material, id)
+        return result.scalars().all()
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[Material], int]:
         count_stmt = select(func.count()).select_from(Material)
@@ -32,9 +29,5 @@ class MaterialRepository(BaseRepository[Material]):
         offset_value = (data.page - 1) * data.pageSize
         stmt = stmt.offset(offset_value).limit(data.pageSize)
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items
-    
-    async def updateQuantity(self, material: Material, quantity: int) -> Material:
-        material.quantity = quantity
-        return material

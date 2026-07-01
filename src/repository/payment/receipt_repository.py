@@ -25,7 +25,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
     
-    async def get(self, id: int) -> Receipt:
+    async def get(self, id: int) -> Receipt | None:
         result = await self.db.execute(
             select(Receipt)
             .where(Receipt.id == id)
@@ -52,5 +52,5 @@ class ReceiptRepository(BaseRepository[Receipt]):
                 .offset(offset_value)
                 .limit(data.pageSize))
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items

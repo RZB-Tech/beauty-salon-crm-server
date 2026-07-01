@@ -39,7 +39,7 @@ class AppointmentRecordsRepository(BaseRepository[AppointmentRecords]):
             .where(AppointmentRecords.id.in_(ids))
             .options(selectinload(AppointmentRecords.services))
         )
-        return list(stmt.scalars().all())
+        return stmt.scalars().all()
     
     async def get(self, id: int) -> AppointmentRecords | None:
         stmt = (
@@ -48,8 +48,8 @@ class AppointmentRecordsRepository(BaseRepository[AppointmentRecords]):
             .options(selectinload(AppointmentRecords.services))
         )
 
-        result = await self.db.scalar(stmt)
-        return result
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[AppointmentRecords], int]:
         count_stmt = select(func.count()).select_from(AppointmentRecords)
@@ -60,7 +60,7 @@ class AppointmentRecordsRepository(BaseRepository[AppointmentRecords]):
         offset_value = (data.page - 1) * data.pageSize
         stmt = stmt.options(selectinload(AppointmentRecords.services)).offset(offset_value).limit(data.pageSize)
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items
 
     async def employee_has_overlap(self, employeeID: int, start: datetime, end: datetime) -> bool:
@@ -75,5 +75,5 @@ class AppointmentRecordsRepository(BaseRepository[AppointmentRecords]):
             )
         )
 
-        count = await self.db.scalar(stmt)
-        return count > 0
+        count = await self.db.execute(stmt)
+        return count.scalar() > 0

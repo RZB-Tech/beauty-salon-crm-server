@@ -11,9 +11,6 @@ class EmployeeAbsenceRepository(BaseRepository[EmployeeAbsence]):
         await self.db.flush()
         await self.db.refresh(absence)
         return absence
-
-    async def get(self, id: int) -> EmployeeAbsence | None:
-        return await self.db.get(EmployeeAbsence, id)
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[EmployeeAbsence], int]:
         count_stmt = select(func.count()).select_from(EmployeeAbsence)
@@ -25,7 +22,7 @@ class EmployeeAbsenceRepository(BaseRepository[EmployeeAbsence]):
             .limit(data.pageSize)
         )
         result = await self.db.execute(stmt)
-        items = list(result.scalars().all())
+        items = result.scalars().all()
         return items, total_items
 
     async def get_by_ids(self, ids: list[int]) -> list[EmployeeAbsence]:
@@ -33,4 +30,4 @@ class EmployeeAbsenceRepository(BaseRepository[EmployeeAbsence]):
             select(EmployeeAbsence)
             .where(EmployeeAbsence.id.in_(ids))
         )
-        return list(result.scalars().all())
+        return result.scalars().all()
