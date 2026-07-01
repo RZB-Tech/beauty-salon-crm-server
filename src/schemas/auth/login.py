@@ -16,3 +16,4 @@ class LoginResponseSchema(BaseResponseSchema):
     middlename: str | None = None
     active: bool
     staff_type: StaffType
+    tenant_name: str

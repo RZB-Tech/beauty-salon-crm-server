@@ -61,6 +61,8 @@ class AuthService():
             samesite = "lax"
         )
 
+        tenant = await self.uow.tenants.get(id = staff.tenant_id)
+
         return LoginResponseSchema(
             id = staff.id,
             tenant_id = staff.tenant_id,
@@ -75,6 +77,7 @@ class AuthService():
             middlename=staff.middlename,
             active=staff.active,
             staff_type=staff.staff_type,
+            tenant_name = tenant.name
         )
 
     async def refresh(self, request: Request, response: Response):
