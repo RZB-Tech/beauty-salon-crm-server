@@ -9,7 +9,7 @@ router = APIRouter()
 get_segmentation_service = make_service_dependency(SegmentationService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=SegmentationResponseSchema, 
     status_code=status.HTTP_201_CREATED,
     summary="Create a new service"

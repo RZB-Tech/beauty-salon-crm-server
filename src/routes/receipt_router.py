@@ -10,7 +10,7 @@ router = APIRouter()
 get_receipt_service = make_service_dependency(ReceiptService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=ReceiptResponseSchema, 
     status_code=status.HTTP_201_CREATED
 )

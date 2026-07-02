@@ -11,7 +11,7 @@ router = APIRouter()
 get_auditLogs_service = make_service_dependency(AuditLogsService)
 
 @router.get(
-    "/",
+    "",
     response_model=PaginatedResponseSchema[AuditLogsResponseSchema], 
     status_code=status.HTTP_200_OK
 )

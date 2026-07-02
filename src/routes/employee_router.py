@@ -13,7 +13,7 @@ router = APIRouter()
 get_employee_service = make_service_dependency(EmployeeService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=EmployeeResponseBase, 
     status_code=status.HTTP_201_CREATED,
     summary="Create a new employee with assigned services"
@@ -52,7 +52,7 @@ async def get(id: int,
     return await employeeService.get(id)
 
 @router.patch(
-    "/",
+    "",
     response_model=EmployeeResponseBase, 
     status_code=status.HTTP_200_OK
 )

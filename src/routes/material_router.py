@@ -10,7 +10,7 @@ router = APIRouter()
 get_material_service = make_service_dependency(MaterialService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=MaterialResponseSchema, 
     status_code=status.HTTP_201_CREATED,
     summary="Create a new service"
@@ -20,7 +20,7 @@ async def create(data: MaterialCreateSchema,
     return await materialService.create(data)
 
 @router.patch(
-    "/",
+    "",
     response_model=MaterialResponseSchema, 
     status_code=status.HTTP_200_OK,
     summary="Update category"

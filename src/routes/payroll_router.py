@@ -11,7 +11,7 @@ router = APIRouter()
 get_payroll_service = make_service_dependency(PayrollService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=PayrollResponseSchema, 
     status_code=status.HTTP_201_CREATED
 )
@@ -20,7 +20,7 @@ async def create(data: PayrollCreateSchema,
     return await payrollService.create(data)
 
 @router.patch(
-    "/",
+    "",
     response_model=PayrollResponseSchema, 
     status_code=status.HTTP_200_OK
 )

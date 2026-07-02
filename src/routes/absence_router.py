@@ -11,7 +11,7 @@ router = APIRouter()
 get_absence_service = make_service_dependency(EmployeeAbsenceService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=AbsenceResponseSchema, 
     status_code=status.HTTP_201_CREATED
 )
@@ -20,7 +20,7 @@ async def create(data: AbsenceCreateSchema,
     return await absenceService.create(data)
 
 @router.patch(
-    "/",
+    "",
     response_model=AbsenceResponseSchema, 
     status_code=status.HTTP_200_OK,
     summary="Update category"
@@ -30,7 +30,7 @@ async def update(data: AbsenceUpdateSchema,
     return await absenceService.update(data)
 
 @router.get(
-    "/",
+    "",
     response_model=PaginatedResponseSchema[AbsenceResponseSchema], 
     status_code=status.HTTP_200_OK,
     summary="Get all categories"

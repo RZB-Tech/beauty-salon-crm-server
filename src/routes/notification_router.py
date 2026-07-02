@@ -17,7 +17,7 @@ router = APIRouter()
 get_notification_service = make_service_dependency(NotificationService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=NotificationResponseSchema, 
     status_code=status.HTTP_201_CREATED,
 )
@@ -90,16 +90,3 @@ async def archive(id: int,
 async def delete(id: int,
                  notificationService: NotificationService = Depends(get_notification_service)):
     return await notificationService.delete(id)
-
-
-# @router.post("/stream/{client_id}/test")
-# async def test_notification_stream(client_id: int):
-#     payload = {
-#         "id": 999,
-#         "title": "Test notification",
-#         "body": "If you see this, SSE + Redis pub/sub is working!",
-#         "type": "other",
-#         "scheduled_at": datetime.now(timezone.utc).isoformat(),
-#     }
-#     await publish_notification(client_id, payload)
-#     return {"published_to": f"notifications:{client_id}", "payload": payload}

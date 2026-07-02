@@ -22,7 +22,8 @@ async def login(data: LoginSchema, response: Response,
 async def refresh_tokens(
     request: Request, 
     response: Response, 
-    authService: AuthService = Depends(get_auth_service)
+    authService: AuthService = Depends(get_auth_service),
+    current_staff: dict = Depends(get_current_staff)
 ):
     return await authService.refresh(request, response)
 
@@ -34,13 +35,12 @@ async def logout_user(
 ):
     return await authService.logout(response)
 
-@router.post(
-    "/change-password",
-    status_code = 204)
+@router.post("/change-password", status_code = 204)
 async def change_password(
-        data: StaffUpdatePasswordSchema,
+        data: StaffUpdatePasswordSchema = Body(...),
         authService: AuthService = Depends(get_auth_service),
         current_staff: dict = Depends(get_current_staff)):
+    print(data)
     return await authService.change_password(data = data)
 
 @router.patch(

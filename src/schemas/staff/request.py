@@ -16,7 +16,7 @@ class StaffRequestSchema(BaseModel):
             raise HTTPException(400, "Укажите только ID или логин")
         
 class StaffUpdatePasswordSchema(BaseModel):
-    id: int | None = Field(None, ge = 1)
+    id: int = Field(..., ge = 1)
     oldPassword: str = Field(..., min_length = 4)
     newPassword: str = Field(..., min_length = 4)
 

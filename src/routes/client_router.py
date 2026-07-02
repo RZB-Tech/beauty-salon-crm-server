@@ -12,7 +12,7 @@ router = APIRouter()
 get_client_service = make_service_dependency(ClientService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=ClientResponseSchema, 
     status_code=status.HTTP_201_CREATED
 )
@@ -21,7 +21,7 @@ async def create(data: ClientCreateSchema,
     return await clientService.create(data)
 
 @router.patch(
-    "/",
+    "",
     response_model=ClientResponseSchema, 
     status_code=status.HTTP_200_OK
 )

@@ -11,7 +11,7 @@ router = APIRouter()
 get_workSchedule_service = make_service_dependency(WorkScheduleService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=WorkScheduleResponseSchema, 
     status_code=status.HTTP_201_CREATED
 )
@@ -20,7 +20,7 @@ async def create(data: WorkScheduleCreateSchema,
     return await workScheduleService.create(data)
 
 @router.patch(
-    "/",
+    "",
     response_model=WorkScheduleResponseSchema, 
     status_code=status.HTTP_200_OK,
     summary="Update category"
@@ -30,7 +30,7 @@ async def update(data: WorkScheduleUpdateSchema,
     return await workScheduleService.update(data)
 
 @router.get(
-    "/",
+    "",
     response_model=PaginatedResponseSchema[WorkScheduleResponseSchema], 
     status_code=status.HTTP_200_OK,
     summary="Get all categories"

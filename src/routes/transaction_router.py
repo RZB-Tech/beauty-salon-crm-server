@@ -9,7 +9,7 @@ router = APIRouter()
 get_transaction_service = make_service_dependency(TransactionService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=TransactionResponseSchema, 
     status_code = 201,
     summary="Create a new service"

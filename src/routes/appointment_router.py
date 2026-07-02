@@ -10,7 +10,7 @@ router = APIRouter()
 get_appointment_service = make_service_dependency(AppointmentService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=AppointmentResponseSchema, 
     status_code=status.HTTP_201_CREATED
 )

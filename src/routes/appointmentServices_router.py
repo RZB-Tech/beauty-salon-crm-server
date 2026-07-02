@@ -10,7 +10,7 @@ router = APIRouter()
 get_appointment_services_service = make_service_dependency(AppointmentServicesService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=AppointmentServicesResponseSchema, 
     status_code=status.HTTP_201_CREATED
 )
@@ -27,7 +27,7 @@ async def create(data: AppointmentServicesCreateSchema,
 #     return await ClientService.update(data)
 
 @router.get(
-    "/",
+    "",
     response_model=PaginatedResponseSchema[AppointmentServicesResponseSchema], 
     status_code=status.HTTP_200_OK
 )

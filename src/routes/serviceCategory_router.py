@@ -10,7 +10,7 @@ router = APIRouter()
 get_category_service = make_service_dependency(ServiceCategoryService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=ServiceCategoryResponseSchema, 
     status_code= 201,
     summary="Create a new service category"
@@ -20,7 +20,7 @@ async def create(data: ServiceCategoryCreateSchema,
     return await categoryService.create(data)
 
 @router.patch(
-    "/",
+    "",
     response_model=ServiceCategoryResponseSchema, 
     status_code=status.HTTP_200_OK,
     summary="Update category"

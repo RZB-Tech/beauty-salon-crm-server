@@ -1,7 +1,9 @@
 import string
 
 from fastapi import HTTPException, Request, Response, status
+from src.core.dependencies.context import get_current_staff_id
 from src.core.dependencies.uow import UnitOfWork
+from src.repository.staff.staff_model import StaffType
 from src.schemas.auth.login import LoginResponseSchema, LoginSchema
 from src.core.auth.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
 from src.schemas.employee.response import EmployeeResponseBase
@@ -159,8 +161,13 @@ class AuthService():
         )
 
     async def change_password(self, data: StaffUpdatePasswordSchema):
+        print(data)
         user = await self.uow.staffs.get(id = data.id)
         if user is None: raise HTTPException(404)
+
+        selfUser = get_current_staff_id()
+        if selfUser != user.id and user.staff_type != StaffType.ADMIN:
+            raise HTTPException(400, "Только администратор может изменять пароли других пользователей!")
 
         verify = verify_password(user.hashed_password, data.oldPassword)
         print("reached service")

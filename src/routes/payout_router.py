@@ -10,7 +10,7 @@ router = APIRouter()
 get_payout_service = make_service_dependency(PayoutService)
 
 @router.post(
-    "/", 
+    "", 
     response_model=PayoutResponseSchema, 
     status_code=status.HTTP_201_CREATED
 )
