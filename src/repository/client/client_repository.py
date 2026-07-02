@@ -2,7 +2,6 @@ from sqlalchemy import func, select
 from src.database.base import BaseRepository
 from src.schemas.base import RequestAllObject
 from src.schemas.client.create import ClientCreateSchema
-from src.schemas.client.update import ClientDepositUpdateSchema, ClientUpdateSchema
 from src.repository.client.client_model import Client
 from src.core.utils.model_filter import apply_dynamic_filters
 

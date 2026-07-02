@@ -28,4 +28,4 @@ class Client(BaseFields):
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
     deposit: Mapped[int] = mapped_column(Integer, default = 0)
 
-    ALLOWED_FILTERS = {"firstname", "lastname", "middlename", "phone", "birth_data", "sex"}
+    ALLOWED_FILTERS = {"firstname", "lastname", "middlename", "phone", "birth_date", "sex"}

@@ -37,6 +37,8 @@ class EmployeeAbsence(BaseFields):
         CheckConstraint("start_date < end_date", name="chk_start_before_end")
     )
 
+    ALLOWED_FILTERS = {"employee_id", "start_date", "end_date", "absence_type"}
+
 class WorkSchedule(BaseFields):
     __tablename__ = "employee_work_schedules"
 
@@ -50,3 +52,5 @@ class WorkSchedule(BaseFields):
         UniqueConstraint("employee_id", "day", name="uq_employee_day_of_week"),
         CheckConstraint("start_time < end_time", name="chk_start_before_end")
     )
+
+    ALLOWED_FILTERS = {"day", "start_time", "end_time"}

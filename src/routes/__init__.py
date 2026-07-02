@@ -1,5 +1,7 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
+from pydantic import BaseModel
 from src.core.dependencies.auth import get_current_staff
+from src.repository.registry import MODEL_REGISTRY, get_filter_schema
 from src.routes.employee_router import router as employeeR
 from src.routes.service_router import router as serviceR
 from src.routes.serviceCategory_router import router as serviceCategoryR
@@ -18,6 +20,7 @@ from src.routes.payment_router import router as PaymentR
 from src.routes.transaction_router import router as TransactionR
 from src.routes.payout_router import router as PayoutR
 from src.routes.notification_router import router as notificationR
+from src.schemas.base import FilterFieldSchema, FilterTables
 
 open_router = APIRouter(prefix = "/api/v1")
 open_router.include_router(
@@ -31,6 +34,12 @@ protected_router = APIRouter(prefix = "/api/v1")
 protected_router.dependencies.extend([
     Depends(get_current_staff)
 ])
+
+@protected_router.get("/docs/filters/{table}", response_model = list[FilterFieldSchema])
+async def get_table_filters(table: FilterTables):
+    model = MODEL_REGISTRY.get(table.value)
+    if model is None: raise HTTPException(404)
+    return get_filter_schema(model)
 
 protected_router.include_router(
     appointmentR, 

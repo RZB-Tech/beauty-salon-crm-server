@@ -34,5 +34,4 @@ class Material(BaseFields):
     volume: Mapped[int] = mapped_column(Integer, default = 0)
     sell_price: Mapped[int] = mapped_column(Integer, default = 0)
 
-    ALLOWED_FILTERS = {"article", "name", "measurement_unit", "volume", 
-            "purchase_price", "retail_price", "wholesale_price", "sell_price", "can_be_product"}
+    ALLOWED_FILTERS = {"article", "name", "measurement_unit", "quantity", "volume", "sell_price"}

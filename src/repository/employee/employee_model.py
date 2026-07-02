@@ -34,6 +34,8 @@ class Specialization(BaseFields):
         back_populates="specialization"
     )
 
+    ALLOWED_FILTERS = {"name"}
+
 class Employee(BaseFields):
     __tablename__ = "employees"
 

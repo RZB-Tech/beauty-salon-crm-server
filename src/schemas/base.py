@@ -1,6 +1,7 @@
 from datetime import datetime
+from enum import Enum
 from typing import Any, ClassVar, Generic, TypeVar
-from pydantic import BaseModel, Field, field_serializer, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 T = TypeVar("T")
 
@@ -52,3 +53,24 @@ class BaseUpdateSchema(BaseModel):
             )
             
         return self
+    
+class FilterTables(Enum):
+    appointments = "appointments"
+    clients = "clients"
+    employees = "employees"
+    employee_absences = "employee_absences"
+    employee_work_schedules = "employee_work_schedules"
+    materials = "materials"
+    payments = "payments"
+    payrolls = "payrolls"
+    transactions = "transactions"
+    receipts = "receipts"
+    service_categories = "service_categories"
+    services = "services"
+    specializations = "specializations"
+    notifications = "notifications"
+    
+class FilterFieldSchema(BaseModel):
+    field: str
+    type: str
+    options: list[str] | None = None
