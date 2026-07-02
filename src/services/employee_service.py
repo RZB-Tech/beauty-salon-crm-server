@@ -52,6 +52,8 @@ class EmployeeService():
                     detail="Один или более из указанных услуг не найден"
                 )
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
+        if services is not None: dataDict["services"] = services
+        
         result = await self.uow.employees.update(data.id, **dataDict)
         if result is None:
             raise HTTPException(

@@ -14,7 +14,7 @@ class PaginatedResponseSchema(BaseModel, Generic[T]):
 class PaginationSchema(BaseModel):
     page: int = Field(
         default=1, 
-        ge=1, 
+        ge=1,
         description="Page number (starts at 1)"
     )
     pageSize: int = Field(
