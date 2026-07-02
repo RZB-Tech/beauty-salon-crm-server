@@ -23,7 +23,7 @@ class NotificationRepository(BaseRepository[Notification]):
         stmt = apply_dynamic_filters(stmt, Notification, data.filters)
         total_items = await self.db.scalar(count_stmt) or 0
         offset_value = (data.page - 1) * data.pageSize
-        stmt = stmt.offset(offset_value).limit(data.pageSize)
+        stmt = stmt.order_by(Notification.id.desc()).offset(offset_value).limit(data.pageSize)
         result = await self.db.execute(stmt)
         items = result.scalars().all()
         return items, total_items

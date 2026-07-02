@@ -43,16 +43,17 @@ class EmployeeService():
         return result
     
     async def update(self, data: EmployeeUpdateSchema) -> Employee:
-        services = None
-        if data.services is not None and len(data.services) >= 1:
-            services = await self.uow.services.get_by_ids(data.services)
-            if len(services) != len(data.services):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Один или более из указанных услуг не найден"
-                )
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
-        if services is not None: dataDict["services"] = services
+        if data.services is not None:
+            services = []
+            if data.services:
+                services = await self.uow.services.get_by_ids(data.services)
+                if len(services) != len(data.services):
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Один или более из указанных услуг не найден"
+                    )
+            dataDict["services"] = services
         
         result = await self.uow.employees.update(data.id, **dataDict)
         if result is None:

@@ -20,6 +20,7 @@ class WorkScheduleRepository(BaseRepository[WorkSchedule]):
         offset_value = (data.page - 1) * data.pageSize
         stmt = (
             select(WorkSchedule)
+            .order_by(WorkSchedule.id.desc())
             .offset(offset_value)
             .limit(data.pageSize)
         )

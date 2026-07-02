@@ -18,6 +18,7 @@ class EmployeeAbsenceRepository(BaseRepository[EmployeeAbsence]):
         offset_value = (data.page - 1) * data.pageSize
         stmt = (
             select(EmployeeAbsence)
+            .order_by(EmployeeAbsence.id.desc())
             .offset(offset_value)
             .limit(data.pageSize)
         )
