@@ -33,7 +33,7 @@ class EmployeeAbsence(BaseFields):
     reason: Mapped[str | None] = mapped_column(Text, nullable = True)
 
     __table_args__ = (
-        UniqueConstraint("employee_id", "start_date", "end_date", name="uq_employee_absence_days"),
+        UniqueConstraint("employee_id", "start_date", "end_date", "tenant_id", name="uq_employee_absence_days"),
         CheckConstraint("start_date < end_date", name="chk_start_before_end")
     )
 

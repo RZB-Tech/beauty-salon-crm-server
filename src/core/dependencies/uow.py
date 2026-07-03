@@ -6,6 +6,7 @@ from src.repository.audit.auditLog_repository import AuditLogsRepository
 from src.repository.client.client_repository import ClientRepository
 from src.repository.employee.absence_repository import EmployeeAbsenceRepository
 from src.repository.employee.employee_repository import EmployeeRepository
+from src.repository.employee.specialization_repository import SpecializationRepository
 from src.repository.employee.workSchedule_repository import WorkScheduleRepository
 from src.repository.material.material_repository import MaterialRepository
 from src.repository.payment.payment_repository import PaymentRepository
@@ -30,6 +31,7 @@ class UnitOfWork:
         self.employees = EmployeeRepository()
         self.serviceCategory = ServiceCategoryRepository()
         self.services = ServiceRepository()
+        self.specializations = SpecializationRepository()
         self.work_schedules = WorkScheduleRepository()
         self.absences = EmployeeAbsenceRepository()
         self.clients = ClientRepository()

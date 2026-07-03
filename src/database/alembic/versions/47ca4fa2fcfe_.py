@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 532e4e554210
+Revision ID: 47ca4fa2fcfe
 Revises: 
-Create Date: 2026-07-03 05:49:57.291960
+Create Date: 2026-07-03 14:06:46.497834
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '532e4e554210'
+revision: str = '47ca4fa2fcfe'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -83,8 +83,8 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
-    op.create_index(op.f('ix_materials_article'), 'materials', ['article'], unique=True)
     op.create_index(op.f('ix_materials_tenant_id'), 'materials', ['tenant_id'], unique=False)
+    op.create_index('uq_article_name_lower', 'materials', [sa.literal_column('lower(article)'), 'tenant_id'], unique=True)
     op.create_table('service_categories',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -96,9 +96,10 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['created_by'], ['staffs.id'], name='fk_created_by_staff', use_alter=True),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('name')
+    sa.UniqueConstraint('id', 'tenant_id', name='uq_service_category_id_tenant')
     )
     op.create_index(op.f('ix_service_categories_tenant_id'), 'service_categories', ['tenant_id'], unique=False)
+    op.create_index('uq_service_category_name_lower', 'service_categories', [sa.literal_column('lower(name)'), 'tenant_id'], unique=True)
     op.create_table('specializations',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -109,10 +110,11 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['created_by'], ['staffs.id'], name='fk_created_by_staff', use_alter=True),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('id', 'tenant_id', name='uq_specialization_id_tenant')
     )
     op.create_index(op.f('ix_specializations_tenant_id'), 'specializations', ['tenant_id'], unique=False)
-    op.create_index('uq_specialization_name_lower', 'specializations', [sa.literal_column('lower(name)')], unique=True)
+    op.create_index('uq_specialization_name_lower', 'specializations', [sa.literal_column('lower(name)'), 'tenant_id'], unique=True)
     op.create_table('tenant_subscriptions',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
@@ -167,7 +169,7 @@ def upgrade() -> None:
     sa.Column('created_by', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['created_by'], ['staffs.id'], name='fk_created_by_staff', use_alter=True),
-    sa.ForeignKeyConstraint(['specialization_id'], ['specializations.id'], ),
+    sa.ForeignKeyConstraint(['specialization_id', 'tenant_id'], ['specializations.id', 'specializations.tenant_id'], name='fk_employee_specialization_tenant', ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
@@ -201,13 +203,13 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['category_id'], ['service_categories.id'], ),
+    sa.ForeignKeyConstraint(['category_id', 'tenant_id'], ['service_categories.id', 'service_categories.tenant_id'], name='fk_service_category_tenant', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['created_by'], ['staffs.id'], name='fk_created_by_staff', use_alter=True),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('name')
+    sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_services_tenant_id'), 'services', ['tenant_id'], unique=False)
+    op.create_index('uq_service_name_lower', 'services', [sa.literal_column('lower(name)'), 'tenant_id'], unique=True)
     op.create_table('appointment_records',
     sa.Column('appointment_id', sa.Integer(), nullable=False),
     sa.Column('employee_id', sa.Integer(), nullable=False),
@@ -241,7 +243,7 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['employee_id'], ['employees.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('employee_id', 'start_date', 'end_date', name='uq_employee_absence_days')
+    sa.UniqueConstraint('employee_id', 'start_date', 'end_date', 'tenant_id', name='uq_employee_absence_days')
     )
     op.create_index(op.f('ix_employee_absences_tenant_id'), 'employee_absences', ['tenant_id'], unique=False)
     op.create_table('employee_services',
@@ -486,6 +488,7 @@ def downgrade() -> None:
     op.drop_table('employee_absences')
     op.drop_index(op.f('ix_appointment_records_tenant_id'), table_name='appointment_records')
     op.drop_table('appointment_records')
+    op.drop_index('uq_service_name_lower', table_name='services')
     op.drop_index(op.f('ix_services_tenant_id'), table_name='services')
     op.drop_table('services')
     op.drop_index(op.f('ix_notifications_tenant_id'), table_name='notifications')
@@ -498,10 +501,11 @@ def downgrade() -> None:
     op.drop_index('uq_specialization_name_lower', table_name='specializations')
     op.drop_index(op.f('ix_specializations_tenant_id'), table_name='specializations')
     op.drop_table('specializations')
+    op.drop_index('uq_service_category_name_lower', table_name='service_categories')
     op.drop_index(op.f('ix_service_categories_tenant_id'), table_name='service_categories')
     op.drop_table('service_categories')
+    op.drop_index('uq_article_name_lower', table_name='materials')
     op.drop_index(op.f('ix_materials_tenant_id'), table_name='materials')
-    op.drop_index(op.f('ix_materials_article'), table_name='materials')
     op.drop_table('materials')
     op.drop_index(op.f('ix_clients_tenant_id'), table_name='clients')
     op.drop_table('clients')

@@ -20,6 +20,7 @@ from src.routes.payment_router import router as PaymentR
 from src.routes.transaction_router import router as TransactionR
 from src.routes.payout_router import router as PayoutR
 from src.routes.notification_router import router as notificationR
+from src.routes.specialization_router import router as specializationR
 from src.schemas.base import FilterFieldSchema, FilterTables
 
 open_router = APIRouter(prefix = "/api/v1")
@@ -63,6 +64,12 @@ protected_router.include_router(
     employeeR, 
     prefix="/employees", 
     tags=["Employees"]
+)
+
+protected_router.include_router(
+    specializationR, 
+    prefix="/specializations", 
+    tags=["Specializations"]
 )
 
 protected_router.include_router(

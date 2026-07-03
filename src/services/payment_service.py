@@ -2,7 +2,6 @@ import math
 from fastapi import HTTPException, status
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
-from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import AppointmentServices
 from src.repository.payment.payment_model import Payment, PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatus, ReceiptType

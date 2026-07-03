@@ -1,9 +1,11 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from sqlalchemy import (
+    Index,
     String,
     Boolean,
-    Integer,Text
+    Integer,Text,
+    func
 )
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Enum as SQLEnum
@@ -22,7 +24,7 @@ class MeasurementUnit(Enum):
 
 class Material(BaseFields):
     __tablename__ = "materials"
-    article: Mapped[str] = mapped_column(String(255), unique = True, index = True)
+    article: Mapped[str] = mapped_column(String(255))
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text, nullable = True)
 
@@ -33,5 +35,14 @@ class Material(BaseFields):
         default = MeasurementUnit.PCS)
     volume: Mapped[int] = mapped_column(Integer, default = 0)
     sell_price: Mapped[int] = mapped_column(Integer, default = 0)
+
+    __table_args__ = (
+        Index(
+            "uq_article_name_lower", 
+            func.lower(article),
+            "tenant_id",
+            unique=True
+        ),
+    )
 
     ALLOWED_FILTERS = {"article", "name", "measurement_unit", "quantity", "volume", "sell_price", "archived"}
