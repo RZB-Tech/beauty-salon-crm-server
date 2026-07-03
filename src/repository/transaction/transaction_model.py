@@ -55,4 +55,4 @@ class Transaction(BaseFields):
     cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
     auto_generated: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
  
-    ALLOWED_FILTERS = {"amount", "type", "method", "category", "cancelled", "auto_generated"}
+    ALLOWED_FILTERS = {"amount", "type", "method", "category", "cancelled", "auto_generated", "archived"}

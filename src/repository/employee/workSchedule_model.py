@@ -37,7 +37,7 @@ class EmployeeAbsence(BaseFields):
         CheckConstraint("start_date < end_date", name="chk_start_before_end")
     )
 
-    ALLOWED_FILTERS = {"employee_id", "start_date", "end_date", "absence_type"}
+    ALLOWED_FILTERS = {"employee_id", "start_date", "end_date", "absence_type", "archived"}
 
 class WorkSchedule(BaseFields):
     __tablename__ = "employee_work_schedules"
@@ -53,4 +53,4 @@ class WorkSchedule(BaseFields):
         CheckConstraint("start_time < end_time", name="chk_start_before_end")
     )
 
-    ALLOWED_FILTERS = {"day", "start_time", "end_time"}
+    ALLOWED_FILTERS = {"day", "start_time", "end_time", "archived"}

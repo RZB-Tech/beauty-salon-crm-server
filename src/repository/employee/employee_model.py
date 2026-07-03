@@ -68,4 +68,4 @@ class Employee(BaseFields):
 
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
 
-    ALLOWED_FILTERS = {"firstname", "lastname", "middlename", "phone", "active", "specialization_id"}
+    ALLOWED_FILTERS = {"firstname", "lastname", "middlename", "phone", "active", "specialization_id", "archived"}

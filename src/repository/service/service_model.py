@@ -20,7 +20,7 @@ class ServiceCategory(BaseFields):
         back_populates="category"
     )
 
-    ALLOWED_FILTERS = {"name"}
+    ALLOWED_FILTERS = {"name", "archived"}
 
 class Service(BaseFields):
     __tablename__ = "services"
@@ -42,4 +42,4 @@ class Service(BaseFields):
         back_populates="services",
     )
 
-    ALLOWED_FILTERS = {"name", "price", "category_id"}
+    ALLOWED_FILTERS = {"name", "price", "category_id", "archived"}

@@ -29,4 +29,4 @@ class Notification(BaseFields):
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone = True))
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone = True), nullable = True, default = None)
 
-    ALLOWED_FILTERS = {"client_id", "type", "schedulet_at", "delivered_at"}
+    ALLOWED_FILTERS = {"client_id", "type", "schedulet_at", "delivered_at", "archived"}

@@ -75,5 +75,5 @@ class Appointment(BaseFields):
         CheckConstraint("start_time_est < end_time_est", name="chk_start_before_end")
     )
     
-    ALLOWED_FILTERS = {"client_id", "start_time_est", "end_time_est", "status", "paid"}
+    ALLOWED_FILTERS = {"client_id", "start_time_est", "end_time_est", "status", "paid", "archived"}
 

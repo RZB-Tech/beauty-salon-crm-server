@@ -60,7 +60,7 @@ class Payout(BaseFields):
             else: total += payroll.amount
         return total
     
-    ALLOWER_FILTERS = {"employee_id", "type", "method", "cancelled"}
+    ALLOWER_FILTERS = {"employee_id", "type", "method", "cancelled", "archived"}
 
 class Payroll(BaseFields):
     __tablename__ = "payrolls"
@@ -91,4 +91,4 @@ class Payroll(BaseFields):
         if value <= 0: raise ValueError("Amount cannot be less than 1")
         return value
     
-    ALLOWER_FILTERS = {"amount", "employee_id", "amount", "type", "status", "auto_generated"}
+    ALLOWER_FILTERS = {"amount", "employee_id", "amount", "type", "status", "auto_generated", "archived"}

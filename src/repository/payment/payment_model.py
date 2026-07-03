@@ -104,7 +104,7 @@ class Receipt(BaseFields):
     def remaining_amount(self) -> int:
         return max(0, self.total_amount - self.paid_amount)
     
-    ALLOWED_FILTERS = {"total_amount", "receipt_type", "status"}
+    ALLOWED_FILTERS = {"total_amount", "receipt_type", "status", "archived"}
 
 class PaymentMethodsEnum(Enum):
     CASH = "cash"
@@ -123,4 +123,4 @@ class Payment(BaseFields):
     
     cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
-    ALLOWED_FILTERS = {"amount", "receipt_id", "method"}
+    ALLOWED_FILTERS = {"amount", "receipt_id", "method", "archived"}
