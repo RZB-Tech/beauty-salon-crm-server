@@ -1,7 +1,7 @@
 services:
-  postgres:
+  postgres-salon:
     image: postgres:18
-    container_name: postgres
+    container_name: postgres-salon
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -16,9 +16,9 @@ services:
       timeout: 5s
       retries: 5
 
-  redis:
+  redis-salon:
     image: redis:7-alpine
-    container_name: redis_salon_crm
+    container_name: redis-salon
     restart: unless-stopped
     ports:
       - "6379:6379"
@@ -32,12 +32,13 @@ services:
     env_file:
       - .env
     depends_on:
-      postgres:
+      postgres-salon:
         condition: service_healthy
     ports:
       - "8000:8000"
     volumes:
       - ./src:/app/src
+      - app_secrets:/app/secrets
 
   celery-worker:
     build: .
@@ -45,9 +46,9 @@ services:
     env_file:
       - .env
     depends_on:
-      postgres:
+      postgres-salon:
         condition: service_healthy
-      redis:
+      redis-salon:
         condition: service_started
     command: >
       uv run celery -A src.core.celery.celeryApp.celery_app worker --loglevel=info
@@ -60,9 +61,9 @@ services:
     env_file:
       - .env
     depends_on:
-      postgres:
+      postgres-salon:
         condition: service_healthy
-      redis:
+      redis-salon:
         condition: service_started
     command: >
       uv run celery -A src.core.celery.celeryApp.celery_app beat --loglevel=info
@@ -72,3 +73,4 @@ services:
 volumes:
   postgres_data_salon:
   redis_data:
+  app_secrets:

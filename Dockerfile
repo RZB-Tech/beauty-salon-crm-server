@@ -14,16 +14,6 @@ COPY alembic.ini .
 COPY entrypoint.sh .
 COPY migrate.py .
 
-RUN mkdir -p /app/secrets && \
-    openssl genpkey \
-        -algorithm RSA \
-        -out /app/secrets/private_key.pem \
-        -pkeyopt rsa_keygen_bits:4096 && \
-    openssl rsa \
-        -pubout \
-        -in /app/secrets/private_key.pem \
-        -out /app/secrets/public_key.pem
-
 RUN chmod +x entrypoint.sh
 
 EXPOSE 8000

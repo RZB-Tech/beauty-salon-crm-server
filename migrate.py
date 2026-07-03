@@ -21,8 +21,8 @@ fake = Faker("ru_RU")
 DB_NAME = "salon"
 DB_USER = "postgres"
 DB_PASSWORD = "postgres"
-DB_HOST = "localhost"
-DB_PORT = "5450"
+DB_HOST = "postgres-salon"
+DB_PORT = "5432"
 
 VERSIONS_DIR = Path("src/database/alembic/versions")
 

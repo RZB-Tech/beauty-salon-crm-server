@@ -1,6 +1,21 @@
 #!/bin/sh
 set -e
 
+mkdir -p /app/secrets
+
+if [ ! -f /app/secrets/private_key.pem ]; then
+    echo "Generating RSA key pair..."
+    openssl genpkey \
+        -algorithm RSA \
+        -out /app/secrets/private_key.pem \
+        -pkeyopt rsa_keygen_bits:4096
+
+    openssl rsa \
+        -pubout \
+        -in /app/secrets/private_key.pem \
+        -out /app/secrets/public_key.pem
+fi
+
 echo "Waiting for postgres"
 sleep 10
 
