@@ -110,7 +110,7 @@ class PaymentService():
                                 appointment_id = appointment_record.appointment_id,
                                 type = PayrollType.COMMISSION,
                                 amount = commission_earned,
-                                notes = f"Автоматическая коммиссия из посещения ID: {appointment_record.appointment_id}"
+                                auto_generated = True
                             )
                             await self.uow.payrolls.create(payroll_record)
         else:
