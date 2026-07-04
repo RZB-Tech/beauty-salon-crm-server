@@ -87,6 +87,7 @@ class AppointmentRepository(BaseRepository[Appointment]):
                     .selectinload(AppointmentRecords.services)
                     .selectinload(AppointmentServices.material)
             )
+            .execution_options(populate_existing = True)
         )
 
         result = await self.db.execute(stmt)

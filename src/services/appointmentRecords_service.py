@@ -1,18 +1,39 @@
 import math
 from fastapi import HTTPException, status
+from sqlalchemy.orm import raiseload
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
-from src.repository.appointment.appointment_model import AppointmentRecords
+from src.repository.appointment.appointment_model import Appointment, AppointmentRecords
+from src.repository.material.material_model import Material
+from src.repository.payment.payment_model import Receipt, ReceiptStatus
+from src.repository.service.service_model import Service
 from src.schemas.appointment.create import AppointmentRecordsCreateSchema
 from src.schemas.base import RequestAllObject
+from sqlalchemy import select
 
 class AppointmentRecordsService():
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
         
-    @require_exists("appointmentRecords", target_param = "appointment_id")
-    async def create(self, data: AppointmentRecordsCreateSchema) -> AppointmentRecords:
-        employee = await self.uow.employee.get(data.employee_id)
+    @require_exists("appointments", target_param = "appointment_id")
+    async def create(self, data: AppointmentRecordsCreateSchema) -> Appointment:
+        receipts = await self.uow.db.scalars(
+            select(Receipt)
+            .options(raiseload("*"))
+            .where(Receipt.appointment_id == data.appointment_id)
+        )
+        if any(receipt.status != ReceiptStatus.CANCELLED for receipt in receipts):
+            raise HTTPException(400, "Необходимо сначало отменить активный чек для этого посещения")
+
+        material: Material | None = None
+        if data.material_id: material = await self.uow.materials.get(data.material_id)
+        if data.material_id and material is None: raise HTTPException(404, f"Товар с ID {data.material_id} не найден")
+
+        service: Service | None = None
+        if data.service_id: service = await self.uow.services.get(data.service_id)
+        if data.service_id and service is None: raise HTTPException(404, f"Услуга с ID {data.service_id}")
+
+        employee = await self.uow.employees.get(data.employee_id)
         if not employee:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
@@ -60,18 +81,8 @@ class AppointmentRecordsService():
                         detail = f"Необходимо в комментариях указать причину изменения стоимости товара"
                     )
                 
-        return await self.uow.appointmentRecords.create(data)
-
-    
-    # async def update(data: ClientUpdateSchema) -> Client:
-    #     check = await appointmentRepository.get(data.id)
-    #     if not check:
-    #         raise HTTPException(
-    #             status_code = status.HTTP_404_NOT_FOUND,
-    #             detail = f"Service with id {data.id} not found"
-    #         )
-    #     result = await appointmentRepository.update(data)
-    #     return result
+        await self.uow.appointmentRecords.create(data)
+        return await self.uow.appointments.get(data.appointment_id)
     
     async def get(self, id: int) -> AppointmentRecords:
         result = await self.uow.appointmentRecords.get(id)
@@ -98,6 +109,21 @@ class AppointmentRecordsService():
             "totalPages": total_pages
         }
     
-    @require_exists("appointmentRecords")
-    async def delete(self, id: int) -> bool:
-        return await self.uow.appointmentRecords.delete(id)
+    async def delete(self, id: int) -> Appointment:
+        check = await self.uow.appointmentRecords.get(id)
+        if check is None: raise HTTPException(404)
+
+        receipts = await self.uow.db.scalars(
+            select(Receipt)
+            .options(raiseload("*"))
+            .where(Receipt.appointment_id == check.appointment_id)
+        )
+
+        if any(receipt.status != ReceiptStatus.CANCELLED for receipt in receipts):
+            raise HTTPException(400, "Необходимо сначало отменить активный чек для этого посещения")
+        
+        appointmentID = check.appointment_id
+
+        await self.uow.appointmentRecords.delete(id)
+        return await self.uow.appointments.get(appointmentID)
+    

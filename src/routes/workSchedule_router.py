@@ -29,14 +29,14 @@ async def update(data: WorkScheduleUpdateSchema,
                  workScheduleService: WorkScheduleService = Depends(get_workSchedule_service)):
     return await workScheduleService.update(data)
 
-@router.get(
-    "",
+@router.post(
+    "/get-all",
     response_model=PaginatedResponseSchema[WorkScheduleResponseSchema], 
-    status_code=status.HTTP_200_OK,
+    status_code = 200,
     summary="Get all categories"
 )
-async def get_all(params: RequestAllObject = Depends(),
-                 workScheduleService: WorkScheduleService = Depends(get_workSchedule_service)):
+async def get_all(params: RequestAllObject,
+                  workScheduleService: WorkScheduleService = Depends(get_workSchedule_service)):
     return await workScheduleService.get_all(params)
 
 @router.get(
@@ -49,10 +49,7 @@ async def get(id: int,
                  workScheduleService: WorkScheduleService = Depends(get_workSchedule_service)):
     return await workScheduleService.get(id)
 
-@router.delete(
-    "/{id}",
-    status_code = status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{id}", status_code = 204)
 async def delete(id: int,
                  workScheduleService: WorkScheduleService = Depends(get_workSchedule_service)):
     return await workScheduleService.delete(id)

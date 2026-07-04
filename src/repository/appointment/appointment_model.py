@@ -127,7 +127,7 @@ class Appointment(BaseFields):
         primaryjoin = "and_(Appointment.id == AppointmentRecords.appointment_id, Appointment.tenant_id == AppointmentRecords.tenant_id)",
         foreign_keys = "[AppointmentRecords.appointment_id]")
     
-    receipt: Mapped["Receipt"] = relationship(back_populates = "appointment")
+    receipts: Mapped["Receipt"] = relationship(back_populates = "appointment")
 
     status: Mapped[AppointmentStatus] = mapped_column(SQLEnum(
         AppointmentStatus, values_callable = lambda e: [m.value for m in e]), 

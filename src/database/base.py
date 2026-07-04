@@ -66,12 +66,14 @@ class BaseRepository(Generic[T]):
         return get_repository_db()
 
     async def get(self, id: int) -> T | None:
+        """returns None if object with provided ID does not exists"""
         result = await self.db.execute(
             select(self.model).where(self.model.id == id)
         )
         return result.scalar_one_or_none()
     
     async def update(self, id: int, **fields: Any) -> T | None:
+        """returns None if object with provided ID does not exists"""
         try:
             obj = await self.get(id)
             if not obj: return None
@@ -91,6 +93,7 @@ class BaseRepository(Generic[T]):
             raise
     
     async def delete(self, id: int) -> bool:
+        """returns None if object with provided ID does not exists"""
         obj = await self.get(id)
         if not obj: return False
 

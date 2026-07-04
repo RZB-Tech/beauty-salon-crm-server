@@ -74,7 +74,7 @@ class ReceiptItem(BaseFields):
         ForeignKeyConstraint(
             ["appointment_service_id", "tenant_id"],
             ["appointment_services.id", "appointment_services.tenant_id"],
-            ondelete = "RESTRICT",
+            ondelete = "CASCADE",
             name = "fk_appointment_service_item_receipt"
         )
     )
@@ -88,7 +88,7 @@ class Receipt(BaseFields):
 
     appointment_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
     appointment: Mapped["Appointment"] = relationship(
-        back_populates = "receipt",
+        back_populates = "receipts",
         primaryjoin = "and_(Receipt.appointment_id == Appointment.id, Receipt.tenant_id == Appointment.tenant_id)",
         foreign_keys = [appointment_id])
     

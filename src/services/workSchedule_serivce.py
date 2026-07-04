@@ -51,3 +51,9 @@ class WorkScheduleService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
+    
+    async def delete(self, id: int) -> bool:
+        result = await self.uow.work_schedules.delete(id)
+        if result is None:
+            raise HTTPException(404, f"Рабочее время с ID {id} не найден")
+        return result

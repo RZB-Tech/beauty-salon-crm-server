@@ -4,7 +4,7 @@ from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
 from src.repository.appointment.appointment_model import Appointment, AppointmentRecords
 from src.repository.payment.payment_model import Receipt, ReceiptItem, ReceiptStatus
-from src.schemas.base import RequestAllObject
+from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema
 
 class ReceiptRepository(BaseRepository[Receipt]):
@@ -54,3 +54,12 @@ class ReceiptRepository(BaseRepository[Receipt]):
         result = await self.db.execute(stmt)
         items = result.scalars().all()
         return items, total_items
+    
+    async def get_by_appointment(self, appointmentID: int) -> list[Receipt]:
+        stmt = (
+            select(Receipt)
+            .where(Receipt.appointment_id == appointmentID)
+            .options(selectinload(Receipt.items),
+                     selectinload(Receipt.payments)))
+        result = await self.db.execute(stmt)
+        return result.scalars().all()

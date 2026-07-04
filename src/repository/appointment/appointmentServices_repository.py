@@ -1,4 +1,5 @@
-from sqlalchemy import func, select
+from sqlalchemy import Result, func, select
+from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
 from src.repository.appointment.appointment_model import AppointmentServices
@@ -11,6 +12,14 @@ class AppointmentServicesRepository(BaseRepository[AppointmentServices]):
         await self.db.flush()
         await self.db.refresh(appointmentService)
         return appointmentService
+    
+    async def get(self, id: int) -> AppointmentServices:
+        result: Result = await self.db.execute(
+            select(AppointmentServices)
+            .where(AppointmentServices.id == id)
+            .options(selectinload(AppointmentServices.appointment_record))
+        )
+        return result.scalar_one_or_none()
     
     async def get_by_ids(self, ids: list[int]) -> list[AppointmentServices]:
         stmt = (

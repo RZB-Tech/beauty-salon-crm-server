@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: db166573f7e5
+Revision ID: d743399d4544
 Revises: 
-Create Date: 2026-07-04 17:20:49.855083
+Create Date: 2026-07-05 00:05:15.390184
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = 'db166573f7e5'
+revision: str = 'd743399d4544'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -479,7 +479,7 @@ def upgrade() -> None:
     sa.Column('created_by', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.CheckConstraint('(material_id IS NOT NULL AND appointment_service_id IS NULL) OR (material_id IS NULL AND appointment_service_id IS NOT NULL)', name='chk_receipt_item_exclusive_source'),
-    sa.ForeignKeyConstraint(['appointment_service_id', 'tenant_id'], ['appointment_services.id', 'appointment_services.tenant_id'], name='fk_appointment_service_item_receipt', ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['appointment_service_id', 'tenant_id'], ['appointment_services.id', 'appointment_services.tenant_id'], name='fk_appointment_service_item_receipt', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['created_by'], ['staffs.id'], name='fk_created_by_staff', use_alter=True),
     sa.ForeignKeyConstraint(['material_id', 'tenant_id'], ['materials.id', 'materials.tenant_id'], name='fk_material_items_receipt', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['receipt_id', 'tenant_id'], ['receipts.id', 'receipts.tenant_id'], name='fk_receipt_items_receipt', ondelete='CASCADE'),

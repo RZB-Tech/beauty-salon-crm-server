@@ -4,6 +4,7 @@ from src.schemas.appointment.create import AppointmentCreateSchema
 from src.schemas.appointment.response import AppointmentResponseSchema
 from src.schemas.appointment.update import AppointmentUpdateSchema
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
+from src.schemas.payment.response import ReceiptResponseSchema
 from src.services.appointment_service import AppointmentService
 
 router = APIRouter()
@@ -26,7 +27,6 @@ async def create(data: AppointmentCreateSchema,
 )
 async def update(data: AppointmentUpdateSchema,
                 appointmentService: AppointmentService = Depends(get_appointment_service)):
-    print(data)
     return await appointmentService.update(data)
 
 @router.post(
@@ -65,10 +65,18 @@ async def cancel(id: int,
         appointmentService: AppointmentService = Depends(get_appointment_service)):
     return await appointmentService.cancel(id)
 
-# @router.delete(
-#     "/{id}",
-#     status_code = status.HTTP_204_NO_CONTENT
-# )
-# async def delete(id: int,
-#                  appointmentService: AppointmentService = Depends(get_appointment_service)):
-#     return await appointmentService.delete(id)
+@router.delete(
+    "/{id}",
+    status_code = 204
+)
+async def delete(id: int,
+                 appointmentService: AppointmentService = Depends(get_appointment_service)):
+    return await appointmentService.delete(id)
+
+@router.get(
+    "/{id}/receipts", 
+    status_code = 200, 
+    response_model = list[ReceiptResponseSchema])
+async def get_receipts(id: int,
+                       appointmentService: AppointmentService = Depends(get_appointment_service)):
+    return await appointmentService.get_receipts(id)

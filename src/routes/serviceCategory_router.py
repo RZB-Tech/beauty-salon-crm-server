@@ -48,15 +48,6 @@ async def get_all(params: RequestAllObject,
 async def get(id: int, categoryService: ServiceCategoryService = Depends(get_category_service)):
     return await categoryService.get(id)
 
-@router.post(
-    "/{id}/archive",
-    status_code = 200,
-    response_model = ServiceCategoryResponseSchema
-)
-async def archive(id: int, categoryService: ServiceCategoryService = Depends(get_category_service)):
-    return await categoryService.archive(id)
-
-
 @router.delete(
     "/{id}",
     status_code = 204

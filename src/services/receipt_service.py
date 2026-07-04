@@ -167,8 +167,8 @@ class ReceiptService():
                 await self.uow.clients.updateDeposit(client, new_deposit_balance)
 
         # cancel payments and payrolls
-        if receipt.appointment_id:
-            stmt = await self.db.execute(
+        if receipt:
+            stmt = await self.uow.db.execute(
                 select(Payroll)
                 .where( 
                     Payroll.appointment_id == receipt.appointment_id,
@@ -185,7 +185,7 @@ class ReceiptService():
                 payment.cancelled = True
 
         # return used materials to stock
-        if receipt.receipt_type == ReceiptType.DIRECT:
+        if receipt.receipt_type == ReceiptType.DIRECT_SALE:
             for receiptItem in receipt.items:
                 material = await self.uow.materials.get(receiptItem.material_id)
                 if not material: continue
@@ -199,6 +199,7 @@ class ReceiptService():
         receipt.change_amount = 0
         receipt.change_to_deposit = False
 
+        # cancel all related transcations
         transactions = await self.uow.transactions.get_by_receipt(receipt.id)
         for transaction in transactions: transaction.cancelled = True
             
@@ -206,7 +207,7 @@ class ReceiptService():
     
     async def get(self, id: int) -> Receipt:
         result = await self.uow.receipts.get(id)
-        if result is None: raise HTTPException(404, f"Чек с ID {id} не найден")
+        if result is None: raise HTTPException(404)
         return result
 
     async def get_many(self, ids: list[int]) -> list[Receipt]:

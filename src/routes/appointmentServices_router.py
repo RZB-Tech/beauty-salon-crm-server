@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, status
 from src.core.dependencies.uow import  make_service_dependency
 from src.schemas.appointment.create import AppointmentServicesCreateSchema
-from src.schemas.appointment.response import AppointmentServicesResponseSchema
+from src.schemas.appointment.response import AppointmentResponseSchema, AppointmentServicesResponseSchema
+from src.schemas.appointment.update import AppointmentServiceUpdateSchema
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.services.appointmentServices_service import AppointmentServicesService
 
@@ -11,51 +12,53 @@ get_appointment_services_service = make_service_dependency(AppointmentServicesSe
 
 @router.post(
     "", 
-    response_model=AppointmentServicesResponseSchema, 
-    status_code=status.HTTP_201_CREATED
+    response_model=AppointmentResponseSchema, 
+    status_code = 201
 )
 async def create(data: AppointmentServicesCreateSchema,
                  appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):
     return await appointmentServicesService.create(data)
 
-# @router.patch(
-#     "/",
-#     response_model=ClientResponseSchema, 
+@router.patch(
+    "",
+    response_model=AppointmentResponseSchema, 
+    status_code = 200
+)
+async def update(data: AppointmentServiceUpdateSchema,
+    appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):
+    return await appointmentServicesService.update(data)
+
+# @router.get(
+#     "",
+#     response_model=PaginatedResponseSchema[AppointmentServicesResponseSchema], 
 #     status_code=status.HTTP_200_OK
 # )
-# async def update(data: ClientUpdateSchema):
-#     return await ClientService.update(data)
+# async def get_all(params: RequestAllObject = Depends(),
+#                  appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):
+#     return await appointmentServicesService.get_all(params)
 
-@router.get(
-    "",
-    response_model=PaginatedResponseSchema[AppointmentServicesResponseSchema], 
-    status_code=status.HTTP_200_OK
-)
-async def get_all(params: RequestAllObject = Depends(),
-                 appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):
-    return await appointmentServicesService.get_all(params)
+# @router.get(
+#     "/{id}",
+#     response_model=AppointmentServicesResponseSchema, 
+#     status_code=status.HTTP_200_OK
+# )
+# async def get(id: int,
+#                  appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):
+#     return await appointmentServicesService.get(id)
 
-@router.get(
-    "/{id}",
-    response_model=AppointmentServicesResponseSchema, 
-    status_code=status.HTTP_200_OK
-)
-async def get(id: int,
-                 appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):
-    return await appointmentServicesService.get(id)
-
-@router.post(
-    "/get-many",
-    response_model=list[AppointmentServicesResponseSchema], 
-    status_code=status.HTTP_200_OK
-)
-async def get_many(data: list[int],
-                 appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):
-    return await appointmentServicesService.get_many(data)
+# @router.post(
+#     "/get-many",
+#     response_model=list[AppointmentServicesResponseSchema], 
+#     status_code=status.HTTP_200_OK
+# )
+# async def get_many(data: list[int],
+#                  appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):
+#     return await appointmentServicesService.get_many(data)
 
 @router.delete(
     "/{id}",
-    status_code = status.HTTP_204_NO_CONTENT
+    status_code = 200,
+    response_model = AppointmentResponseSchema
 )
 async def delete(id: int,
                  appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):

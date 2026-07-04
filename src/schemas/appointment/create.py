@@ -1,5 +1,6 @@
 from typing import Self
 
+from fastapi import HTTPException
 from pydantic import BaseModel, Field, field_validator, model_validator
 from datetime import datetime
 
@@ -9,13 +10,17 @@ class AppointmentServicesCreateSchema(BaseModel):
     material_id: int | None = Field(default = None, ge = 1)
     quantity: int = Field(default = 1, ge = 1)
     price: int | None = Field(None, ge = 1)
-    price_changed_reason: str | None = None
+    price_changed_reason: str | None = Field(None, min_length = 5)
     notes: str | None = None
 
     @model_validator(mode = "after")
     def check_service_or_material(self) -> Self:
         if self.service_id is None and self.material_id is None:
-            raise ValueError("Either 'service_id' or 'material_id' has to be provided")
+            raise HTTPException(400, "Необходимо указать либо Услугу либо Товар")
+
+        if self.service_id is not None and self.material_id is not None:
+            raise HTTPException(400, "В одном запросе можно указывать либо Услугу либо Товар")
+        
         return self
 
 class AppointmentServicesCreateOptionalSchema(AppointmentServicesCreateSchema):
@@ -24,7 +29,7 @@ class AppointmentServicesCreateOptionalSchema(AppointmentServicesCreateSchema):
 class AppointmentRecordsCreateSchema(BaseModel):
     appointment_id: int = Field(ge = 1)
     employee_id: int = Field(ge = 1)
-    services: list[AppointmentServicesCreateSchema]
+    services: list[AppointmentServicesCreateOptionalSchema]
 
 class AppointmentRecordsCreateOptionalSchema(AppointmentRecordsCreateSchema):
     appointment_id: None = None

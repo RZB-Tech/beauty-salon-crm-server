@@ -3,6 +3,7 @@ from fastapi import HTTPException, status
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import Appointment, AppointmentStatus
+from src.repository.payment.payment_model import Receipt
 from src.schemas.appointment.create import AppointmentCreateSchema
 from src.schemas.appointment.update import AppointmentUpdateSchema
 from src.schemas.base import RequestAllObject
@@ -131,16 +132,18 @@ class AppointmentService():
         if appointment.paid:
             raise HTTPException(
                 status_code = 400,
-                detail = f"Нельзя отменить оплаченое посещение. Сначало отмените оплату и уже после само посещение"
+                detail = f"Нельзя отменить оплаченое посещение. Сначало отмените чек и уже после само посещение"
             )
         
         return await self.uow.appointments.cancel(appointment)
 
     async def delete(self, id: int) -> bool:
-        result = await self.uow.appointments.delete(id)
-        if not result:
-            raise HTTPException(
-                status_code = 404,
-                detail = f"Посещение с ID {id} не найден"
-            )
+        check = await self.uow.appointments.get(id)
+        if check is None: raise HTTPException(404)
+        if not check.archived: raise HTTPException(400, "Прежде чем удалить объект, необходимо его сначало заархировать.")
+        await self.uow.appointments.delete(id)
         return True
+    
+    @require_exists("appointments")
+    async def get_receipts(self, id: int) -> list[Receipt]:
+        return await self.uow.receipts.get_by_appointment(id)

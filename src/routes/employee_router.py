@@ -33,14 +33,14 @@ async def get_all(params: RequestAllObject,
     employeeService: EmployeeService = Depends(get_employee_service)):
     return await employeeService.get_all(params)
 
-@router.post(
-    "/get-many",
-    response_model=list[EmployeeResponseBase], 
-    status_code=status.HTTP_200_OK
-)
-async def get_many(data: list[int],
-    employeeService: EmployeeService = Depends(get_employee_service)):
-    return await employeeService.get_many(data)
+# @router.post(
+#     "/get-many",
+#     response_model=list[EmployeeResponseBase], 
+#     status_code=status.HTTP_200_OK
+# )
+# async def get_many(data: list[int],
+#     employeeService: EmployeeService = Depends(get_employee_service)):
+#     return await employeeService.get_many(data)
 
 @router.get(
     "/{id}",
