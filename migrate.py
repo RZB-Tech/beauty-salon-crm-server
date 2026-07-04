@@ -5,7 +5,7 @@ import subprocess
 import os
 from faker import Faker
 import random
-from datetime import date, time, timedelta
+from datetime import date, time, timedelta, timezone
 
 from src.database.session import SessionLocal
 from src.repository.client.client_model import Client, Sex
@@ -256,6 +256,8 @@ async def seed_materials(count: int = 100) -> None:
         session.add_all(materials)
         await session.commit()
         
+UZT = timezone(timedelta(hours = 5))
+
 async def seed_work_schedules() -> None:
     print("Creating employee work schedules...")
 
@@ -289,11 +291,13 @@ async def seed_work_schedules() -> None:
                 start_time = time(
                     hour=start_hour,
                     minute=0,
+                    tzinfo = UZT
                 )
 
                 end_time = time(
                     hour=start_hour + 8,
                     minute=0,
+                    tzinfo = UZT
                 )
 
                 schedules.append(

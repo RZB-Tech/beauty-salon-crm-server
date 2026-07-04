@@ -19,7 +19,7 @@ class ServiceCategoryService():
     
     async def update(self, data: ServiceCategoryUpdateSchema) -> ServiceCategory:
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
-        result = await self.uow.serviceCategory.update(data, **dataDict)
+        result = await self.uow.serviceCategory.update(data.id, **dataDict)
         if result is None:
             raise HTTPException(
                 status_code = 404,
@@ -52,3 +52,5 @@ class ServiceCategoryService():
             "totalPages": total_pages
         }
     
+    async def delete(self, id: int) -> bool:
+        return await self.uow.serviceCategory.delete(id)

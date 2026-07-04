@@ -6,4 +6,5 @@ class PayrollResponseSchema(BaseResponseSchema):
     amount: int
     type: PayrollType
     notes: str | None = None
+    payout_id: int | None = None
     appointment_id: int | None = None

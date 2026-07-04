@@ -13,7 +13,6 @@ class ClientNestedResponseSchema(BaseResponseSchema):
 class EmployeeNestedResponseSchema(BaseResponseSchema):
     firstname: str
     lastname: str | None = None
-    specialization: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -39,8 +38,7 @@ class AppointmentRecordsResponseSchema(BaseResponseSchema):
     services: list[AppointmentServicesResponseSchema]
 
 class AppointmentResponseSchema(BaseResponseSchema):
-    client_id: int
-    client: ClientNestedResponseSchema | None = None
+    client: ClientNestedResponseSchema
     start_time_est: datetime
     end_time_est: datetime
     status: AppointmentStatus

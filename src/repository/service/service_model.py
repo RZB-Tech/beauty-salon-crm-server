@@ -5,13 +5,13 @@ from sqlalchemy import (
     Index,
     Integer,
     String,
-    ForeignKey,
     BigInteger,
     UniqueConstraint,
     func,
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database.base import BaseFields
+from src.repository.employee.employee_model import EmployeeServices
 
 if TYPE_CHECKING:
     from src.repository.employee.employee_model import Employee
@@ -21,7 +21,9 @@ class ServiceCategory(BaseFields):
     name: Mapped[str] = mapped_column(String(255))
 
     services: Mapped[list["Service"]] = relationship(
-        back_populates="category"
+        back_populates="category",
+        primaryjoin="and_(Service.category_id == ServiceCategory.id, Service.tenant_id == ServiceCategory.tenant_id)",
+        foreign_keys="[Service.category_id]"
     )
 
     __table_args__ = (
@@ -44,15 +46,20 @@ class Service(BaseFields):
     
     category_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
     category: Mapped["ServiceCategory"] = relationship(
-        back_populates="services"
+        back_populates="services",
+        primaryjoin="and_(Service.category_id == ServiceCategory.id, Service.tenant_id == ServiceCategory.tenant_id)",
+        foreign_keys=[category_id]
     )
 
     employees: Mapped[list["Employee"]] = relationship(
-        secondary="employee_services",
+        secondary = EmployeeServices.__table__,
         back_populates="services",
+        primaryjoin = "and_(Service.id == foreign(employee_services.c.service_id), Service.tenant_id == foreign(employee_services.c.tenant_id))",
+        secondaryjoin = "and_(Employee.id == foreign(employee_services.c.employee_id), Employee.tenant_id == foreign(employee_services.c.tenant_id))"
     )
 
     __table_args__ = (
+        UniqueConstraint("id", "tenant_id", name = "uq_service_id_tenant"),
         Index(
             "uq_service_name_lower", 
             func.lower(name),
@@ -62,7 +69,7 @@ class Service(BaseFields):
         ForeignKeyConstraint(
             ["category_id", "tenant_id"],
             ["service_categories.id", "service_categories.tenant_id"],
-            ondelete="RESTRICT",
+            ondelete="SET NULL (category_id)",
             name="fk_service_category_tenant"
         ),
     )

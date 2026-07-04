@@ -6,8 +6,10 @@ from sqlalchemy import (
     CheckConstraint,
     ForeignKey,
     Enum as SQLEnum,
+    ForeignKeyConstraint,
     Integer,
-    Text
+    Text,
+    UniqueConstraint
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from src.database.base import BaseFields
@@ -37,8 +39,17 @@ class PayoutMethod(Enum):
 class Payout(BaseFields):
     __tablename__ = "payouts"
 
-    employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id",
-                                            ondelete = "CASCADE"))
+    employee_id: Mapped[int] = mapped_column(Integer)
+    payrolls: Mapped[list["Payroll"]] = relationship(
+        back_populates = "payout",
+        primaryjoin = "and_(Payout.id == Payroll.payout_id, Payout.tenant_id == Payroll.tenant_id)",
+        foreign_keys = "[Payroll.payout_id]")
+    transactions: Mapped[list["Transaction"]] = relationship(
+        back_populates = "payout",
+        primaryjoin = "and_(Payout.id == Transaction.payout_id, Payout.tenant_id == Transaction.tenant_id)",
+        foreign_keys = "[Transaction.payout_id]")
+
+    amount: Mapped[int | None] = mapped_column(Integer, nullable = True)
     type: Mapped[PayoutType] = mapped_column(SQLEnum(
         PayoutType, values_callable = lambda e: [m.value for m in e]
     ))
@@ -46,8 +57,6 @@ class Payout(BaseFields):
         PayoutMethod, values_callable = lambda e: [m.value for m in e]
     ))
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
-    payrolls: Mapped[list["Payroll"]] = relationship(back_populates = "payout")
-    transactions: Mapped[list["Transaction"]] = relationship(back_populates = "payout")
     cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
     @property
@@ -58,32 +67,62 @@ class Payout(BaseFields):
             if payroll.type == PayrollType.PENALTY:
                 total -= payroll.amount
             else: total += payroll.amount
+        if self.amount: total += self.amount
         return total
+    
+    __table_args__ = (
+        UniqueConstraint("id", "tenant_id", name = "uq_payout_tenant"),
+        ForeignKeyConstraint(
+            ["employee_id", "tenant_id"],
+            ["employees.id", "employees.tenant_id"],
+            ondelete = "CASCADE",
+            name = "fk_payout_employee"
+        ),
+    )
     
     ALLOWER_FILTERS = {"employee_id", "type", "method", "cancelled", "archived"}
 
 class Payroll(BaseFields):
     __tablename__ = "payrolls"
 
-    employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id", ondelete = "CASCADE"))
+    employee_id: Mapped[int] = mapped_column(Integer)
+    payout_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
+    payout: Mapped["Payout"] = relationship(
+        back_populates = "payrolls",
+        primaryjoin = "and_(Payroll.payout_id == Payout.id, Payroll.tenant_id == Payout.tenant_id)",
+        foreign_keys = [payout_id])
+    appointment_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
 
     amount: Mapped[int] = mapped_column(Integer, default = 0)
     type: Mapped[PayrollType] = mapped_column(SQLEnum(
         PayrollType, values_callable = lambda e: [m.value for m in e]))
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
 
-    appointment_id: Mapped[int | None] = mapped_column(ForeignKey("appointments.id"))
-
-    payout_id: Mapped[int | None] = mapped_column(
-        ForeignKey("payouts.id", ondelete = "SET NULL"), 
-        nullable = True)
-    payout: Mapped["Payout"] = relationship(back_populates = "payrolls")
     status: Mapped[PayrollStatus] = mapped_column(SQLEnum(
         PayrollStatus, values_callable = lambda e: [m.value for m in e]), default = PayrollStatus.PENDING)
     auto_genereted: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
     __table_args__ = (
+        UniqueConstraint("id", "tenant_id", name = "uq_payroll_tenant"),
         CheckConstraint("amount >= 1", name = "ck_payorll_amount_non_negative"),
+        ForeignKeyConstraint(
+            ["employee_id", "tenant_id"],
+            ["employees.id", "employees.tenant_id"],
+            ondelete = "CASCADE",
+            name = "fk_payroll_employee"
+        ),
+        ForeignKeyConstraint(
+            ["payout_id", "tenant_id"],
+            ["payouts.id", "payouts.tenant_id"],
+            ondelete = "CASCADE",
+            name = "fk_payroll_payout"
+        ),
+        ForeignKeyConstraint(
+            ["appointment_id", "tenant_id"],
+            ["appointments.id", "appointments.tenant_id"],
+            ondelete = "CASCADE",
+            name = "fk_payroll_appointment"
+        )
     )
 
     @validates("amount")

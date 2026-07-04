@@ -1,11 +1,5 @@
-from typing import Annotated, Self
-
-from fastapi import HTTPException
-from pydantic import BaseModel, ConfigDict, Field, model_validator
-
+from pydantic import BaseModel, ConfigDict, Field
 from src.repository.payroll.payroll_model import PayoutType
-from datetime import date
-
 from src.schemas.payroll.response import PayrollResponseSchema
 
 class PayoutResponseSchema(BaseModel):

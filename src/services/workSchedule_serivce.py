@@ -19,7 +19,7 @@ class WorkScheduleService():
 
     async def update(self, data: WorkScheduleUpdateSchema) -> WorkSchedule:
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
-        result = await self.uow.work_schedules.update(data, **dataDict)
+        result = await self.uow.work_schedules.update(data.id, **dataDict)
         if result is None:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,

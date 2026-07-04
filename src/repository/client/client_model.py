@@ -1,11 +1,11 @@
 from __future__ import annotations
 from enum import Enum
-from typing import TYPE_CHECKING
 from sqlalchemy import (
     String,
     Integer,
     Date,
-    Text
+    Text,
+    UniqueConstraint
 )
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column
@@ -27,5 +27,10 @@ class Client(BaseFields):
     sex: Mapped[Sex] = mapped_column(SQLEnum(Sex, values_callable = lambda e: [m.value for m in e]))
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
     deposit: Mapped[int] = mapped_column(Integer, default = 0)
+
+    __table_args__ = (
+        UniqueConstraint("id", "tenant_id", name = "uq_client_tenant"),
+        UniqueConstraint("phone", "tenant_id", name = "uq_client_phone_tenant"),
+    )
 
     ALLOWED_FILTERS = {"firstname", "lastname", "middlename", "phone", "birth_date", "sex", "archived"}

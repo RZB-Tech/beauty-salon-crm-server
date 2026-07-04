@@ -11,7 +11,7 @@ class EmployeeAbsenceService():
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
     
-    @require_exists("employees")
+    @require_exists("employees", target_param = "employee_id")
     async def create(self, data: AbsenceCreateSchema) -> EmployeeAbsence:
         absenceData = data.model_dump()
         newObject = EmployeeAbsence(**absenceData)
@@ -19,7 +19,14 @@ class EmployeeAbsenceService():
 
     @require_exists("absences")
     async def update(self, data: AbsenceUpdateSchema) -> EmployeeAbsence:
-        return await self.uow.absences.update(data)
+        dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
+        result = await self.uow.absences.update(data.id, **dataDict)
+        if result is None:
+            raise HTTPException(
+                status_code = status.HTTP_404_NOT_FOUND,
+                detail = f"Отгул с ID {data.id} не найден"
+            )
+        return result
     
     async def get(self, id: int) -> EmployeeAbsence:
         result = await self.uow.absences.get(id)

@@ -59,7 +59,7 @@ class EmployeeService():
         if result is None:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Сотрудник с ID {id} не найден"
+                detail = f"Сотрудник с ID {data.id} не найден"
             )
         return result
     

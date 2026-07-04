@@ -50,10 +50,7 @@ async def get(id: int,
                 specializationService: SpecializationService = Depends(get_specialization_service)):
     return await specializationService.get(id)
 
-# @router.delete(
-#     "/{id}",
-#     status_code = status.HTTP_204_NO_CONTENT
-# )
-# async def delete(id: int,
-#                 specializationService: SpecializationService = Depends(get_specialization_service)):
-#     return await specializationService.delete(id)
+@router.delete("/{id}", status_code = 204)
+async def delete(id: int,
+                specializationService: SpecializationService = Depends(get_specialization_service)):
+    return await specializationService.delete(id)

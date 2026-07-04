@@ -60,6 +60,9 @@ class ServiceService():
             "totalPages": total_pages
         }
     
+    async def delete(self, id: int) -> bool:
+        return await self.uow.services.delete(id)
+
     async def import_excel(
         self, 
         file: UploadFile,

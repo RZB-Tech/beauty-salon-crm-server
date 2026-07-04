@@ -17,7 +17,7 @@ class SpecializationService():
     
     async def update(self, data: SpecializationUpdateSchema) -> Specialization:
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
-        result = await self.uow.specializations.update(data, **dataDict)
+        result = await self.uow.specializations.update(data.id, **dataDict)
         if result is None:
             raise HTTPException(
                 status_code = 404,
@@ -49,4 +49,7 @@ class SpecializationService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
+    
+    async def delete(self, id: int) -> bool:
+        return await self.uow.specializations.delete(id)
     

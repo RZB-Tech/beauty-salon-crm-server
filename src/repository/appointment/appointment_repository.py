@@ -41,8 +41,16 @@ class AppointmentRepository(BaseRepository[Appointment]):
         stmt = (
             select(Appointment)
             .where(Appointment.id == db_appointment.id)
-            .options(selectinload(Appointment.records)
-                     .selectinload(AppointmentRecords.services))
+            .options(
+                selectinload(Appointment.client),
+                selectinload(Appointment.records).selectinload(AppointmentRecords.employee),
+                selectinload(Appointment.records)
+                    .selectinload(AppointmentRecords.services)
+                    .selectinload(AppointmentServices.service),
+                selectinload(Appointment.records)
+                    .selectinload(AppointmentRecords.services)
+                    .selectinload(AppointmentServices.material)
+            )
         )
         result = await self.db.execute(stmt)
         return result.scalar()
@@ -51,8 +59,16 @@ class AppointmentRepository(BaseRepository[Appointment]):
         stmt = (
             select(Appointment)
             .where(Appointment.id.in_(ids))
-            .options(selectinload(Appointment.records)
-                     .selectinload(AppointmentRecords.services))
+            .options(
+                selectinload(Appointment.client),
+                selectinload(Appointment.records).selectinload(AppointmentRecords.employee),
+                selectinload(Appointment.records)
+                    .selectinload(AppointmentRecords.services)
+                    .selectinload(AppointmentServices.service),
+                selectinload(Appointment.records)
+                    .selectinload(AppointmentRecords.services)
+                    .selectinload(AppointmentServices.material)
+            )
         )
         result = await self.db.execute(stmt)
         return result.scalars().all()
@@ -61,8 +77,16 @@ class AppointmentRepository(BaseRepository[Appointment]):
         stmt = (
             select(Appointment)
             .where(Appointment.id == id)
-            .options(selectinload(Appointment.records)
-                     .selectinload(AppointmentRecords.services))
+            .options(
+                selectinload(Appointment.client),
+                selectinload(Appointment.records).selectinload(AppointmentRecords.employee),
+                selectinload(Appointment.records)
+                    .selectinload(AppointmentRecords.services)
+                    .selectinload(AppointmentServices.service),
+                selectinload(Appointment.records)
+                    .selectinload(AppointmentRecords.services)
+                    .selectinload(AppointmentServices.material)
+            )
         )
 
         result = await self.db.execute(stmt)
@@ -76,8 +100,16 @@ class AppointmentRepository(BaseRepository[Appointment]):
         total_items = await self.db.scalar(count_stmt) or 0
         offset_value = (data.page - 1) * data.pageSize
         stmt = (stmt
-                .options(selectinload(Appointment.records)
-                     .selectinload(AppointmentRecords.services))
+                .options(
+                    selectinload(Appointment.client),
+                    selectinload(Appointment.records).selectinload(AppointmentRecords.employee),
+                    selectinload(Appointment.records)
+                        .selectinload(AppointmentRecords.services)
+                        .selectinload(AppointmentServices.service),
+                    selectinload(Appointment.records)
+                        .selectinload(AppointmentRecords.services)
+                        .selectinload(AppointmentServices.material)
+                )
                 .order_by(Appointment.id.desc())
                 .offset(offset_value)
                 .limit(data.pageSize))
@@ -98,7 +130,7 @@ class AppointmentRepository(BaseRepository[Appointment]):
                 Appointment.end_time_est < end
             )
         result = await self.db.execute(stmt)
-        return result is not None
+        return result.first() is not None
     
     async def get_by_client(self, data: PaginationSchema, id: int) -> tuple[list[Appointment], int]:
         count_stmt = (select(func.count())
@@ -111,8 +143,16 @@ class AppointmentRepository(BaseRepository[Appointment]):
             select(Appointment)
             .where(Appointment.client_id == id)
             .order_by(Appointment.id.desc())
-            .options(selectinload(Appointment.records)
-                     .selectinload(AppointmentRecords.services))
+            .options(
+                selectinload(Appointment.client),
+                selectinload(Appointment.records).selectinload(AppointmentRecords.employee),
+                selectinload(Appointment.records)
+                    .selectinload(AppointmentRecords.services)
+                    .selectinload(AppointmentServices.service),
+                selectinload(Appointment.records)
+                    .selectinload(AppointmentRecords.services)
+                    .selectinload(AppointmentServices.material)
+            )
             .offset(offset_value)
             .limit(data.pageSize)
         )
@@ -139,8 +179,14 @@ class AppointmentRepository(BaseRepository[Appointment]):
             baseStmt
             .order_by(Appointment.id.desc())
             .options(
+                selectinload(Appointment.client),
+                selectinload(Appointment.records).selectinload(AppointmentRecords.employee),
                 selectinload(Appointment.records)
-                .selectinload(AppointmentRecords.services)
+                    .selectinload(AppointmentRecords.services)
+                    .selectinload(AppointmentServices.service),
+                selectinload(Appointment.records)
+                    .selectinload(AppointmentRecords.services)
+                    .selectinload(AppointmentServices.material)
             )
             .offset(offset_value)
             .limit(data.pageSize)

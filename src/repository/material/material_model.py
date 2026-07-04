@@ -1,10 +1,9 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
 from sqlalchemy import (
     Index,
     String,
-    Boolean,
     Integer,Text,
+    UniqueConstraint,
     func
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -37,9 +36,11 @@ class Material(BaseFields):
     sell_price: Mapped[int] = mapped_column(Integer, default = 0)
 
     __table_args__ = (
+        UniqueConstraint("id", "tenant_id", name = "uq_material_tenant"),
         Index(
-            "uq_article_name_lower", 
+            "uq_material_article_name_lower", 
             func.lower(article),
+            func.lower(name),
             "tenant_id",
             unique=True
         ),

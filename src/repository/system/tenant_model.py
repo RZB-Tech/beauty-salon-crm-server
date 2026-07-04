@@ -45,7 +45,7 @@ class TenantSubscriptions(Base):
     __tablename__ = "tenant_subscriptions"
 
     id: Mapped[int] = mapped_column(primary_key = True, autoincrement = True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id"))
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete = "cascade"))
     plan_id: Mapped[int] = mapped_column(ForeignKey("plans.id"))
     status: Mapped[TenantSubscriptionStatus] = mapped_column(SQLEnum(
         TenantSubscriptionStatus, values_callable = lambda e: [m.value for m in e]))

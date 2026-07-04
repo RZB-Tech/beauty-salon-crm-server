@@ -3,9 +3,10 @@ from datetime import datetime
 from enum import Enum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
+    ForeignKeyConstraint,
     DateTime,
+    Integer,
     String,
-    ForeignKey,
     Text,
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -19,7 +20,7 @@ class NotificationType(Enum):
 class Notification(BaseFields):
     __tablename__ = "notifications"
 
-    client_id: Mapped[int | None] = mapped_column(ForeignKey("clients.id"), nullable = True)
+    client_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
     title: Mapped[str | None] = mapped_column(String(50), nullable = True)
     body: Mapped[str] = mapped_column(Text)
 
@@ -28,5 +29,14 @@ class Notification(BaseFields):
 
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone = True))
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone = True), nullable = True, default = None)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["client_id", "tenant_id"],
+            ["clients.id", "clients.tenant_id"],
+            ondelete = "CASCADE",
+            name = "fk_notifications_client_tenant"
+        ),
+    )
 
     ALLOWED_FILTERS = {"client_id", "type", "schedulet_at", "delivered_at", "archived"}

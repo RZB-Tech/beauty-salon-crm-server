@@ -23,7 +23,7 @@ class PayrollService():
         if payroll.payout_id: raise HTTPException(400, "Нельзя изменить выплаченную заработную плату / коммисию / бонусы, сначало отмените связанную выплату")
 
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
-        result = await self.uow.payrolls.update(data, **dataDict)
+        result = await self.uow.payrolls.update(data.id, **dataDict)
         if not result:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,

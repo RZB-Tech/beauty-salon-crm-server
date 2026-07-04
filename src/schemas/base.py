@@ -26,14 +26,12 @@ class PaginationSchema(BaseModel):
     )
 
 class RequestAllObject(PaginationSchema):
-    # filters: dict[str, Any] | None = None
     filters: dict[str, Any] | None = {
         "archived": False
     }
 
 class BaseResponseSchema(BaseModel):
     id: int
-    tenant_id: int
     created_at: datetime
     updated_at: datetime
     created_by: int | None

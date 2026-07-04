@@ -59,7 +59,7 @@ async def archive(id: int, categoryService: ServiceCategoryService = Depends(get
 
 @router.delete(
     "/{id}",
-    status_code = 200
+    status_code = 204
 )
 async def delete(id: int, categoryService: ServiceCategoryService = Depends(get_category_service)):
     return await categoryService.delete(id)

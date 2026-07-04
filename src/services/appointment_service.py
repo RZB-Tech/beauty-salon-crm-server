@@ -8,6 +8,7 @@ from src.repository.appointment.appointment_model import Appointment, Appointmen
 from src.repository.employee.employee_model import Employee
 from src.repository.service.service_model import Service
 from src.schemas.appointment.create import AppointmentCreateSchema
+from src.schemas.appointment.response import AppointmentResponseSchema, ClientNestedResponseSchema
 from src.schemas.base import RequestAllObject
 
 class AppointmentService():
@@ -67,7 +68,7 @@ class AppointmentService():
                         )
                     
                     if service.price is None: service.price = serviceObj.price
-                    if service.price != serviceObj.price and (service.notes is None or len(service.notes.strip()) == 0):
+                    if service.price != serviceObj.price and (service.price_changed_reason is None or len(service.price_changed_reason.strip()) == 0):
                         raise HTTPException(
                             status_code = 400,
                             detail = f"Необходимо в комментариях указать причину изменения стоимости услуги"
@@ -90,48 +91,12 @@ class AppointmentService():
                             status_code = 400,
                             detail = f"Необходимо в комментариях указать причину изменения стоимости товара"
                         )
-        result = await self.uow.appointments.create(data)
-        return result
+        return await self.uow.appointments.create(data)
     
     async def get(self, id: int) -> Appointment:
         appointment = await self.uow.appointments.get(id)
         if appointment is None:
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Посещение с ID {id} не найден"
-            )
-        
-        client_id = appointment.client_id
-        employee_ids = { record.employee_id for record in appointment.records}
-        service_ids = {
-            srv.service_id
-            for record in appointment.records
-            for srv in record.services
-            if srv.service_id is not None
-        }
-
-        appointment.client = await self.uow.clients.get(client_id)
-
-        employees_map = {}
-        if employee_ids:
-            emp_stmt = select(Employee).where(Employee.id.in_(employee_ids))
-            emp_res = await self.uow.db.execute(emp_stmt)
-            employees_map = {emp.id: emp for emp in emp_res.scalars().all()}
-
-        services_map = {}
-        if service_ids:
-            srv_stmt = select(Service).where(Service.id.in_(service_ids))
-            srv_res = await self.uow.db.execute(srv_stmt)
-            services_map = {srv.id: srv for srv in srv_res.scalars().all()}
-
-        for record in appointment.records:
-            record.employee = employees_map.get(record.employee_id)
-            
-            for srv in record.services:
-                if srv.service_id:
-                    srv.service = services_map.get(srv.service_id)
-                else:
-                    srv.service = None
+            raise HTTPException(status_code = 404, detail = f"Посещение с ID {id} не найден")
         return appointment
     
     async def get_many(self, ids: list[int]) -> list[Appointment]:
@@ -139,57 +104,7 @@ class AppointmentService():
     
     async def get_all(self, data: RequestAllObject) -> dict:
         items, total_items = await self.uow.appointments.get_all(data)
-
-        if items:
-            all_client_ids = {i.client_id for i in items}
-            all_employee_ids = set()
-            all_service_ids = set()
-
-            for i in items:
-                for record in i.records:
-                    all_employee_ids.add(record.employee_id)
-                    for srv in record.services:
-                        if srv.service_id is not None:
-                            all_service_ids.add(srv.service_id)
-
-            clients_map = {}
-            if all_client_ids:
-                client_res = await self.uow.clients.get_by_ids(all_client_ids)
-                clients_map = {c.id: c for c in client_res}
-
-            employees_map = {}
-            if all_employee_ids:
-                emp_res = await self.uow.employees.get_by_ids(all_employee_ids)
-                employees_map = {e.id: e for e in emp_res}
-
-            services_map = {}
-            if all_service_ids:
-                srv_res = await self.uow.services.get_by_ids(all_service_ids)
-                services_map = {s.id: s for s in srv_res}
-
-            # 3. 🌟 Map data and compute totals in memory (Blazing fast!)
-            for i in items:
-                i.client = clients_map.get(i.client_id)
-                
-                appointment_total = 0  # Running total for this specific appointment
-                
-                for record in i.records:
-                    record.employee = employees_map.get(record.employee_id)
-                    
-                    for srv in record.services:
-                        if srv.service_id:
-                            srv.service = services_map.get(srv.service_id)
-                        else:
-                            srv.service = None
-                        
-                        # Accumulate the price multiplied by quantity
-                        appointment_total += (srv.price * srv.quantity)
-                
-                # Dynamically attach the final calculation onto the appointment object
-                i.total_price = appointment_total
-
         total_pages = math.ceil(total_items / data.pageSize) if data.pageSize > 0 else 0
-        
         return {
             "items": items,
             "page": data.page,
@@ -227,4 +142,4 @@ class AppointmentService():
                 status_code = 404,
                 detail = f"Посещение с ID {id} не найден"
             )
-        return result
+        return True

@@ -29,13 +29,13 @@ async def update(data: AbsenceUpdateSchema,
                  absenceService: EmployeeAbsenceService = Depends(get_absence_service)):
     return await absenceService.update(data)
 
-@router.get(
-    "",
-    response_model=PaginatedResponseSchema[AbsenceResponseSchema], 
-    status_code=status.HTTP_200_OK,
-    summary="Get all categories"
+@router.post(
+    "/get-all",
+    response_model = PaginatedResponseSchema[AbsenceResponseSchema], 
+    status_code = 200,
+    summary="Get all absences"
 )
-async def get_all(params: RequestAllObject = Depends(),
+async def get_all(params: RequestAllObject,
                  absenceService: EmployeeAbsenceService = Depends(get_absence_service)):
     return await absenceService.get_all(params)
 

@@ -8,9 +8,9 @@ from datetime import date
 
 class PayoutCreateSchema(BaseModel):
     employee_id: int = Field(..., ge = 1)
-    type: PayoutType
+    type: PayoutType | None = PayoutType.OTHER
     amount: int | None = Field(None, ge = 1)
-    method: PayoutMethod
+    method: PayoutMethod | None = PayoutMethod.CASH
     notes: str | None = None
     payrolls: list[Annotated[int, Field(ge = 1)]] | None = Field(None, min_length = 1)
     start_date: date | None = None
