@@ -1,14 +1,9 @@
 import math
-from multiprocessing.connection import Client
 from fastapi import HTTPException, status
-from sqlalchemy import select
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import Appointment, AppointmentStatus
-from src.repository.employee.employee_model import Employee
-from src.repository.service.service_model import Service
 from src.schemas.appointment.create import AppointmentCreateSchema
-from src.schemas.appointment.response import AppointmentResponseSchema, ClientNestedResponseSchema
 from src.schemas.base import RequestAllObject
 
 class AppointmentService():
