@@ -44,14 +44,14 @@ async def get(id: int,
                  appointmentRecordsService: AppointmentRecordsService = Depends(get_appointment_records_service)):
     return await appointmentRecordsService.get(id)
 
-@router.post(
-    "/get-many",
-    response_model=list[AppointmentRecordsResponseSchema], 
-    status_code=status.HTTP_200_OK
-)
-async def get_many(data: list[int],
-                 appointmentRecordsService: AppointmentRecordsService = Depends(get_appointment_records_service)):
-    return await appointmentRecordsService.get_many(data)
+# @router.post(
+#     "/get-many",
+#     response_model=list[AppointmentRecordsResponseSchema], 
+#     status_code=status.HTTP_200_OK
+# )
+# async def get_many(data: list[int],
+#                  appointmentRecordsService: AppointmentRecordsService = Depends(get_appointment_records_service)):
+#     return await appointmentRecordsService.get_many(data)
 
 # @router.delete(
 #     "/{id}",

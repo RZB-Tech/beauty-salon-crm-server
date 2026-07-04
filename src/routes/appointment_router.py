@@ -47,14 +47,14 @@ async def get(id: int,
                  appointmentService: AppointmentService = Depends(get_appointment_service)):
     return await appointmentService.get(id)
 
-@router.post(
-    "/get-many",
-    response_model=list[AppointmentResponseSchema], 
-    status_code=status.HTTP_200_OK
-)
-async def get_many(data: list[int],
-                 appointmentService: AppointmentService = Depends(get_appointment_service)):
-    return await appointmentService.get_many(data)
+# @router.post(
+#     "/get-many",
+#     response_model=list[AppointmentResponseSchema], 
+#     status_code=status.HTTP_200_OK
+# )
+# async def get_many(data: list[int],
+#                  appointmentService: AppointmentService = Depends(get_appointment_service)):
+#     return await appointmentService.get_many(data)
 
 @router.patch(
     "/{id}/cancel",
