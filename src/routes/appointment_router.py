@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status
 from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_service_dependency
 from src.schemas.appointment.create import AppointmentCreateSchema
 from src.schemas.appointment.response import AppointmentResponseSchema
+from src.schemas.appointment.update import AppointmentUpdateSchema
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.services.appointment_service import AppointmentService
 
@@ -17,6 +18,16 @@ get_appointment_service = make_service_dependency(AppointmentService)
 async def create(data: AppointmentCreateSchema,
                  appointmentService: AppointmentService = Depends(get_appointment_service)):
     return await appointmentService.create(data)
+
+@router.patch(
+    "",
+    response_model = AppointmentResponseSchema, 
+    status_code= 200
+)
+async def update(data: AppointmentUpdateSchema,
+                appointmentService: AppointmentService = Depends(get_appointment_service)):
+    print(data)
+    return await appointmentService.update(data)
 
 @router.post(
     "/get-all",

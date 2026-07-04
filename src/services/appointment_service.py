@@ -4,6 +4,7 @@ from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import Appointment, AppointmentStatus
 from src.schemas.appointment.create import AppointmentCreateSchema
+from src.schemas.appointment.update import AppointmentUpdateSchema
 from src.schemas.base import RequestAllObject
 
 class AppointmentService():
@@ -88,10 +89,15 @@ class AppointmentService():
                         )
         return await self.uow.appointments.create(data)
     
+    async def update(self, data: AppointmentUpdateSchema) -> Appointment:
+        dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
+        result = await self.uow.appointments.update(data.id, **dataDict)
+        if result is None: raise HTTPException(404, detail = f"Посещение с ID {data.id} не найден")
+        return result
+
     async def get(self, id: int) -> Appointment:
         appointment = await self.uow.appointments.get(id)
-        if appointment is None:
-            raise HTTPException(status_code = 404, detail = f"Посещение с ID {id} не найден")
+        if appointment is None: raise HTTPException(status_code = 404, detail = f"Посещение с ID {id} не найден")
         return appointment
     
     async def get_many(self, ids: list[int]) -> list[Appointment]:
