@@ -25,14 +25,20 @@ class ServiceService():
         return await self.uow.services.create(newService)
 
     async def update(self, data: ServiceUpdateSchema) -> Service:
+        service = await self.uow.services.get_with_employees(data.id)
+        if service is None: raise HTTPException(404, f"Услуга с ID {data.id} не найдена")
+
         if data.category_id:
             checkCategory = await self.uow.serviceCategory.get(data.category_id)
             if checkCategory is None: raise HTTPException(404, f"Категория с ID {data.category_id} не найден")
+            if checkCategory.archived: raise HTTPException(409, f"Нельзя привязать архивированный объект")
+
+        if data.archived: service.employees.clear()
 
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
         result = await self.uow.services.update(data.id, **dataDict)
 
-        if result is None: raise HTTPException(404, detail = f"Услуга с ID {id} не найдена")
+        if result is None: raise HTTPException(404, detail = f"Услуга с ID {data.id} не найдена")
         return result
     
     async def get(self, id: int) -> Service:

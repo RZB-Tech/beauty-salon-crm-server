@@ -15,6 +15,13 @@ class ServiceRepository(BaseRepository[Service]):
         await self.db.refresh(service)
         return service
     
+    async def get_with_employees(self, id: int) -> Service | None:
+        stmt = (select(Service)
+            .where(Service.id == id)
+            .options(selectinload(Service.employees)))
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()
+    
     async def get_by_ids(self, ids: list[int]) -> list[Service]:
         result = await self.db.execute(
             select(Service).where(Service.id.in_(ids))

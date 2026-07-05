@@ -5,7 +5,7 @@ from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import Appointment, AppointmentStatus
 from src.repository.payment.payment_model import Receipt
 from src.schemas.appointment.create import AppointmentCreateSchema
-from src.schemas.appointment.update import AppointmentUpdateSchema
+from src.schemas.appointment.update import AppointmentCancelSchema, AppointmentUpdateSchema
 from src.schemas.base import RequestAllObject
 
 class AppointmentService():
@@ -21,15 +21,15 @@ class AppointmentService():
         
         for record in (data.records or []):
             employee = await self.uow.employees.get(record.employee_id)
-            if not employee:
+            if employee is None:
                 raise HTTPException(
                     status_code = status.HTTP_404_NOT_FOUND,
                     detail = f"Employee with id {data.id} not found"
                 )
-            if not employee.active:
+            if not employee.active or employee.archived:
                 raise HTTPException(
                     status_code = status.HTTP_400_BAD_REQUEST,
-                    detail = f"Employee with id {data.id} is inactive"
+                    detail = f"Этого сотрудник {employee.firstname}, ID {employee.id} неактивен / архивирован"
                 )
             
             isWorking = await self.uow.work_schedules.is_employee_working(employee.id, data.start_time_est, data.end_time_est)
@@ -58,6 +58,9 @@ class AppointmentService():
                             detail = f"Service with id {data.id} not found"
                         )
                     
+                    if serviceObj.archived: 
+                        raise HTTPException(409, f"Нельзя использовать архивированную услуг {serviceObj.name}, ID {serviceObj.id}")
+                    
                     if serviceObj.id not in employeeAllowedServices:
                         raise HTTPException(
                             status_code = 400,
@@ -77,6 +80,9 @@ class AppointmentService():
                             status_code = 404,
                             detail = f"Service with id {data.id} not found"
                         )
+                    if materialObj.archived: 
+                        raise HTTPException(409, f"Нельзя использовать архивированную услуг {materialObj.name}, ID {materialObj.id}")
+                    
                     if service.quantity > materialObj.quantity:
                         raise HTTPException(
                             status_code = 400,
@@ -115,12 +121,12 @@ class AppointmentService():
             "totalPages": total_pages
         }
     
-    async def cancel(self, id: int) -> Appointment:
-        appointment = await self.uow.appointments.get(id)
+    async def cancel(self, data: AppointmentCancelSchema) -> Appointment:
+        appointment = await self.uow.appointments.get(data.id)
         if not appointment:
             raise HTTPException(
                 status_code = 404,
-                detail = f"Посещение с ID {id} не найден"
+                detail = f"Посещение с ID {data.id} не найден"
             )
         
         if appointment.status == AppointmentStatus.CANCELLED:
@@ -135,7 +141,7 @@ class AppointmentService():
                 detail = f"Нельзя отменить оплаченое посещение. Сначало отмените чек и уже после само посещение"
             )
         
-        return await self.uow.appointments.cancel(appointment)
+        return await self.uow.appointments.update(data.id, status = AppointmentStatus.CANCELLED, cancelled_reason = data.reason)
 
     async def delete(self, id: int) -> bool:
         check = await self.uow.appointments.get(id)

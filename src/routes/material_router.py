@@ -49,13 +49,13 @@ async def get(id: int,
                  materialService: MaterialService = Depends(get_material_service)):
     return await materialService.get(id)
 
-@router.delete(
-    "/{id}",
-    status_code = status.HTTP_204_NO_CONTENT
-)
-async def delete(id: int,
-                 materialService: MaterialService = Depends(get_material_service)):
-    return await materialService.delete(id)
+# @router.delete(
+#     "/{id}",
+#     status_code = status.HTTP_204_NO_CONTENT
+# )
+# async def delete(id: int,
+#                  materialService: MaterialService = Depends(get_material_service)):
+#     return await materialService.delete(id)
 
 @router.post(
     "/update-quantity",

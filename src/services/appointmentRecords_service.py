@@ -25,19 +25,16 @@ class AppointmentRecordsService():
         if any(receipt.status != ReceiptStatus.CANCELLED for receipt in receipts):
             raise HTTPException(400, "Необходимо сначало отменить активный чек для этого посещения")
 
-        material: Material | None = None
-        if data.material_id: material = await self.uow.materials.get(data.material_id)
-        if data.material_id and material is None: raise HTTPException(404, f"Товар с ID {data.material_id} не найден")
-
-        service: Service | None = None
-        if data.service_id: service = await self.uow.services.get(data.service_id)
-        if data.service_id and service is None: raise HTTPException(404, f"Услуга с ID {data.service_id}")
-
         employee = await self.uow.employees.get(data.employee_id)
         if not employee:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Employee with id {data.employee_id} not found"
+                detail = f"Сотрудник с ID {data.employee_id} не найден"
+            )
+        if not employee.active or employee.archived:
+            raise HTTPException(
+                status_code = status.HTTP_400_BAD_REQUEST,
+                detail = f"Этого сотрудник {employee.firstname}, ID {employee.id} неактивен / архивирован"
             )
             
         employeeAllowedServices = {i.id for i in employee.services}
@@ -49,6 +46,8 @@ class AppointmentRecordsService():
                         status_code = 404,
                         detail = f"Service with id {data.id} not found"
                     )
+                if serviceObj.archived: 
+                        raise HTTPException(409, f"Нельзя использовать архивированную услуг {serviceObj.name}, ID {serviceObj.id}")
                 
                 if serviceObj.id not in employeeAllowedServices:
                     raise HTTPException(
@@ -69,6 +68,8 @@ class AppointmentRecordsService():
                         status_code = 404,
                         detail = f"Service with id {data.id} not found"
                     )
+                if materialObj.archived: 
+                    raise HTTPException(409, f"Нельзя использовать архивированную услуг {materialObj.name}, ID {materialObj.id}")
                 if service.quantity > materialObj.quantity:
                     raise HTTPException(
                         status_code = 400,

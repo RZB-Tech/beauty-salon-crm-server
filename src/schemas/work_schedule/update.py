@@ -9,7 +9,6 @@ class WorkScheduleUpdateSchema(BaseUpdateSchema):
     day: date | None = None
     start_time: time | None = None
     end_time: time | None = None
-    archived: bool | None = None
 
 class AbsenceUpdateSchema(BaseUpdateSchema):
     id: int = Field(ge = 1)
@@ -17,4 +16,3 @@ class AbsenceUpdateSchema(BaseUpdateSchema):
     end_date: date | None = None
     absence_type: AbsenceEnum | None = None
     reason: str | None = None
-    archived: bool | None = None

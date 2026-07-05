@@ -48,13 +48,13 @@ async def get(id: int,
                 serviceService: ServiceService = Depends(get_service_service)):
     return await serviceService.get(id)
 
-@router.delete(
-    "/{id}",
-    status_code = status.HTTP_204_NO_CONTENT
-)
-async def delete(id: int,
-                serviceService: ServiceService = Depends(get_service_service)):
-    return await serviceService.delete(id)
+# @router.delete(
+#     "/{id}",
+#     status_code = status.HTTP_204_NO_CONTENT
+# )
+# async def delete(id: int,
+#                 serviceService: ServiceService = Depends(get_service_service)):
+#     return await serviceService.delete(id)
 
 @router.post("/import")
 async def import_services(file: UploadFile = File(...),

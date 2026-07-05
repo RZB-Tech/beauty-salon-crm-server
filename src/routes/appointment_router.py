@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_service_dependency
 from src.schemas.appointment.create import AppointmentCreateSchema
 from src.schemas.appointment.response import AppointmentResponseSchema
-from src.schemas.appointment.update import AppointmentUpdateSchema
+from src.schemas.appointment.update import AppointmentCancelSchema, AppointmentUpdateSchema
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.payment.response import ReceiptResponseSchema
 from src.services.appointment_service import AppointmentService
@@ -61,17 +61,17 @@ async def get(id: int,
     response_model = AppointmentResponseSchema,
     status_code = 200
 )
-async def cancel(id: int, 
+async def cancel(data: AppointmentCancelSchema, 
         appointmentService: AppointmentService = Depends(get_appointment_service)):
-    return await appointmentService.cancel(id)
+    return await appointmentService.cancel(data)
 
-@router.delete(
-    "/{id}",
-    status_code = 204
-)
-async def delete(id: int,
-                 appointmentService: AppointmentService = Depends(get_appointment_service)):
-    return await appointmentService.delete(id)
+# @router.delete(
+#     "/{id}",
+#     status_code = 204
+# )
+# async def delete(id: int,
+#                  appointmentService: AppointmentService = Depends(get_appointment_service)):
+#     return await appointmentService.delete(id)
 
 @router.get(
     "/{id}/receipts", 

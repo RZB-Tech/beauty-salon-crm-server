@@ -60,13 +60,13 @@ async def update(data: EmployeeUpdateSchema,
     employeeService: EmployeeService = Depends(get_employee_service)):
     return await employeeService.update(data)
 
-@router.delete(
-    "/{id}",
-    status_code = status.HTTP_204_NO_CONTENT
-)
-async def delete(id: int,
-    employeeService: EmployeeService = Depends(get_employee_service)):
-    return await employeeService.delete(id)
+# @router.delete(
+#     "/{id}",
+#     status_code = status.HTTP_204_NO_CONTENT
+# )
+# async def delete(id: int,
+#     employeeService: EmployeeService = Depends(get_employee_service)):
+#     return await employeeService.delete(id)
 
 @router.get(
     "/{id}/work-schedules",

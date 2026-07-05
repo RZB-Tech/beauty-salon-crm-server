@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKey,
     Enum as SQLEnum,
     ForeignKeyConstraint,
+    Index,
     Integer,
     Text,
     UniqueConstraint
@@ -78,9 +79,10 @@ class Payout(BaseFields):
             ondelete = "CASCADE",
             name = "fk_payout_employee"
         ),
+        Index("ix_payouts_tenant_employee", "tenant_id", "employee_id"),
     )
     
-    ALLOWER_FILTERS = {"employee_id", "type", "method", "cancelled", "archived"}
+    ALLOWED_FILTERS = {"employee_id", "type", "method", "cancelled", "archived"}
 
 class Payroll(BaseFields):
     __tablename__ = "payrolls"
@@ -111,6 +113,7 @@ class Payroll(BaseFields):
             ondelete = "CASCADE",
             name = "fk_payroll_employee"
         ),
+        Index("ix_payrolls_tenant_employee", "tenant_id", "employee_id"),
         ForeignKeyConstraint(
             ["payout_id", "tenant_id"],
             ["payouts.id", "payouts.tenant_id"],
@@ -130,4 +133,4 @@ class Payroll(BaseFields):
         if value <= 0: raise ValueError("Amount cannot be less than 1")
         return value
     
-    ALLOWER_FILTERS = {"amount", "employee_id", "amount", "type", "status", "auto_generated", "archived"}
+    ALLOWED_FILTERS = {"amount", "employee_id", "amount", "type", "status", "auto_generated", "archived"}

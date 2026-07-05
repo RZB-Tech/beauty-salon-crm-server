@@ -19,7 +19,12 @@ class PayoutRepository(BaseRepository[Payout]):
         return result.scalars().all()
     
     async def get(self, id: int) -> Payout | None:
-        stmt = select(Payout).where(Payout.id == id).options(selectinload(Payout.payrolls))
+        stmt = (select(Payout)
+                .where(Payout.id == id)
+                .options(
+                    selectinload(Payout.payrolls),
+                    selectinload(Payout.transactions)
+                ))
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
     

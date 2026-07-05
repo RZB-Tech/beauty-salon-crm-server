@@ -1,6 +1,6 @@
 from typing import Self
 from fastapi import HTTPException
-from src.repository.appointment.appointment_model import AppointmentStatus
+from src.repository.appointment.appointment_model import AppointmentCancelledReason, AppointmentStatus
 from src.schemas.base import BaseUpdateSchema
 from pydantic import  Field, model_validator
 
@@ -30,3 +30,7 @@ class AppointmentServiceUpdateSchema(BaseUpdateSchema):
             raise HTTPException(400, "В одном запросе можно указывать либо Услугу либо Товар")
         
         return self
+    
+class AppointmentCancelSchema(BaseUpdateSchema):
+    id: int = Field(ge = 1)
+    reason: AppointmentCancelledReason = AppointmentCancelledReason.MISTAKEN_INPUT

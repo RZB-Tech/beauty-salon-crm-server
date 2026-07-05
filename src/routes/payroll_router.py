@@ -46,10 +46,12 @@ async def get(id: int,
                  payrollService: PayrollService = Depends(get_payroll_service)):
     return await payrollService.get(id)
 
-@router.delete(
-    "/{id}",
-    status_code = status.HTTP_204_NO_CONTENT
-)
+@router.delete("/{id}", status_code = 204)
 async def delete(id: int,
                  payrollService: PayrollService = Depends(get_payroll_service)):
     return await payrollService.delete(id)
+
+@router.post("/cancel", status_code = 200, response_model = PayrollResponseSchema)
+async def cancel(id: int,
+                 payrollService: PayrollService = Depends(get_payroll_service)):
+    return await payrollService.cancel(id)

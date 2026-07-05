@@ -24,6 +24,12 @@ class AppointmentStatus(Enum):
     STARTED = "started"
     FINISHED = "finished"
 
+class AppointmentCancelledReason(Enum):
+    CLIENT_CANCELLED = "client changed his mind"
+    MISTAKEN_INPUT = "mistaken input"
+    INCORRECT_CLIENT = "incorrect client"
+    INCORRECT_DATE = "incorrect date"
+
 class AppointmentServices(BaseFields):
     __tablename__ = "appointment_services"
 
@@ -133,6 +139,11 @@ class Appointment(BaseFields):
         AppointmentStatus, values_callable = lambda e: [m.value for m in e]), 
         default = AppointmentStatus.AWAITING)
     paid: Mapped[bool] = mapped_column(Boolean, default = False)
+    
+    cancelled_reason: Mapped[AppointmentCancelledReason | None] = mapped_column(SQLEnum(
+        AppointmentCancelledReason, values_callable = lambda e: [m.value for m in e]), 
+        default = None,
+        nullable = True)
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
 
     @property

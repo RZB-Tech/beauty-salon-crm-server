@@ -22,12 +22,16 @@ class AppointmentServicesService():
         appointmentID = appointmentRecord.appointment_id
 
         material: Material | None = None
-        if data.material_id: material = await self.uow.materials.get(data.material_id)
-        if data.material_id and material is None: raise HTTPException(404, f"Товар с ID {data.material_id} не найден")
+        if data.material_id: 
+            material = await self.uow.materials.get(data.material_id)
+            if material is None: raise HTTPException(404, f"Товар с ID {data.material_id} не найден")
+            if material.archived: raise HTTPException(409, f"Нельзя использовать архивированный Товар {material.name}, ID {material.id}")
 
         service: Service | None = None
-        if data.service_id: service = await self.uow.services.get(data.service_id)
-        if data.service_id and service is None: raise HTTPException(404, f"Услуга с ID {data.service_id}")
+        if data.service_id: 
+            service = await self.uow.services.get(data.service_id)
+            if service is None: raise HTTPException(404, f"Услуга с ID {data.service_id}")
+            if service.archived: raise HTTPException(409, f"Нельзя использовать архивированную Услугу {service.name}, ID {service.id}")
 
         receipts = await self.uow.db.scalars(
             select(Receipt)
@@ -85,12 +89,16 @@ class AppointmentServicesService():
             raise HTTPException(400, "Необходимо сначало отменить активный чек для этого посещения")
         
         material: Material | None = None
-        if data.material_id: material = await self.uow.materials.get(data.material_id)
-        if data.material_id and material is None: raise HTTPException(404, f"Товар с ID {data.material_id} не найден")
+        if data.material_id: 
+            material = await self.uow.materials.get(data.material_id)
+            if material is None: raise HTTPException(404, f"Товар с ID {data.material_id} не найден")
+            if material.archived: raise HTTPException(409, f"Нельзя использовать архивированный Товар {material.name}, ID {material.id}")
 
         service: Service | None = None
-        if data.service_id: service = await self.uow.services.get(data.service_id)
-        if data.service_id and service is None: raise HTTPException(404, f"Услуга с ID {data}")
+        if data.service_id: 
+            service = await self.uow.services.get(data.service_id)
+            if service is None: raise HTTPException(404, f"Услуга с ID {data.service_id}")
+            if service.archived: raise HTTPException(409, f"Нельзя использовать архивированную Услугу {service.name}, ID {service.id}")
         
         employee = await self.uow.employees.get(appointmentRecord.employee_id)
         if not employee: raise HTTPException(404, f"Employee with id {data.employee_id} not found")

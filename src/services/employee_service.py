@@ -46,14 +46,21 @@ class EmployeeService():
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
         if data.services is not None:
             services = []
-            if data.services:
+            if len(data.services) >= 1:
                 services = await self.uow.services.get_by_ids(data.services)
                 if len(services) != len(data.services):
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="Один или более из указанных услуг не найден"
                     )
+                for service in services: 
+                    if service.archived: raise HTTPException(409, f"Нельзя привязать архивированную услугу {service.name} (ID {service.ID}) к сотруднику")
             dataDict["services"] = services
+
+        if data.specialization_id:
+            specialization = await self.uow.specializations.get(data.specialization_id)
+            if specialization is None: raise HTTPException(404, f"Специализация с ID {data.specialization_id} не найдена")
+            if specialization.archived: raise HTTPException(409, f"Нелья использовать архивированную специализацию")
         
         result = await self.uow.employees.update(data.id, **dataDict)
         if result is None:

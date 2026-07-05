@@ -39,4 +39,4 @@ class Notification(BaseFields):
         ),
     )
 
-    ALLOWED_FILTERS = {"client_id", "type", "schedulet_at", "delivered_at", "archived"}
+    ALLOWED_FILTERS = {"client_id", "type", "scheduled_at", "delivered_at", "archived"}

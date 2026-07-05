@@ -94,3 +94,19 @@ class PayoutService():
             "totalPages": total_pages
         }
     
+    async def cancel(self, id: int) -> Payout:
+        payout = await self.uow.payouts.get(id)
+        if payout is None: raise HTTPException(404)
+
+        if payout.cancelled: raise HTTPException(400, "Выплата зарплаты / бонуса уже отменена")
+        if payout.archived: raise HTTPException(400, "Нельзя вносить изменения в архивированный объект")
+        # cancel transactions
+        for transaction in payout.transactions:
+            await self.uow.transactions.update(transaction.id, cancelled = True)
+        # set payout_id to payrolls null
+        for payroll in payout.payrolls:
+            await self.uow.payrolls.update(payroll.id, 
+                                           status = PayrollStatus.PENDING, payout_id = None)
+        
+        return await self.uow.payouts.update(id, cancelled = True)
+        

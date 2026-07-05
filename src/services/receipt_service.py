@@ -96,6 +96,8 @@ class ReceiptService():
                         status_code=status.HTTP_404_NOT_FOUND, 
                         detail=f"Материал с ID {item_data.material_id} не найден."
                     )
+                if material.archived:
+                    raise HTTPException(409, f"Нельзя использовать архивированный Товар {material.name}, ID {material.id}")
                 if material.quantity < item_data.quantity:
                     raise HTTPException(
                         status_code= 400, 

@@ -48,10 +48,10 @@ async def get_all(params: RequestAllObject,
 async def get(id: int, categoryService: ServiceCategoryService = Depends(get_category_service)):
     return await categoryService.get(id)
 
-@router.delete(
-    "/{id}",
-    status_code = 204
-)
-async def delete(id: int, categoryService: ServiceCategoryService = Depends(get_category_service)):
-    return await categoryService.delete(id)
+# @router.delete(
+#     "/{id}",
+#     status_code = 204
+# )
+# async def delete(id: int, categoryService: ServiceCategoryService = Depends(get_category_service)):
+#     return await categoryService.delete(id)
 

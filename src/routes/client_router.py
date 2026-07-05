@@ -47,13 +47,13 @@ async def get(id: int,
                  clientService: ClientService = Depends(get_client_service)):
     return await clientService.get(id)
 
-@router.delete(
-    "/{id}",
-    status_code = status.HTTP_204_NO_CONTENT
-)
-async def delete(id: int,
-                 clientService: ClientService = Depends(get_client_service)):
-    return await clientService.delete(id)
+# @router.delete(
+#     "/{id}",
+#     status_code = status.HTTP_204_NO_CONTENT
+# )
+# async def delete(id: int,
+#                  clientService: ClientService = Depends(get_client_service)):
+#     return await clientService.delete(id)
 
 @router.post(
     "/update-deposit",
