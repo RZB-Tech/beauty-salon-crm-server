@@ -2,25 +2,25 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from src.core.dependencies.auth import get_current_staff
 from src.repository.registry import MODEL_REGISTRY, get_filter_schema
-from src.routes.employee_router import router as employeeR
-from src.routes.service_router import router as serviceR
-from src.routes.serviceCategory_router import router as serviceCategoryR
-from src.routes.client_router import router as clientR
-from src.routes.auth_router import router as authR
-from src.routes.material_router import router as materialR
-from src.routes.workSchedule_router import router as workScheduleR
-from src.routes.absence_router import router as absenceR
-from src.routes.appointment_router import router as appointmentR
-from src.routes.payroll_router import router as PayrollR
-from src.routes.appointmentRecords_router import router as appointmentRecordsR
-from src.routes.appointmentServices_router import router as appointmentServicesR
-from src.routes.auditLogs_router import router as auditLogsR
-from src.routes.receipt_router import router as ReceiptR
-from src.routes.payment_router import router as PaymentR
-from src.routes.transaction_router import router as TransactionR
-from src.routes.payout_router import router as PayoutR
-from src.routes.notification_router import router as notificationR
-from src.routes.specialization_router import router as specializationR
+from src.routes.employee.employee_router import router as employeeR
+from src.routes.employee.service_router import router as serviceR
+from src.routes.employee.serviceCategory_router import router as serviceCategoryR
+from src.routes.client.client_router import router as clientR
+from src.routes.system.auth_router import router as authR
+from src.routes.appointment.material_router import router as materialR
+from src.routes.employee.workSchedule_router import router as workScheduleR
+from src.routes.employee.absence_router import router as absenceR
+from src.routes.appointment.appointment_router import router as appointmentR
+from src.routes.payment.payroll_router import router as PayrollR
+from src.routes.appointment.appointmentRecords_router import router as appointmentRecordsR
+from src.routes.appointment.appointmentServices_router import router as appointmentServicesR
+from src.routes.system.auditLogs_router import router as auditLogsR
+from src.routes.payment.receipt_router import router as ReceiptR
+from src.routes.payment.payment_router import router as PaymentR
+from src.routes.payment.transaction_router import router as TransactionR
+from src.routes.payment.payout_router import router as PayoutR
+from src.routes.system.notification_router import router as notificationR
+from src.routes.employee.specialization_router import router as specializationR
 from src.schemas.base import FilterFieldSchema, FilterTables
 
 open_router = APIRouter(prefix = "/api/v1")

@@ -4,7 +4,7 @@ from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.material.create import MaterialCreateSchema
 from src.schemas.material.response import MaterialResponseSchema
 from src.schemas.material.update import MaterialQuantityUpdateSchema, MaterialUpdateSchema
-from src.services.material_service import MaterialService
+from src.services.appointment.material_service import MaterialService
 
 router = APIRouter()
 get_material_service = make_service_dependency(MaterialService)

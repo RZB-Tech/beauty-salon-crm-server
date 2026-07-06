@@ -8,7 +8,7 @@ from src.core.dependencies.uow import make_service_dependency
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.notification.create import NotificationCreateSchema
 from src.schemas.notification.response import NotificationResponseSchema
-from src.services.notification_service import NotificationService
+from src.services.client.notification_service import NotificationService
 from src.core.config import settings
 import redis.asyncio as aioredis
 

@@ -3,7 +3,7 @@ from src.core.dependencies.uow import  make_service_dependency
 from src.schemas.appointment.create import AppointmentRecordsCreateSchema
 from src.schemas.appointment.response import AppointmentRecordsResponseSchema, AppointmentResponseSchema
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
-from src.services.appointmentRecords_service import AppointmentRecordsService
+from src.services.appointment.appointmentRecords_service import AppointmentRecordsService
 
 router = APIRouter()
 

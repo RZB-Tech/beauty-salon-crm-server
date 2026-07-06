@@ -3,7 +3,7 @@ from src.core.dependencies.uow import make_service_dependency
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.transaction.create import TransactionCreateSchema
 from src.schemas.transaction.response import TransactionResponseSchema
-from src.services.transaction_service import TransactionService
+from src.services.payment.transaction_service import TransactionService
 
 router = APIRouter()
 get_transaction_service = make_service_dependency(TransactionService)

@@ -3,7 +3,7 @@ from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_ser
 from src.schemas.auditLogs.request import AuditLogsRequestSchema
 from src.schemas.auditLogs.response import AuditLogsResponseSchema
 from src.schemas.base import PaginatedResponseSchema, PaginationSchema
-from src.services.auditLogs_service import AuditLogsService
+from src.services.system.auditLogs_service import AuditLogsService
 from src.schemas.base import PaginatedResponseSchema
 
 router = APIRouter()

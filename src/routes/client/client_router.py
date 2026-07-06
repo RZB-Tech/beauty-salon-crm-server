@@ -5,7 +5,7 @@ from src.schemas.base import PaginatedResponseSchema, PaginationSchema, RequestA
 from src.schemas.client.create import ClientCreateSchema
 from src.schemas.client.response import ClientResponseSchema
 from src.schemas.client.update import ClientDepositUpdateSchema, ClientUpdateSchema
-from src.services.client_service import ClientService
+from src.services.client.client_service import ClientService
 
 router = APIRouter()
 

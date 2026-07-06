@@ -3,7 +3,7 @@ from src.core.dependencies.uow import make_service_dependency
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.payment.create import PaymentCreateSchema
 from src.schemas.payment.response import PaymentResponseSchema, ReceiptResponseSchema
-from src.services.payment_service import PaymentService
+from src.services.payment.payment_service import PaymentService
 
 router = APIRouter()
 

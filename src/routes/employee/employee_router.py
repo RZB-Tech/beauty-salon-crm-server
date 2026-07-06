@@ -6,7 +6,7 @@ from src.schemas.employee.create import EmployeeCreateSchema
 from src.schemas.employee.response import EmployeeResponseBase, EmployeeWorkScheduleResponse
 from src.schemas.employee.update import EmployeeUpdateSchema
 from src.schemas.payroll.response import PayrollResponseSchema
-from src.services.employee_service import EmployeeService
+from src.services.employee.employee_service import EmployeeService
 
 router = APIRouter()
 

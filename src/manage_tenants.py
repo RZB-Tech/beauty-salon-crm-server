@@ -3,7 +3,7 @@ import asyncio
 import argparse
 # Import your custom session managers
 from src.database.session import transaction_scope, get_repository_db 
-from src.services.tenant_service import provision_tenant
+from src.services.system.tenant_service import provision_tenant
 
 async def async_main():
     # 1. Set up CLI Argument Parser

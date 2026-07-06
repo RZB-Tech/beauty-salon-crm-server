@@ -4,7 +4,7 @@ from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.work_schedule.create import AbsenceCreateSchema
 from src.schemas.work_schedule.response import AbsenceResponseSchema
 from src.schemas.work_schedule.update import AbsenceUpdateSchema
-from src.services.absence_service import EmployeeAbsenceService
+from src.services.employee.absence_service import EmployeeAbsenceService
 
 router = APIRouter()
 

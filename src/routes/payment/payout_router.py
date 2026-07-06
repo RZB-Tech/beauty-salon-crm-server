@@ -3,7 +3,7 @@ from src.core.dependencies.uow import  make_service_dependency
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.payout.create import PayoutCreateSchema
 from src.schemas.payout.response import PayoutResponseSchema
-from src.services.payout_service import PayoutService
+from src.services.payment.payout_service import PayoutService
 
 router = APIRouter()
 

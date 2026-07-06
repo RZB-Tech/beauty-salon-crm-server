@@ -3,7 +3,7 @@ from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_ser
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema
 from src.schemas.payment.response import ReceiptResponseSchema
-from src.services.receipt_service import ReceiptService
+from src.services.payment.receipt_service import ReceiptService
 
 router = APIRouter()
 

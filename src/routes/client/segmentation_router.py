@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from src.core.dependencies.uow import UnitOfWork, make_service_dependency
 from src.schemas.segmentation.create import SegmentationCreateSchema
 from src.schemas.segmentation.response import SegmentationResponseSchema
-from src.services.segmentation_service import SegmentationService
+from src.services.client.segmentation_service import SegmentationService
 
 router = APIRouter()
 

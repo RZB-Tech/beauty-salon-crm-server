@@ -4,7 +4,7 @@ from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.specialization.create import SpecializationCreateSchema
 from src.schemas.specialization.response import SpecializationResponseSchema
 from src.schemas.specialization.update import SpecializationUpdateSchema
-from src.services.specialization_service import SpecializationService
+from src.services.employee.specialization_service import SpecializationService
 
 router = APIRouter()
 

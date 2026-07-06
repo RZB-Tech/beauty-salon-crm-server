@@ -4,7 +4,7 @@ from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.payroll.create import PayrollCreateSchema
 from src.schemas.payroll.response import PayrollResponseSchema
 from src.schemas.payroll.update import PayrollUpdateSchema
-from src.services.payroll_service import PayrollService
+from src.services.payment.payroll_service import PayrollService
 
 router = APIRouter()
 

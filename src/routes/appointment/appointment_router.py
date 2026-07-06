@@ -5,7 +5,7 @@ from src.schemas.appointment.response import AppointmentResponseSchema
 from src.schemas.appointment.update import AppointmentCancelSchema, AppointmentUpdateSchema
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.payment.response import ReceiptResponseSchema
-from src.services.appointment_service import AppointmentService
+from src.services.appointment.appointment_service import AppointmentService
 
 router = APIRouter()
 

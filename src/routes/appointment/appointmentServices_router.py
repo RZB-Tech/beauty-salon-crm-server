@@ -4,7 +4,7 @@ from src.schemas.appointment.create import AppointmentServicesCreateSchema
 from src.schemas.appointment.response import AppointmentResponseSchema, AppointmentServicesResponseSchema
 from src.schemas.appointment.update import AppointmentServiceUpdateSchema
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
-from src.services.appointmentServices_service import AppointmentServicesService
+from src.services.appointment.appointmentServices_service import AppointmentServicesService
 
 router = APIRouter()
 
