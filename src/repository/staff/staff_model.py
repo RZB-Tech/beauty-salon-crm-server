@@ -8,6 +8,7 @@ from src.database.base import BaseFields
 class StaffType(Enum):
     ADMIN = "administrator"
     EMPLOYEE = "employee"
+    TELEGRAM_BOT = "telegram bot"
 
 class Staff(BaseFields):
     __tablename__ = "staffs"

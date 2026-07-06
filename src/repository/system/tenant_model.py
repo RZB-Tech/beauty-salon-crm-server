@@ -6,8 +6,10 @@ from sqlalchemy import (
     ForeignKey,
     String,
     Integer, Enum as SQLEnum, DateTime,
+    Text,
     func
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from enum import Enum
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
@@ -34,6 +36,20 @@ class Tenant(Base):
         onupdate=func.now(),
         nullable=False,
     )
+
+class TenantPreferences(Base):
+    __tablename__ = "tenant_preferences"
+    
+    tenant_id: Mapped[Tenant] = mapped_column(ForeignKey("tenants.id", ondelete="cascade"), primary_key=True)
+    preferences: Mapped[dict] = mapped_column(JSONB, default = dict)
+
+class TenantIntegration(Base):
+    __tablename__ = "tenant_integrations"
+
+    tenant_id: Mapped[Tenant] = mapped_column(ForeignKey("tenants.id", ondelete="cascade"), primary_key=True)
+
+    telegram_bot_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+    telegram_bot_enabled: Mapped[bool] = mapped_column(Boolean, default = False, server_default="false")
 
 class TenantSubscriptionStatus(Enum):
     ACTIVE = "active"
