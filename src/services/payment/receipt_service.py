@@ -1,12 +1,15 @@
 import math
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
-from sqlalchemy import delete, select
+from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from src.core.dependencies.uow import UnitOfWork
-from src.repository.payment.payment_model import PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatus, ReceiptType
+from src.repository.payment.payment_model import Payment, PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatus, ReceiptType
 from src.repository.payroll.payroll_model import Payroll, PayrollStatus, PayrollType
 from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema
+from src.schemas.tenant.base import TenantPreferencesSchema
+from src.core.utils.common import as_utc
 
 class ReceiptService():
     def __init__(self, uow: UnitOfWork):
@@ -151,6 +154,8 @@ class ReceiptService():
                 status_code = status.HTTP_400_BAD_REQUEST,
                 detail = f"Чек уже отменен"
             )
+
+        await self.ensure_receipt_payments_can_be_cancelled(receipt)
         
         deposit_to_refund = 0
         for payment in receipt.payments:
@@ -206,7 +211,42 @@ class ReceiptService():
         for transaction in transactions: transaction.cancelled = True
             
         return await self.uow.receipts.get(id)
-    
+
+    async def ensure_receipt_payments_can_be_cancelled(self, receipt: Receipt) -> None:
+        if not receipt.payments:
+            return
+
+        preferences = await self.uow.tenantPreferences.get_by_tenant_id(receipt.tenant_id)
+        preference_data = (
+            preferences.preferences
+            if preferences is not None
+            else TenantPreferencesSchema().model_dump()
+        )
+        cancel_payment_due = TenantPreferencesSchema(**preference_data).cancel_payment_due
+
+        expired_payment = next(
+            (
+                payment
+                for payment in receipt.payments
+                if self.is_payment_cancel_expired(payment, cancel_payment_due)
+            ),
+            None,
+        )
+        if expired_payment is None:
+            return
+
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Время для отмены чека истекло: в чеке есть оплата, "
+                f"которую можно отменить только в течение {cancel_payment_due} ч. после создания."
+            ),
+        )
+
+    def is_payment_cancel_expired(self, payment: Payment, cancel_payment_due: int) -> bool:
+        cancel_deadline = as_utc(payment.created_at) + timedelta(hours=cancel_payment_due)
+        return datetime.now(timezone.utc) > cancel_deadline
+
     async def get(self, id: int) -> Receipt:
         result = await self.uow.receipts.get(id)
         if result is None: raise HTTPException(404)

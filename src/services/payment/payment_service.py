@@ -1,4 +1,5 @@
 import math
+from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from sqlalchemy.orm import selectinload
 from sqlalchemy import select
@@ -9,6 +10,8 @@ from src.repository.payroll.payroll_model import Payroll, PayrollType
 from src.repository.transaction.transaction_model import Transaction, TransactionCategory, TransactionMethod, TransactionType
 from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import PaymentCreateSchema
+from src.schemas.tenant.base import TenantPreferencesSchema
+from src.core.utils.common import as_utc
 
 class PaymentService():
     def __init__(self, uow: UnitOfWork):
@@ -175,7 +178,28 @@ class PaymentService():
             "totalPages": total_pages
         }
     
-    async def cancel(self, id: int) -> bool:
-        return await self.uow.update_fields(
-            Payment, id, cancelled = True
+    async def cancel(self, id: int) -> Payment:
+        payment = await self.get(id)
+        await self.ensure_payment_can_be_cancelled(payment)
+
+        result = await self.uow.payments.update(id, cancelled = True)
+        return result
+
+    async def ensure_payment_can_be_cancelled(self, payment: Payment) -> None:
+        preferences = await self.uow.tenantPreferences.get_by_tenant_id(payment.tenant_id)
+        preference_data = (
+            preferences.preferences
+            if preferences is not None
+            else TenantPreferencesSchema().model_dump()
         )
+        cancel_payment_due = TenantPreferencesSchema(**preference_data).cancel_payment_due
+        cancel_deadline = as_utc(payment.created_at) + timedelta(hours=cancel_payment_due)
+
+        if datetime.now(timezone.utc) > cancel_deadline:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=(
+                    "Время для отмены оплаты истекло. "
+                    f"Отменить оплату можно только в течение {cancel_payment_due} ч. после создания."
+                ),
+            )
