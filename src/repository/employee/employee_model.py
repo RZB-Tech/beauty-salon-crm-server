@@ -109,4 +109,3 @@ class Employee(BaseFields):
     )
 
     ALLOWED_FILTERS = {"firstname", "lastname", "middlename", "phone", "active", "specialization_id", "archived"}
-

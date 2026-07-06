@@ -8,6 +8,7 @@ from src.database.base import BaseFields
 class StaffType(Enum):
     ADMIN = "administrator"
     EMPLOYEE = "employee"
+    TELEGRAM_BOT = "telegram bot"
 
 class Staff(BaseFields):
     __tablename__ = "staffs"
@@ -18,7 +19,7 @@ class Staff(BaseFields):
     
     login: Mapped[str] = mapped_column(String(100), unique=True, index=True)
     hashed_password: Mapped[str] = mapped_column(Text)
-    active: Mapped[bool] = mapped_column(Boolean, default=True)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
 
     staff_type: Mapped[StaffType] = mapped_column(SQLEnum(
         StaffType, values_callable = lambda e: [m.value for m in e]))
