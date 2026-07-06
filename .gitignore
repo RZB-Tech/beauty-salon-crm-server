@@ -11,3 +11,6 @@ wheels/
 .env
 .venv
 
+.agents
+.codex
+.pytest_cache
