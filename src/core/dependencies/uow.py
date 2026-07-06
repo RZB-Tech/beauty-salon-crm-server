@@ -17,6 +17,7 @@ from src.repository.payroll.payroll_repository import PayrollRepository
 from src.repository.payroll.payout_repository import PayoutRepository
 from src.repository.payment.receipt_repository import ReceiptRepository
 from src.repository.system.tenant_repository import TenantRepository
+from src.repository.system.tenantPreferences_repository import TenantPreferencesRepository
 from src.repository.transaction.transaction_repository import TransactionRepository
 from src.repository.notification.notification_repository import NotificationRepository
 from typing import Any, AsyncGenerator, TypeVar, Type, Callable
@@ -49,6 +50,7 @@ class UnitOfWork:
         
         self.notifications = NotificationRepository()
         self.tenants = TenantRepository()
+        self.tenantPreferences = TenantPreferencesRepository()
     @property
     def db(self):
         return get_repository_db()

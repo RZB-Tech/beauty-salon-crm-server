@@ -20,6 +20,7 @@ from src.routes.payment.payment_router import router as PaymentR
 from src.routes.payment.transaction_router import router as TransactionR
 from src.routes.payment.payout_router import router as PayoutR
 from src.routes.system.notification_router import router as notificationR
+from src.routes.system.tenantPreferences_router import router as tenantPreferencesR
 from src.routes.employee.specialization_router import router as specializationR
 from src.schemas.base import FilterFieldSchema, FilterTables
 
@@ -143,6 +144,12 @@ protected_router.include_router(
     notificationR,
     prefix = "/notifications",
     tags = ["Notifications"]
+)
+
+protected_router.include_router(
+    tenantPreferencesR,
+    prefix = "/tenant-preferences",
+    tags = ["Tenant preferences"]
 )
 
 protected_router.include_router(

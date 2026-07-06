@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 185f5f694b0a
+Revision ID: 530867110bd6
 Revises: 
-Create Date: 2026-07-06 17:15:39.174887
+Create Date: 2026-07-06 20:38:47.633937
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '185f5f694b0a'
+revision: str = '530867110bd6'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -39,7 +39,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('TIN', sa.String(length=255), nullable=True),
-    sa.Column('active', sa.Boolean(), nullable=False),
+    sa.Column('active', sa.Boolean(), server_default='true', nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
@@ -358,7 +358,7 @@ def upgrade() -> None:
     sa.Column('middlename', sa.String(length=255), nullable=True),
     sa.Column('login', sa.String(length=100), nullable=False),
     sa.Column('hashed_password', sa.Text(), nullable=False),
-    sa.Column('active', sa.Boolean(), nullable=False),
+    sa.Column('active', sa.Boolean(), server_default='true', nullable=False),
     sa.Column('staff_type', sa.Enum('administrator', 'employee', 'telegram bot', name='stafftype'), nullable=False),
     sa.Column('employee_id', sa.Integer(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),

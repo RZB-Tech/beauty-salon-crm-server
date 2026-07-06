@@ -1,7 +1,9 @@
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 class TenantPreferencesSchema(BaseModel):
-    theme: str = "light"
+    theme: Literal["light", "dark"] = "light"
     timezone: str = "UTC"
     currency: str = "UZS"
     enable_telegram_booking: bool = False
