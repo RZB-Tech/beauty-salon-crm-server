@@ -21,6 +21,6 @@ Docker instruction:
 2. Сделайте build: docker compose build --no-cache
 3. Запустите контейнеры: docker compose up -d
 4. Если это первый запуск, требуется сделать миграцию моделей таблиц:
-   4.1 docker exec -it salonBackend uv run migrate.py
+   4.1 docker exec -it salonBackend uv run migrate_docker.py
 5. Проверьте готовность сервера: docker logs salonBackend
 6. Готово
