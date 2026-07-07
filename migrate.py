@@ -108,8 +108,14 @@ def seed_admin_user() -> None:
         insert into tenants (name, active)
         values ('rzbtech', true);
 
+        insert into actors (actor_type, tenant_id)
+        values ('staff', 1);
+
+        insert into actors (actor_type, tenant_id)
+        values ('staff', 2);
+
         INSERT INTO staffs
-            (firstname, login, tenant_id, staff_type, active, hashed_password)
+            (firstname, login, tenant_id, staff_type, active, hashed_password, actor_id)
         VALUES
             (
                 'max',
@@ -117,11 +123,12 @@ def seed_admin_user() -> None:
                 1,
                 'administrator',
                 true,
-                '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc'
+                '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc',
+                1
             );
 
         INSERT INTO staffs
-            (firstname, login, tenant_id, staff_type, active, hashed_password)
+            (firstname, login, tenant_id, staff_type, active, hashed_password, actor_id)
         VALUES
             (
                 'eva',
@@ -129,8 +136,10 @@ def seed_admin_user() -> None:
                 2,
                 'administrator',
                 true,
-                '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc'
+                '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc',
+                2
             );
+
         """,
     ])
 
@@ -158,7 +167,7 @@ async def seed_employees(count: int = 10) -> None:
                 percent_from_services=random.randint(5, 30),
                 percent_from_sales=random.randint(0, 15),
                 notes=fake.text(max_nb_chars=100),
-                created_by = 1,
+                created_by_actor_id = 1,
                 tenant_id = 1
             )
 
@@ -189,7 +198,7 @@ async def seed_clients(count: int = 100) -> None:
                 ]),
                 notes=fake.text(max_nb_chars=100),
                 deposit=random.randint(0, 1_000_000),
-                created_by = 1,
+                created_by_actor_id = 1,
                 tenant_id = 1
             )
 
@@ -247,7 +256,7 @@ async def seed_materials(count: int = 100) -> None:
                     20_000,
                     100_000
                 ),
-                created_by = 1,
+                created_by_actor_id = 1,
                 tenant_id = 1
             )
 
@@ -306,7 +315,7 @@ async def seed_work_schedules() -> None:
                         day=current_day,
                         start_time=start_time,
                         end_time=end_time,
-                        created_by = 1,
+                        created_by_actor_id = 1,
                         tenant_id = 1
                     )
                 )
@@ -364,7 +373,7 @@ async def seed_payrolls(count_per_employee: int = 3) -> None:
                         amount=amount,
                         type=payroll_type,
                         notes=note,
-                        created_by = 1,
+                        created_by_actor_id = 1,
                         tenant_id = 1
                     )
                 )

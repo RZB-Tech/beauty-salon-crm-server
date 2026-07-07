@@ -31,7 +31,8 @@ class EmployeeService():
                 
             new_employee.services = found_services
 
-        return await self.uow.employees.create(new_employee)
+        result = await self.uow.employees.create(new_employee)
+        return await self.uow.employees.get(result.id)
     
     async def get(self, id: int) -> Employee:
         result = await self.uow.employees.get(id)

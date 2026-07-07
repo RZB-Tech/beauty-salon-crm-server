@@ -19,13 +19,15 @@ async def get_current_staff(request: Request) -> dict:
     login: str = payload.get("sub")
     id: int = payload.get("id")
     tenant_id: int = payload.get("tenant_id")
+    actor_id: int = payload.get("actor_id")
 
     if login is None or id is None: raise credentials_exception
 
-    set_current_staff_id(id, tenant_id)
+    set_current_staff_id(id, tenant_id, actor_id)
 
     return {
         "sub": login, 
         "id": id, 
-        "tenant_id": tenant_id
+        "tenant_id": tenant_id,
+        "actor_id": actor_id
         }

@@ -1,13 +1,51 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from datetime import datetime
+from enum import Enum
 from typing import Any, Generic, TypeVar, get_args, get_origin
-from sqlalchemy import Boolean, DateTime, ForeignKey, func, select, text
-from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, mapped_column, validates
+from sqlalchemy import Boolean, DateTime, ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint, and_, func, select, text, Enum as SQLEnum
+from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, foreign, mapped_column, relationship, validates
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.mixins import TenantMixin
 from src.database.session import get_repository_db
 
+if TYPE_CHECKING:
+    from src.repository.staff.staff_model import Staff
+
 class Base(DeclarativeBase):
     pass
+
+class ActorType(Enum):
+    STAFF = "staff"
+    SYSTEM = "system"
+    API = "api"
+    TELEGRAM = "telegram"
+    INSTAGRAM = "instagram"
+
+class Actor(TenantMixin, Base):
+    __tablename__ = "actors"
+    
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    actor_type: Mapped[ActorType] = mapped_column(SQLEnum(
+        ActorType, values_callable = lambda e: [m.value for m in e]))
+    name: Mapped[str | None] = mapped_column(String(255), nullable = True)
+    description: Mapped[str | None] = mapped_column(Text, nullable = True)
+
+    staff: Mapped["Staff | None"] = relationship(
+        back_populates="actor",
+        primaryjoin="and_(Staff.actor_id == Actor.id, Staff.tenant_id == Actor.tenant_id)",
+        foreign_keys="[Staff.actor_id]",
+        lazy = "joined")
+
+    @property
+    def display_name(self) -> str:
+        if self.actor_type == ActorType.STAFF:
+            if "staff" in self.__dict__ and self.staff is not None:
+                return f"{self.staff.login} ({self.staff.firstname})"
+            return self.name or f"Сотрудник #{self.id}"            
+        return self.name or (self.actor_type.value if hasattr(self.actor_type, "value") else str(self.actor_type))
+
+    __table_args__ = (UniqueConstraint("id", "tenant_id", name = "uq_actor_tenant"),)
 
 class BaseFields(TenantMixin, Base):
     __abstract__ = True
@@ -29,14 +67,45 @@ class BaseFields(TenantMixin, Base):
         nullable=False,
     )
 
-    created_by: Mapped[int | None] = mapped_column(
-        ForeignKey("staffs.id", use_alter=True, name="fk_created_by_staff"), 
-        nullable = True) 
+    created_by_actor_id: Mapped[int | None] = mapped_column(
+        ForeignKey("actors.id", use_alter=True, name="fk_created_by_actor",  ondelete = "set null"), 
+        nullable = True)
+    
+    @declared_attr
+    def creator(cls):
+        return relationship(
+            "Actor",
+            primaryjoin=lambda: and_(
+                foreign(cls.created_by_actor_id) == Actor.id,
+                cls.tenant_id == Actor.tenant_id,
+            ),
+            viewonly=True,
+            lazy="selectin",
+        )
+    
+    @property
+    def created_by(self) -> dict | None:
+        # 1. If the creator relationship is loaded and exists, use it!
+        if self.creator:
+            return {
+                "id": self.creator.id,
+                "display_name": self.creator.display_name,
+                "actor_type": self.creator.actor_type
+            }
+        
+        # 2. Fallback if there is no actor (e.g., system-created)
+        # Note: Ensure "system" is a valid value in your ActorType Enum so Pydantic can parse it.
+        return {
+            "id": self.created_by_actor_id or 0,
+            "display_name": "Unknown system",
+            "actor_type": "system"  # Fixed key name from "type" to "actor_type"
+        }
 
-    @validates("created_by")
+    @validates("created_by_actor_id")
     def validate_created_by(self, key, value):
-        if self.id is not None and self.created_by is not None:
-            if self.created_by != value:
+        # Fixed: Compare the integer ID, not the dictionary property
+        if self.id is not None and self.created_by_actor_id is not None:
+            if self.created_by_actor_id != value:
                 raise ValueError("Restricted to change creator of object")
         return value
             
@@ -47,6 +116,15 @@ class BaseFields(TenantMixin, Base):
             new_val = value.astimezone() if hasattr(value, 'astimezone') else value
             if current_val != new_val:
                 raise ValueError("Restricted to change creation date of object")
+            
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "set null (created_by)",
+            name = "fk_created_by_tenant"
+        )
+    )
             
 T = TypeVar('T')
 

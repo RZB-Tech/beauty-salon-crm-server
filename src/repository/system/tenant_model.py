@@ -45,6 +45,7 @@ class TenantPreferences(Base):
 
 class TenantIntegration(Base):
     __tablename__ = "tenant_integrations"
+    id: Mapped[int] = mapped_column(primary_key = True,)
 
     tenant_id: Mapped[Tenant] = mapped_column(ForeignKey("tenants.id", ondelete="cascade"), primary_key=True)
 

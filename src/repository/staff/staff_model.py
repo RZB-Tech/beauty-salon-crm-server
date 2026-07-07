@@ -1,14 +1,16 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
 from enum import Enum
-
 from sqlalchemy import ForeignKeyConstraint, Integer, String, Boolean, Enum as SQLEnum, Text, UniqueConstraint
-from sqlalchemy.orm import Mapped, mapped_column, validates
-
+from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from src.database.base import BaseFields
+
+if TYPE_CHECKING:
+    from src.database.base import Actor
 
 class StaffType(Enum):
     ADMIN = "administrator"
     EMPLOYEE = "employee"
-    TELEGRAM_BOT = "telegram bot"
 
 class Staff(BaseFields):
     __tablename__ = "staffs"
@@ -25,6 +27,14 @@ class Staff(BaseFields):
         StaffType, values_callable = lambda e: [m.value for m in e]))
     
     employee_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
+
+    actor_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
+    actor: Mapped["Actor | None"] = relationship(
+        back_populates="staff",
+        primaryjoin="and_(Staff.actor_id == Actor.id, Staff.tenant_id == Actor.tenant_id)",
+        foreign_keys=[actor_id],
+        lazy = "joined"
+    )
     
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_staff_tenant"),
@@ -34,6 +44,12 @@ class Staff(BaseFields):
             ondelete = "SET NULL (employee_id)",
             name = "fk_staff_employee"
         ),
+        ForeignKeyConstraint(
+            ["actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "set null (actor_id)",
+            name = "fk_actor_staff"
+        )
     )
  
     @validates("login")

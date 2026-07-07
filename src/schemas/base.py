@@ -1,7 +1,9 @@
 from datetime import datetime
 from enum import Enum
 from typing import Any, ClassVar, Generic, TypeVar
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
+
+from src.database.base import ActorType
 
 T = TypeVar("T")
 
@@ -30,11 +32,18 @@ class RequestAllObject(PaginationSchema):
         "archived": False
     }
 
+class ActorResponseSchema(BaseModel):
+    id: int
+    display_name: str
+    actor_type: ActorType
+
+    model_config = ConfigDict(from_attributes = True)
+
 class BaseResponseSchema(BaseModel):
     id: int
     created_at: datetime
     updated_at: datetime
-    created_by: int | None
+    created_by: ActorResponseSchema | None = None
     archived: bool
 
 class BaseUpdateSchema(BaseModel):

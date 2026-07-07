@@ -1,6 +1,7 @@
 from sqlalchemy import Result, select
+from sqlalchemy.orm import selectinload
 
-from src.database.base import BaseRepository
+from src.database.base import Actor, BaseRepository
 from src.repository.staff.staff_model import Staff
 
 class StaffRepository(BaseRepository[Staff]):
@@ -16,10 +17,12 @@ class StaffRepository(BaseRepository[Staff]):
             result = await self.db.execute(
                 select(Staff)
                 .where(Staff.id == id)
+                # .options(selectinload(Staff.actor))
             )
         elif login:
             result = await self.db.execute(
                 select(Staff)
                 .where(Staff.login == login)
+                # .options(selectinload(Staff.actor).selectinload(Actor.staff))
             )
         return result.scalar_one_or_none()

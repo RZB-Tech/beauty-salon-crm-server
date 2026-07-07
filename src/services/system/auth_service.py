@@ -6,6 +6,7 @@ from src.core.dependencies.uow import UnitOfWork
 from src.repository.staff.staff_model import StaffType
 from src.schemas.auth.login import LoginResponseSchema, LoginSchema
 from src.core.auth.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
+from src.schemas.base import ActorResponseSchema
 from src.schemas.employee.response import EmployeeResponseBase
 import secrets
 
@@ -39,6 +40,7 @@ class AuthService():
             "sub": staff.login,
             "id": staff.id,
             "tenant_id": staff.tenant_id,
+            "actor_id": staff.actor_id,
             "type": "access"
         }
         refreshTokenPayload = accessTokenPayload.copy()
@@ -64,13 +66,12 @@ class AuthService():
         )
 
         tenant = await self.uow.tenants.get(id = staff.tenant_id)
-
         return LoginResponseSchema(
             id = staff.id,
             tenant_id = staff.tenant_id,
             created_at = staff.created_at,
             updated_at = staff.updated_at,
-            created_by = staff.created_by,
+            creator = ActorResponseSchema.model_validate(staff.actor) if staff.actor else None,
             archived = staff.archived,
             login=staff.login,
             employee=EmployeeResponseBase.model_validate(employee) if employee else None,
@@ -123,6 +124,7 @@ class AuthService():
             "sub": user.login,
             "id": user.id,
             "tenant_id": user.tenant_id,
+            "actor_id": user.actor_id,
             "type": "access"
         }
         refreshTokenPayload = accessTokenPayload.copy()

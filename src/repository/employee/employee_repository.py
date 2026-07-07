@@ -1,14 +1,10 @@
 from typing import Any
-
 from sqlalchemy import func, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
-from src.database.base import BaseRepository
+from src.database.base import Actor, BaseRepository
 from src.repository.employee.employee_model import Employee
-from src.repository.employee.workSchedule_model import WorkSchedule
-from src.repository.service.service_model import Service
 from src.schemas.base import RequestAllObject
-from src.schemas.employee.update import EmployeeUpdateSchema
 
 class EmployeeRepository(BaseRepository[Employee]):
     async def create(self, employee: Employee) -> Employee:
@@ -20,7 +16,7 @@ class EmployeeRepository(BaseRepository[Employee]):
             .options(selectinload(Employee.services))
         )
         result = await self.db.execute(stmt)
-        return result.scalar_one()
+        return result.scalar()
 
     async def get(self, id: int) -> Employee | None:
         stmt = (
