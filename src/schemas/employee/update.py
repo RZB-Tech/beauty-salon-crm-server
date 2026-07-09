@@ -16,3 +16,4 @@ class EmployeeUpdateSchema(BaseUpdateSchema):
     percent_from_services: int | None = Field(default = None, ge = 0)
     percent_from_sales: int | None = Field(default = None, ge = 0)
     notes: str | None = None
+    archived: bool | None = None

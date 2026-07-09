@@ -1,7 +1,6 @@
 from datetime import datetime, timezone
 import math
 from fastapi import HTTPException, status
-from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.core.utils import sse_manager
 from src.repository.notification.notification_model import Notification
@@ -58,7 +57,7 @@ class NotificationService():
             "id": notification.id,
             "title": notification.title,
             "body": notification.body,
-            "type": notification.type.value,
+            "type": notification.type,
             "scheduled_at": notification.scheduled_at.isoformat(),
         }
 

@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.auth import get_current_staff
-from src.core.dependencies.context import get_current_staff_id, get_current_tenant_id
+from src.core.dependencies.context import get_current_actor_id, get_current_staff_id, get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.service.service_model import Service, ServiceCategory
 from src.schemas.base import RequestAllObject
@@ -90,6 +90,7 @@ class ServiceService():
         
         tenant_id = get_current_tenant_id()
         staff_id = get_current_staff_id()
+        actor_id = get_current_actor_id()
 
         if tenant_id is None or staff_id is None:
             raise HTTPException(
@@ -124,7 +125,7 @@ class ServiceService():
             if category_name not in existing_categories:
                 category = ServiceCategory(
                     name=category_name,
-                    created_by = staff_id,
+                    created_by_actor_id = actor_id,
                     tenant_id = tenant_id
                 )
                 db.add(category)
@@ -158,7 +159,7 @@ class ServiceService():
                 name=service_name,
                 price=int(row["price"] or 0),
                 category_id=category.id,
-                created_by = staff_id,
+                created_by_actor_id = actor_id,
                 tenant_id = tenant_id
             )
 

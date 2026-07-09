@@ -5,15 +5,15 @@ from sqlalchemy import (
     Boolean,
     ForeignKey,
     String,
-    Integer, Enum as SQLEnum, DateTime,
+    Integer, DateTime,
     Text,
     func
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from enum import Enum
+from enum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
-from src.database.base import Base
+from src.database.base import Base, BaseFields
 
 class Tenant(Base):
     __tablename__ = "tenants"
@@ -37,22 +37,16 @@ class Tenant(Base):
         nullable=False,
     )
 
-class TenantPreferences(Base):
+class TenantPreferences(BaseFields):
     __tablename__ = "tenant_preferences"
-    
-    tenant_id: Mapped[Tenant] = mapped_column(ForeignKey("tenants.id", ondelete="cascade"), primary_key=True)
     preferences: Mapped[dict] = mapped_column(JSONB, default = dict)
 
-class TenantIntegration(Base):
+class TenantIntegration(BaseFields):
     __tablename__ = "tenant_integrations"
-    id: Mapped[int] = mapped_column(primary_key = True,)
-
-    tenant_id: Mapped[Tenant] = mapped_column(ForeignKey("tenants.id", ondelete="cascade"), primary_key=True)
 
     telegram_bot_token: Mapped[str | None] = mapped_column(Text, nullable=True)
-    telegram_bot_enabled: Mapped[bool] = mapped_column(Boolean, default = False, server_default="false")
 
-class TenantSubscriptionStatus(Enum):
+class TenantSubscriptionStatus(StrEnum):
     ACTIVE = "active"
     CANCELLED = "canceled"
     TRIAL = "trial"
@@ -63,9 +57,8 @@ class TenantSubscriptions(Base):
 
     id: Mapped[int] = mapped_column(primary_key = True, autoincrement = True)
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete = "cascade"))
-    plan_id: Mapped[int] = mapped_column(ForeignKey("plans.id"))
-    status: Mapped[TenantSubscriptionStatus] = mapped_column(SQLEnum(
-        TenantSubscriptionStatus, values_callable = lambda e: [m.value for m in e]))
+    plan_id: Mapped[int] = mapped_column(ForeignKey("subscription_plans.id"))
+    status: Mapped[str] = mapped_column(String(50))
     amount_paid: Mapped[int] = mapped_column(Integer, nullable = True)
     billing_interval: Mapped[int] = mapped_column()
 

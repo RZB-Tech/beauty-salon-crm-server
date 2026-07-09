@@ -1,12 +1,12 @@
 from __future__ import annotations
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
-    ForeignKey,
     Enum as SQLEnum,
     ForeignKeyConstraint,
     Integer,
+    String,
     Text,
     UniqueConstraint
 )
@@ -16,11 +16,11 @@ from src.database.base import BaseFields
 if TYPE_CHECKING: 
     from src.repository.payroll.payroll_model import Payout
 
-class TransactionType(Enum):
+class TransactionType(StrEnum):
     INCOME = "income"
     EXPENSE = "expense"
 
-class TransactionCategory(Enum):
+class TransactionCategory(StrEnum):
     RECEIPT = "receipt"
     EMPLOYEE_PAYMENT = "employee payment"
     UTILITY = "utility"
@@ -28,7 +28,7 @@ class TransactionCategory(Enum):
     TELEPHONE = "telephone"
     OTHER = "other"
 
-class TransactionMethod(Enum):
+class TransactionMethod(StrEnum):
     CARD = "card"
     CASH = "cash"
     BANK_TRANSER = "bank transfer"
@@ -38,12 +38,9 @@ class Transaction(BaseFields):
     __tablename__ = "transactions"
 
     amount: Mapped[int] = mapped_column(Integer)
-    type: Mapped[TransactionType] = mapped_column(
-        SQLEnum(TransactionType, values_callable = lambda e: [m.value for m in e]))
-    method: Mapped[TransactionMethod] = mapped_column(
-        SQLEnum(TransactionMethod, values_callable = lambda e: [m.value for m in e]))
-    category: Mapped[TransactionCategory] = mapped_column(
-        SQLEnum(TransactionCategory, values_callable = lambda e: [m.value for m in e]))
+    type: Mapped[str] = mapped_column(String(50))
+    method: Mapped[str] = mapped_column(String(50))
+    category: Mapped[str] = mapped_column(String(50))
     
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
     cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")

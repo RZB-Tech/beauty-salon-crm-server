@@ -8,10 +8,10 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy import Enum as SQLEnum
-from enum import Enum
+from enum import StrEnum
 from src.database.base import BaseFields
 
-class MeasurementUnit(Enum):
+class MeasurementUnit(StrEnum):
     PCS = "piece"
     PACK = "pack"
     BOX = "box"
@@ -29,9 +29,7 @@ class Material(BaseFields):
 
     quantity: Mapped[int] = mapped_column(Integer, default = 0)
 
-    measurement_unit: Mapped[MeasurementUnit] = mapped_column(SQLEnum(
-        MeasurementUnit, values_callable = lambda e: [m.value for m in e]), 
-        default = MeasurementUnit.PCS)
+    measurement_unit: Mapped[str] = mapped_column(default = MeasurementUnit.PCS)
     volume: Mapped[int] = mapped_column(Integer, default = 0)
     sell_price: Mapped[int] = mapped_column(Integer, default = 0)
 

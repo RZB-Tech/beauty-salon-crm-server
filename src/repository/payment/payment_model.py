@@ -1,5 +1,5 @@
 from __future__ import annotations
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
@@ -8,6 +8,7 @@ from sqlalchemy import (
     Index,
     Integer, 
     Enum as SQLEnum,
+    String,
     Text,
     UniqueConstraint,
     text
@@ -20,12 +21,12 @@ if TYPE_CHECKING:
     from src.repository.appointment.appointment_model import Appointment, AppointmentServices
     from src.repository.material.material_model import Material
 
-class ReceiptStatus(Enum):
+class ReceiptStatus(StrEnum):
     PENDING = "pending"
     PAID = "paid"
     CANCELLED = "cancelled"
 
-class ReceiptType(Enum):
+class ReceiptType(StrEnum):
     APPOINTMENT = "appointment"
     DIRECT_SALE = "direct sale"
 
@@ -100,9 +101,7 @@ class Receipt(BaseFields):
         primaryjoin = "and_(Receipt.id == ReceiptItem.receipt_id, Receipt.tenant_id == ReceiptItem.tenant_id)",
         foreign_keys = "[ReceiptItem.receipt_id]")
     
-    receipt_type: Mapped[ReceiptType] = mapped_column(
-        SQLEnum(ReceiptType, values_callable = lambda e: [m.value for m in e])
-    )
+    receipt_type: Mapped[str] = mapped_column(String(50))
 
     payments: Mapped[list["Payment"]] = relationship(
         back_populates = "receipt",
@@ -110,9 +109,7 @@ class Receipt(BaseFields):
         foreign_keys = "[Payment.receipt_id]")
     
     total_amount: Mapped[int] = mapped_column(Integer)
-    status: Mapped[ReceiptStatus] = mapped_column(SQLEnum(
-        ReceiptStatus, values_callable = lambda e: [m.value for m in e]),
-        default = ReceiptStatus.PENDING)
+    status: Mapped[str] = mapped_column(String(50), default = ReceiptStatus.PENDING)
     
     change_amount: Mapped[int] = mapped_column(Integer, default = 0)
     change_to_deposit: Mapped[bool] = mapped_column(Boolean, default = False)
@@ -159,7 +156,7 @@ class Receipt(BaseFields):
     
     ALLOWED_FILTERS = {"total_amount", "receipt_type", "status", "archived"}
 
-class PaymentMethodsEnum(Enum):
+class PaymentMethodsEnum(StrEnum):
     CASH = "cash"
     CARD = "card"
     DEPOSIT = "deposit"
@@ -175,8 +172,7 @@ class Payment(BaseFields):
         )
 
     amount: Mapped[int] = mapped_column(Integer)
-    method: Mapped[PaymentMethodsEnum] = mapped_column(SQLEnum(
-        PaymentMethodsEnum, values_callable = lambda e: [m.value for m in e]))
+    method: Mapped[str] = mapped_column(String(50))
     
     cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 

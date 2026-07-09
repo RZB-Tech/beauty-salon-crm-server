@@ -1,7 +1,7 @@
 from __future__ import annotations
-from enum import Enum
+from enum import Enum, StrEnum
 from src.database.base import BaseFields
-from sqlalchemy import CheckConstraint, Enum as SQLEnum, ForeignKeyConstraint, Integer, Time, UniqueConstraint
+from sqlalchemy import CheckConstraint, Enum as SQLEnum, ForeignKeyConstraint, Integer, String, Time, UniqueConstraint
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     ForeignKey,
@@ -13,7 +13,7 @@ from datetime import date, time
 if TYPE_CHECKING:
     from src.repository.employee.employee_model import Employee
 
-class AbsenceEnum(Enum):
+class AbsenceEnum(StrEnum):
     SICK = "sick"
     VACATION = "vacation"
     DAY_OFF = "day off"
@@ -28,8 +28,7 @@ class EmployeeAbsence(BaseFields):
     start_date: Mapped[date] = mapped_column(Date)
     end_date: Mapped[date] = mapped_column(Date)
 
-    absence_type: Mapped[AbsenceEnum] = mapped_column(SQLEnum(
-        AbsenceEnum, values_callable = lambda e: [m.value for m in e]))
+    absence_type: Mapped[str] = mapped_column(String(50))
     reason: Mapped[str | None] = mapped_column(Text, nullable = True)
 
     __table_args__ = (

@@ -1,9 +1,9 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 from datetime import datetime
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import Any, Generic, TypeVar, get_args, get_origin
-from sqlalchemy import Boolean, DateTime, ForeignKey, ForeignKeyConstraint, String, Text, UniqueConstraint, and_, func, select, text, Enum as SQLEnum
+from sqlalchemy import Boolean, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, Text, UniqueConstraint, and_, func, select, text, Enum as SQLEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, foreign, mapped_column, relationship, validates
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.mixins import TenantMixin
@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 class Base(DeclarativeBase):
     pass
 
-class ActorType(Enum):
+class ActorType(StrEnum):
     STAFF = "staff"
     SYSTEM = "system"
     API = "api"
@@ -26,8 +26,7 @@ class Actor(TenantMixin, Base):
     __tablename__ = "actors"
     
     id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
-    actor_type: Mapped[ActorType] = mapped_column(SQLEnum(
-        ActorType, values_callable = lambda e: [m.value for m in e]))
+    actor_type: Mapped[str] = mapped_column(String(50))
     name: Mapped[str | None] = mapped_column(String(255), nullable = True)
     description: Mapped[str | None] = mapped_column(Text, nullable = True)
 
@@ -43,7 +42,7 @@ class Actor(TenantMixin, Base):
             if "staff" in self.__dict__ and self.staff is not None:
                 return f"{self.staff.login} ({self.staff.firstname})"
             return self.name or f"Сотрудник #{self.id}"            
-        return self.name or (self.actor_type.value if hasattr(self.actor_type, "value") else str(self.actor_type))
+        return self.name or (self.actor_type if hasattr(self.actor_type) else str(self.actor_type))
 
     __table_args__ = (UniqueConstraint("id", "tenant_id", name = "uq_actor_tenant"),)
 
@@ -67,9 +66,7 @@ class BaseFields(TenantMixin, Base):
         nullable=False,
     )
 
-    created_by_actor_id: Mapped[int | None] = mapped_column(
-        ForeignKey("actors.id", use_alter=True, name="fk_created_by_actor",  ondelete = "set null"), 
-        nullable = True)
+    created_by_actor_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
     
     @declared_attr
     def creator(cls):
@@ -117,14 +114,16 @@ class BaseFields(TenantMixin, Base):
             if current_val != new_val:
                 raise ValueError("Restricted to change creation date of object")
             
-    __table_args__ = (
-        ForeignKeyConstraint(
-            ["created_by_actor_id", "tenant_id"],
-            ["actors.id", "actors.tenant_id"],
-            ondelete = "set null (created_by)",
-            name = "fk_created_by_tenant"
+    @declared_attr
+    def __table_args__(cls):
+        return (
+            ForeignKeyConstraint(
+                ["created_by_actor_id", "tenant_id"],
+                ["actors.id", "actors.tenant_id"],
+                ondelete="SET NULL",
+                name=f"fk_{cls.__tablename__}_created_by_tenant",
+            ),
         )
-    )
             
 T = TypeVar('T')
 

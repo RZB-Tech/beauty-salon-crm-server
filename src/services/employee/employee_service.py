@@ -3,9 +3,7 @@ import math
 from fastapi import HTTPException, status
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
-from src.repository.appointment.appointment_model import Appointment
 from src.repository.employee.employee_model import Employee
-from src.repository.payroll.payroll_model import Payroll
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.employee.create import EmployeeCreateSchema
 from src.schemas.employee.update import EmployeeUpdateSchema

@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
-from src.repository.system.tenant_model import TenantPreferences
+from src.repository.tenant.tenant_model import TenantPreferences
 from src.schemas.tenant.base import TenantPreferencesSchema
 from src.schemas.tenant.update import TenantPreferencesUpdateSchema
 

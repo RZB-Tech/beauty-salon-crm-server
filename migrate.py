@@ -140,6 +140,15 @@ def seed_admin_user() -> None:
                 2
             );
 
+        insert into tenant_integrations
+            (tenant_id, telegram_bot_token)
+        values
+            (1, null);
+
+        insert into tenant_integrations
+            (tenant_id, telegram_bot_token)
+        values
+            (2, null);
         """,
     ])
 

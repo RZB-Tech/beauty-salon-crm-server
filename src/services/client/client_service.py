@@ -59,8 +59,8 @@ class ClientService():
         client = await self.uow.clients.get(data.id)
         if not client:
             raise HTTPException(
-                status_code = status.HTTP_404_BAD_REQUEST,
-                detail = f"Client with id {data.client_id} not found"
+                status_code = 404,
+                detail = f"Client with id {data.id} not found"
             )
         
         if data.operation not in DepositOperation:

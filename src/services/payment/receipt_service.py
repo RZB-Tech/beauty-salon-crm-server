@@ -32,7 +32,7 @@ class ReceiptService():
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
                         f"Appointment {data.appointment_id} already has an active bill "
-                        f"(Receipt #{existing_active_receipt.id} is {existing_active_receipt.status.value}). "
+                        f"(Receipt #{existing_active_receipt.id} is {existing_active_receipt.status}). "
                         f"Cancel it before issuing a new one."
                     )
                 )

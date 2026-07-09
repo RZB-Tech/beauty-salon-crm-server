@@ -1,6 +1,3 @@
-from fastapi import HTTPException, status
-from sqlalchemy import select
-
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.employee.segments_model import Segmentation
 from src.schemas.segmentation.create import SegmentationCreateSchema

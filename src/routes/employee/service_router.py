@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, File, UploadFile, status
 from src.core.dependencies.uow import make_service_dependency
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
-from src.schemas.service import ServiceCreateSchema, ServiceResponseSchema, ServiceUpdateSchema
+from src.schemas.service.create import ServiceCreateSchema
+from src.schemas.service.response import ServiceResponseSchema
+from src.schemas.service.update import ServiceUpdateSchema
 from src.services.employee.service_service import ServiceService
 
 router = APIRouter()

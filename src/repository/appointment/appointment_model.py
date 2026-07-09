@@ -1,5 +1,5 @@
 from __future__ import annotations
-from enum import Enum
+from enum import Enum, StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
@@ -7,6 +7,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Integer,
     DateTime,
+    String,
     Text,
     UniqueConstraint
 )
@@ -18,13 +19,13 @@ from src.database.base import BaseFields
 if TYPE_CHECKING:
     from src.repository import Receipt, Client, Employee, Service, Material
 
-class AppointmentStatus(Enum):
+class AppointmentStatus(StrEnum):
     AWAITING = "awaiting"
     CANCELLED = "cancelled"
     STARTED = "started"
     FINISHED = "finished"
 
-class AppointmentCancelledReason(Enum):
+class AppointmentCancelledReason(StrEnum):
     CLIENT_CANCELLED = "client changed his mind"
     MISTAKEN_INPUT = "mistaken input"
     INCORRECT_CLIENT = "incorrect client"
@@ -135,16 +136,11 @@ class Appointment(BaseFields):
     
     receipts: Mapped["Receipt"] = relationship(back_populates = "appointment")
 
-    status: Mapped[AppointmentStatus] = mapped_column(SQLEnum(
-        AppointmentStatus, values_callable = lambda e: [m.value for m in e]), 
-        default = AppointmentStatus.AWAITING)
     paid: Mapped[bool] = mapped_column(Boolean, default = False)
-    
-    cancelled_reason: Mapped[AppointmentCancelledReason | None] = mapped_column(SQLEnum(
-        AppointmentCancelledReason, values_callable = lambda e: [m.value for m in e]), 
-        default = None,
-        nullable = True)
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
+    
+    status: Mapped[str] = mapped_column(String(50), default = AppointmentStatus.AWAITING)
+    cancelled_reason: Mapped[str | None] = mapped_column(String(50), default = None, nullable = True)
 
     @property
     def total_price(self) -> int:

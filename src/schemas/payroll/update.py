@@ -7,3 +7,4 @@ class PayrollUpdateSchema(BaseUpdateSchema):
     amount: int | None = Field(None, ge = 1)
     type: PayrollType | None = None
     notes: str | None = None
+    archived: bool | None = None

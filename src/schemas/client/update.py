@@ -14,6 +14,7 @@ class ClientUpdateSchema(BaseUpdateSchema):
     birth_date: date | None = None
     sex: Sex | None = None
     notes: str | None = None
+    archived: bool | None = None
 
 class DepositOperation(IntEnum):
     INCREMENT = 1

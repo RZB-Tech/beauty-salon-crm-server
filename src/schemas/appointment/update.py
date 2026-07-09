@@ -8,6 +8,7 @@ class AppointmentUpdateSchema(BaseUpdateSchema):
     id: int = Field(ge = 1)
     status: AppointmentStatus | None = None
     notes: str | None = None
+    archived: bool | None = None
 
     @model_validator(mode = "after")
     def check_status(self) -> Self:
@@ -23,6 +24,7 @@ class AppointmentServiceUpdateSchema(BaseUpdateSchema):
     price: int | None = Field(None, ge = 1)
     price_changed_reason: str | None = Field(None, min_length = 5)
     notes: str | None = None
+    archived: bool | None = None
 
     @model_validator(mode = "after")
     def check_require_one_field(self) -> Self:

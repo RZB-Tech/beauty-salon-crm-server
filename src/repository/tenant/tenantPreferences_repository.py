@@ -1,7 +1,7 @@
 from sqlalchemy import select
 
 from src.database.base import BaseRepository
-from src.repository.system.tenant_model import TenantPreferences
+from src.repository.tenant.tenant_model import TenantPreferences
 
 
 class TenantPreferencesRepository(BaseRepository[TenantPreferences]):

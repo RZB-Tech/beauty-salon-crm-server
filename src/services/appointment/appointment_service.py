@@ -1,5 +1,6 @@
 import math
 from fastapi import HTTPException, status
+from sqlalchemy import select
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import Appointment, AppointmentStatus
@@ -64,7 +65,7 @@ class AppointmentService():
                     if serviceObj.id not in employeeAllowedServices:
                         raise HTTPException(
                             status_code = 400,
-                            detail = f"Employee {employee.id} does not provide services: {service.id}"
+                            detail = f"Employee {employee.id} does not provide services: {serviceObj.id}"
                         )
                     
                     if service.price is None: service.price = serviceObj.price
@@ -128,12 +129,15 @@ class AppointmentService():
                 status_code = 404,
                 detail = f"Посещение с ID {data.id} не найден"
             )
-        
+
         if appointment.status == AppointmentStatus.CANCELLED:
             raise HTTPException(
                 status_code = 400,
                 detail = f"Посещение уже отменено"
             )
+        
+        receipts = await self.uow.receipts.get_by_appointment(data.id)
+        if len(receipts) >= 1: raise HTTPException(400, f"Нельзя отменить посещение с активным чеков, сначало отмените чек.")
         
         if appointment.paid:
             raise HTTPException(

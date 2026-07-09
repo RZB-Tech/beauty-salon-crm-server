@@ -1,7 +1,9 @@
 from fastapi import APIRouter, Depends, status
 from src.core.dependencies.uow import make_service_dependency
 from src.schemas.base import PaginatedResponseSchema
-from src.schemas.service_category import ServiceCategoryCreateSchema, ServiceCategoryResponseSchema, ServiceCategoryUpdateSchema
+from src.schemas.service_category.create import ServiceCategoryCreateSchema
+from src.schemas.service_category.response import ServiceCategoryResponseSchema
+from src.schemas.service_category.update import ServiceCategoryUpdateSchema
 from src.services.employee.serviceCategory_service import ServiceCategoryService
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 

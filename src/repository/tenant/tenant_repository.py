@@ -1,6 +1,6 @@
 from sqlalchemy import Result, select
 from src.database.base import BaseRepository
-from src.repository.system.tenant_model import Tenant
+from src.repository.tenant.tenant_model import Tenant
 
 class TenantRepository(BaseRepository[Tenant]):
     async def create(self, staff: Tenant) -> Tenant:

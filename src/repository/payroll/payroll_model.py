@@ -1,14 +1,13 @@
 from __future__ import annotations
-from enum import Enum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
     CheckConstraint,
-    ForeignKey,
-    Enum as SQLEnum,
     ForeignKeyConstraint,
     Index,
     Integer,
+    String,
     Text,
     UniqueConstraint
 )
@@ -18,22 +17,22 @@ from src.database.base import BaseFields
 if TYPE_CHECKING: 
     from src.repository.transaction.transaction_model import Transaction
 
-class PayrollType(Enum):
+class PayrollType(StrEnum):
     BONUS = "bonus"
     PENALTY = "penalty"
     COMMISSION = "commission"
 
-class PayrollStatus(Enum):
+class PayrollStatus(StrEnum):
     PENDING = "pending"
     PAID = "paid"
     CANCELLED = "cancelled"
 
-class PayoutType(Enum):
+class PayoutType(StrEnum):
     SALARY = "salary"
     ADVANCE_SALARY = "advance salary"
     OTHER = "other"
 
-class PayoutMethod(Enum):
+class PayoutMethod(StrEnum):
     CASH = "cash"
     CARD = "card"
 
@@ -51,12 +50,8 @@ class Payout(BaseFields):
         foreign_keys = "[Transaction.payout_id]")
 
     amount: Mapped[int | None] = mapped_column(Integer, nullable = True)
-    type: Mapped[PayoutType] = mapped_column(SQLEnum(
-        PayoutType, values_callable = lambda e: [m.value for m in e]
-    ))
-    method: Mapped[PayoutType] = mapped_column(SQLEnum(
-        PayoutMethod, values_callable = lambda e: [m.value for m in e]
-    ))
+    type: Mapped[str] = mapped_column(String(50))
+    method: Mapped[str] = mapped_column(String(50))
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
     cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
@@ -96,13 +91,11 @@ class Payroll(BaseFields):
     appointment_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
 
     amount: Mapped[int] = mapped_column(Integer, default = 0)
-    type: Mapped[PayrollType] = mapped_column(SQLEnum(
-        PayrollType, values_callable = lambda e: [m.value for m in e]))
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
-
-    status: Mapped[PayrollStatus] = mapped_column(SQLEnum(
-        PayrollStatus, values_callable = lambda e: [m.value for m in e]), default = PayrollStatus.PENDING)
     auto_genereted: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
+
+    type: Mapped[str] = mapped_column(String(50))
+    status: Mapped[str] = mapped_column(String(50), default = PayrollStatus.PENDING)
 
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_payroll_tenant"),

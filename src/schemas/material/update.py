@@ -15,6 +15,8 @@ class MaterialUpdateSchema(BaseUpdateSchema):
     volume: int | None = Field(None, ge = 0)
     sell_price: int | None = Field(None, ge = 0)
 
+    archived: bool | None = None
+
 class MaterialOperation(IntEnum):
     INCREMENT = 1
     DECREMENT = -1

@@ -1,6 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from enum import Enum
+from enum import Enum, StrEnum
 from sqlalchemy import ForeignKeyConstraint, Integer, String, Boolean, Enum as SQLEnum, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
 from src.database.base import BaseFields
@@ -8,7 +8,7 @@ from src.database.base import BaseFields
 if TYPE_CHECKING:
     from src.database.base import Actor
 
-class StaffType(Enum):
+class StaffType(StrEnum):
     ADMIN = "administrator"
     EMPLOYEE = "employee"
 
@@ -23,8 +23,7 @@ class Staff(BaseFields):
     hashed_password: Mapped[str] = mapped_column(Text)
     active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true")
 
-    staff_type: Mapped[StaffType] = mapped_column(SQLEnum(
-        StaffType, values_callable = lambda e: [m.value for m in e]))
+    staff_type: Mapped[str] = mapped_column(String(50))
     
     employee_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
 

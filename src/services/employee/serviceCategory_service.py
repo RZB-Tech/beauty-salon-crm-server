@@ -1,8 +1,6 @@
 import math
-from fastapi import HTTPException, status
-from src.core.decorators.requireID import require_exists
+from fastapi import HTTPException
 from src.core.dependencies.uow import UnitOfWork
-from src.repository.service.serviceCategory_repository import ServiceCategoryRepository
 from src.repository.service.service_model import ServiceCategory
 from src.schemas.service_category.create import ServiceCategoryCreateSchema
 from src.schemas.service_category.update import ServiceCategoryUpdateSchema

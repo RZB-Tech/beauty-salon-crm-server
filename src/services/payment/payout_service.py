@@ -62,7 +62,7 @@ class PayoutService():
         await self.uow.transactions.create(Transaction(
             amount = result.total_amount,
             type = TransactionType.EXPENSE,
-            method = TransactionMethod(newPayout.method.value),
+            method = TransactionMethod(newPayout.method),
             category = TransactionCategory.EMPLOYEE_PAYMENT,
             payout_id = result.id,
             auto_generated = True

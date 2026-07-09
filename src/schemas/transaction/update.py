@@ -9,6 +9,7 @@ class TransactionUpdateSchema(BaseUpdateSchema):
     method: TransactionMethod | None = None
     category: TransactionCategory | None = None
     notes: str | None = None
+    archived: bool | None = None
 
     @field_validator("category")
     @classmethod

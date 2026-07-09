@@ -61,7 +61,7 @@ class PaymentService():
                 receipt_id = receipt.id,
                 amount = receipt.total_amount,
                 type = TransactionType.INCOME,
-                method = TransactionMethod(new_payment.method.value),
+                method = TransactionMethod(new_payment.method),
                 category = TransactionCategory.RECEIPT,
                 auto_generated = True
             ))
@@ -123,7 +123,7 @@ class PaymentService():
                 receipt_id = receipt.id,
                 amount = data.amount,
                 type = TransactionType.INCOME,
-                method = TransactionMethod(new_payment.method.value),
+                method = TransactionMethod(new_payment.method),
                 category = TransactionCategory.RECEIPT,
                 auto_generated = True
             ))

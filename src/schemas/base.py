@@ -48,7 +48,6 @@ class BaseResponseSchema(BaseModel):
 
 class BaseUpdateSchema(BaseModel):
     _exclude_fields: ClassVar[set[str]] = {"id"}
-    archived: bool | None = None
     @model_validator(mode="after")
     def validate_at_least_one_field(self) -> "BaseUpdateSchema":
         update_fields = {

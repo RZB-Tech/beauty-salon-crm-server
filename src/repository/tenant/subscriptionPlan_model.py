@@ -10,8 +10,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from src.database.base import Base
 
-class Plan(Base):
-    __tablename__ = "plans"
+class SubscriptionPlan(Base):
+    __tablename__ = "subscription_plans"
 
     id: Mapped[int] = mapped_column(primary_key = True, autoincrement = True)
     name: Mapped[str] = mapped_column(String(255), unique = True)
