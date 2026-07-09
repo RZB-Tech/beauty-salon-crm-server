@@ -6,7 +6,6 @@ from sqlalchemy.pool import NullPool
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
 from src.database.base import BaseFields
-from src.core.dependencies.context import set_db_context
 from src.database.session import db_session_ctx
 from src.app import app
 
