@@ -12,8 +12,8 @@ get_material_service = make_service_dependency(MaterialService)
 @router.post(
     "", 
     response_model=MaterialResponseSchema, 
-    status_code=status.HTTP_201_CREATED,
-    summary="Create a new service"
+    status_code= 201,
+    summary="Create a new material"
 )
 async def create(data: MaterialCreateSchema,
                  materialService: MaterialService = Depends(get_material_service)):

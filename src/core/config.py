@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_SECONDS: int
     REDIS_BROKER: str
     REDIS_BACKEND: str
-
+    
     @property
     def PRIVATE_KEY(self) -> str:
         with open(self.PRIVATE_KEY_PATH, 'r') as f: return f.read()
