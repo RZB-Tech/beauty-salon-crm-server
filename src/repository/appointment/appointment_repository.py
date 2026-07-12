@@ -127,8 +127,9 @@ class AppointmentRepository(BaseRepository[Appointment]):
     async def client_has_overlap(self, clientID: int, start: datetime, end: datetime) -> bool:
         stmt = select(Appointment).where(
                 Appointment.client_id == clientID,
-                Appointment.start_time_est > start,
-                Appointment.end_time_est < end
+                Appointment.start_time_est < end,
+                Appointment.end_time_est > start,
+                Appointment.status != AppointmentStatus.CANCELLED
             )
         result = await self.db.execute(stmt)
         return result.first() is not None

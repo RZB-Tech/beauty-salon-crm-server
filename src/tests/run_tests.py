@@ -92,7 +92,8 @@ async def main():
         # 3. RUN TESTS
         # This will execute pytest and stream output directly to your terminal.
         # We pass the DATABASE_URL environment variable down so your app loads the test DB context.
-        run(["uv", "run", "pytest", "-v"])
+        pytestArgs = sys.argv[1:] if len(sys.argv) > 1 else ["-v"]
+        run(["uv", "run", "pytest", *pytestArgs])
         
     except subprocess.CalledProcessError:
         print("❌ Tests failed or setup crashed.")

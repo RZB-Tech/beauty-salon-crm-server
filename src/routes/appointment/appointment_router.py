@@ -14,7 +14,7 @@ get_appointment_service = make_service_dependency(AppointmentService)
 @router.post(
     "", 
     response_model=AppointmentResponseSchema, 
-    status_code=status.HTTP_201_CREATED
+    status_code = 201
 )
 async def create(data: AppointmentCreateSchema,
                  appointmentService: AppointmentService = Depends(get_appointment_service)):

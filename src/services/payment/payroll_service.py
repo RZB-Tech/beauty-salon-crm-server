@@ -25,6 +25,7 @@ class PayrollService():
         if payroll.archived: raise HTTPException(400, f"Нельзя изменить архивированный объект")
 
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
+
         result = await self.uow.payrolls.update(data.id, **dataDict)
         if not result:
             raise HTTPException(

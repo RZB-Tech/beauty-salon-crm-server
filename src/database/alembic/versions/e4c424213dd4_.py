@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 6de54a35f88b
+Revision ID: e4c424213dd4
 Revises: 
-Create Date: 2026-07-09 17:44:16.725808
+Create Date: 2026-07-12 19:40:57.719622
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '6de54a35f88b'
+revision: str = 'e4c424213dd4'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -93,10 +93,11 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('article'),
     sa.UniqueConstraint('id', 'tenant_id', name='uq_material_tenant')
     )
     op.create_index(op.f('ix_materials_tenant_id'), 'materials', ['tenant_id'], unique=False)
-    op.create_index('uq_material_article_name_lower', 'materials', [sa.literal_column('lower(article)'), sa.literal_column('lower(name)'), 'tenant_id'], unique=True)
+    op.create_index('uq_material_article_name_lower', 'materials', [sa.literal_column('lower(article)'), sa.literal_column('lower(name)'), 'tenant_id'], unique=False)
     op.create_table('service_categories',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -182,8 +183,8 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['specialization_id', 'tenant_id'], ['specializations.id', 'specializations.tenant_id'], name='fk_employee_specialization_tenant', ondelete='SET NULL (specialization_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('firstname', 'lastname', 'phone', 'birth_date', 'tenant_id', name='uq_employee_per_tenant'),
-    sa.UniqueConstraint('id', 'tenant_id', name='uq_emplyoee_id_tenant')
+    sa.UniqueConstraint('id', 'tenant_id', name='uq_emplyoee_id_tenant'),
+    sa.UniqueConstraint('phone', 'tenant_id', name='uq_employee_per_tenant')
     )
     op.create_index(op.f('ix_employees_tenant_id'), 'employees', ['tenant_id'], unique=False)
     op.create_table('notifications',

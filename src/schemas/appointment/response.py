@@ -23,7 +23,7 @@ class ServiceNestedResponseSchema(BaseResponseSchema):
 
 class AppointmentServicesResponseSchema(BaseResponseSchema):
     appointment_record_id: int
-    service_id: int
+    service_id: int | None = None
     service: ServiceNestedResponseSchema | None = None
     material_id: int | None = None
     quantity: int

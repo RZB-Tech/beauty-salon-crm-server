@@ -23,7 +23,7 @@ class MeasurementUnit(StrEnum):
 
 class Material(BaseFields):
     __tablename__ = "materials"
-    article: Mapped[str] = mapped_column(String(255))
+    article: Mapped[str] = mapped_column(String(255), unique = True)
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text, nullable = True)
 
@@ -39,8 +39,7 @@ class Material(BaseFields):
             "uq_material_article_name_lower", 
             func.lower(article),
             func.lower(name),
-            "tenant_id",
-            unique=True
+            "tenant_id"
         ),
     )
 

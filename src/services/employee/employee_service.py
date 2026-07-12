@@ -22,12 +22,14 @@ class EmployeeService():
             found_services = await self.uow.services.get_by_ids(services_ids)
             
             if len(found_services) != len(services_ids):
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="One or more provided service_ids do not exist."
-                )
+                raise HTTPException(404, detail="One or more provided service_ids do not exist.")
                 
             new_employee.services = found_services
+
+        if data.specialization_id:
+            specialization = await self.uow.specializations.get(data.specialization_id)
+            if specialization is None: raise HTTPException(404, f"Специализация с ID {data.specialization_id} не найдена")
+            if specialization.archived: raise HTTPException(409, f"Нелья использовать архивированную специализацию")
 
         result = await self.uow.employees.create(new_employee)
         return await self.uow.employees.get(result.id)
@@ -42,16 +44,16 @@ class EmployeeService():
         return result
     
     async def update(self, data: EmployeeUpdateSchema) -> Employee:
+        checkArchived = await self.uow.employees.get(data.id)
+        if checkArchived.archived: raise HTTPException(409, detail = f"Сотрудник с ID {data.id} архивирован и не может быть изменен")
+
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
         if data.services is not None:
             services = []
             if len(data.services) >= 1:
                 services = await self.uow.services.get_by_ids(data.services)
                 if len(services) != len(data.services):
-                    raise HTTPException(
-                        status_code=status.HTTP_400_BAD_REQUEST,
-                        detail="Один или более из указанных услуг не найден"
-                    )
+                    raise HTTPException( 404, detail="Один или более из указанных услуг не найден")
                 for service in services: 
                     if service.archived: raise HTTPException(409, f"Нельзя привязать архивированную услугу {service.name} (ID {service.ID}) к сотруднику")
             dataDict["services"] = services

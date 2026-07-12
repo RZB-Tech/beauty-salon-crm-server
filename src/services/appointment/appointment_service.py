@@ -24,8 +24,8 @@ class AppointmentService():
             employee = await self.uow.employees.get(record.employee_id)
             if employee is None:
                 raise HTTPException(
-                    status_code = status.HTTP_404_NOT_FOUND,
-                    detail = f"Employee with id {data.id} not found"
+                    status_code = 404,
+                    detail = f"Employee with id {record.employee_id} not found"
                 )
             if not employee.active or employee.archived:
                 raise HTTPException(
@@ -36,7 +36,7 @@ class AppointmentService():
             isWorking = await self.uow.work_schedules.is_employee_working(employee.id, data.start_time_est, data.end_time_est)
             if not isWorking:
                 raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
+                    status_code= 409,
                     detail=f"Employee {employee.id} is not scheduled to work during these hours."
                 )
             
@@ -56,17 +56,14 @@ class AppointmentService():
                     if not serviceObj:
                         raise HTTPException(
                             status_code = 404,
-                            detail = f"Service with id {data.id} not found"
+                            detail = f"Service with id {service.service_id} not found"
                         )
                     
                     if serviceObj.archived: 
                         raise HTTPException(409, f"Нельзя использовать архивированную услуг {serviceObj.name}, ID {serviceObj.id}")
                     
                     if serviceObj.id not in employeeAllowedServices:
-                        raise HTTPException(
-                            status_code = 400,
-                            detail = f"Employee {employee.id} does not provide services: {serviceObj.id}"
-                        )
+                        raise HTTPException(409, f"Employee {employee.id} does not provide services: {serviceObj.id}")
                     
                     if service.price is None: service.price = serviceObj.price
                     if service.price != serviceObj.price and (service.price_changed_reason is None or len(service.price_changed_reason.strip()) == 0):
@@ -79,7 +76,7 @@ class AppointmentService():
                     if not materialObj:
                         raise HTTPException(
                             status_code = 404,
-                            detail = f"Service with id {data.id} not found"
+                            detail = f"Service with id {service.material_id} not found"
                         )
                     if materialObj.archived: 
                         raise HTTPException(409, f"Нельзя использовать архивированную услуг {materialObj.name}, ID {materialObj.id}")
@@ -89,8 +86,8 @@ class AppointmentService():
                             status_code = 400,
                             detail = f"Недостаточное количество {materialObj.article} {materialObj.name} на складе, требуется {service.quantity}, на складе: {materialObj.quantity}"
                         )
-                    if service.price is None: service.price = materialObj.price
-                    if service.price != materialObj.price and (service.notes is None or len(service.notes.strip()) == 0):
+                    if service.price is None: service.price = materialObj.sell_price
+                    if service.price != materialObj.sell_price and (service.notes is None or len(service.notes.strip()) == 0):
                         raise HTTPException(
                             status_code = 400,
                             detail = f"Необходимо в комментариях указать причину изменения стоимости товара"

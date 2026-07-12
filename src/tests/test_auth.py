@@ -2,7 +2,7 @@ import pytest
 from httpx import ASGITransport, AsyncClient
 from src.app import app 
 
-pytestmark = pytest.mark.asyncio
+pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 async def test_login_refresh_logout_success():
     transport = ASGITransport(app=app)
@@ -25,5 +25,15 @@ async def test_login_refresh_logout_success():
         assert refresh_response.status_code == 204
 
         # LOGOUT
-        # logoutResponse = await client.post("/api/v1/auth/logout")
-        # assert logoutResponse.status_code == 204
+        logoutResponse = await client.post("/api/v1/auth/logout")
+        assert logoutResponse.status_code == 204
+
+    async with AsyncClient(transport=transport, base_url="https://testserver") as client:
+        # incorrect login
+        payload = {
+            "login": "blalaldasld",
+            "password": "test"
+        }
+        response = await client.post("/api/v1/auth/login", json=payload)
+        
+        assert response.status_code == 404

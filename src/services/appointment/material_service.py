@@ -75,7 +75,7 @@ class MaterialService():
         newQuantity = material.quantity + (data.operation * data.quantity)
         if newQuantity < 0:
             raise HTTPException(
-                status_code = status.HTTP_400_BAD_REQUEST,
+                status_code = 409,
                 detail = "Количество материала не может быть негативным"
             )
         

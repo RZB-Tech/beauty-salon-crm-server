@@ -23,7 +23,7 @@ async def create(data: SpecializationCreateSchema,
 @router.patch(
     "",
     response_model=SpecializationResponseSchema, 
-    status_code=status.HTTP_200_OK,
+    status_code= 200,
     summary="Update specialization"
 )
 async def update(data: SpecializationUpdateSchema,

@@ -32,7 +32,7 @@ async def update(data: MaterialUpdateSchema,
 @router.post(
     "/get-all",
     response_model=PaginatedResponseSchema[MaterialResponseSchema], 
-    status_code=status.HTTP_200_OK,
+    status_code = 200,
     summary="Get all categories"
 )
 async def get_all(params: RequestAllObject,
@@ -42,7 +42,7 @@ async def get_all(params: RequestAllObject,
 @router.get(
     "/{id}",
     response_model=MaterialResponseSchema, 
-    status_code=status.HTTP_200_OK,
+    status_code = 200,
     summary="Get "
 )
 async def get(id: int,

@@ -18,11 +18,7 @@ class SpecializationService():
     async def update(self, data: SpecializationUpdateSchema) -> Specialization:
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
         result = await self.uow.specializations.update(data.id, **dataDict)
-        if result is None:
-            raise HTTPException(
-                status_code = 404,
-                detail = f"Специализация с ID {data.id} не найден"
-            )
+        if result is None: raise HTTPException(404, f"Специализация с ID {data.id} не найден")
         return result
     
     async def get(self, id: int) -> Specialization:

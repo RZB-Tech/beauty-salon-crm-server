@@ -7,4 +7,5 @@ class PayrollResponseSchema(BaseResponseSchema):
     type: PayrollType
     notes: str | None = None
     payout_id: int | None = None
+    status: str
     appointment_id: int | None = None

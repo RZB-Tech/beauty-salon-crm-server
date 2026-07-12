@@ -71,10 +71,7 @@ class ClientService():
         
         newDeposit = client.deposit + (data.operation * data.amount)
         if newDeposit < 0:
-            raise HTTPException(
-                status_code = status.HTTP_400_BAD_REQUEST,
-                detail = "Deposit cannot be negative"
-            )
+            raise HTTPException(409, "Deposit cannot be negative")
         
         return await self.uow.clients.update(client.id, deposit = newDeposit)
     
