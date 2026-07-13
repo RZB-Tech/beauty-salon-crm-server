@@ -12,7 +12,7 @@ class PaymentCreateSchema(BaseModel):
     receipt_id: int = Field(ge = 1)
     amount: int = Field(ge = 1)
     method: PaymentMethodsEnum
-    add_change_to_deposit: bool = False
+    add_change_to_deposit: bool = True
 
 class ReceiptCreateSchema(BaseModel):
     receipt_type: ReceiptType = ReceiptType.APPOINTMENT

@@ -71,6 +71,7 @@ class PaymentService():
             
             overpayment = receipt.paid_amount - receipt.total_amount
             if overpayment > 0:
+                if not data.add_change_to_deposit: raise HTTPException(400, "Переплата, измените сумму или оплатите с учетом перевода сдачи в депозит клиента")
                 receipt.change_amount = overpayment
                 receipt.change_to_deposit = data.add_change_to_deposit
                 
@@ -80,7 +81,7 @@ class PaymentService():
                 # create new transaction for deposit
                 await self.uow.transactions.create(Transaction(
                     receipt_id = receipt.id,
-                    amount = receipt.overpayment,
+                    amount = overpayment,
                     type = TransactionType.INCOME,
                     method = TransactionMethod.DEPOSIT,
                     category = TransactionCategory.RECEIPT,
@@ -149,7 +150,7 @@ class PaymentService():
                 )
             
             final_deposit_balance = client.deposit + depositAdjustment
-            await self.uow.clients.updateDeposit(client, final_deposit_balance)
+            await self.uow.clients.update(client.id, deposit = final_deposit_balance)
 
         return await self.uow.receipts.get(receipt.id)
     

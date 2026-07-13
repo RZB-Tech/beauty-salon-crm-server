@@ -16,7 +16,7 @@ class TestPayroll:
             json= {
             "firstname": "SOME NAME",
             "lastname": "SOME LASTNAME",
-            "birth_date": "1990-01-01",})
+            "birthk_date": "1990-01-01",})
         TestPayroll.employeeID = int(employeeResponse.json()["id"])
 
         salon_payload = {
