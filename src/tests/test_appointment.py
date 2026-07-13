@@ -1,5 +1,6 @@
 import pytest
 import pytest_asyncio
+from datetime import datetime
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
@@ -9,6 +10,10 @@ class TestAppointment:
     clientID: int
     appointmentID: int
     materialID: int
+    appointmentRecordID: int
+    appointmentServiceID: int
+
+    # Appointment tests
 
     async def test_appointment_create_only_with_client(self, auth_client):
         clientResponse = await auth_client.post("/api/v1/clients", json={
@@ -254,3 +259,240 @@ class TestAppointment:
         }
         response = await auth_client.post("/api/v1/appointments", json=appointmentPayload)
         assert response.status_code == 400
+
+    # Appointment records tests
+
+    async def test_appointmentRecord_create(self, auth_client):
+        recordPayload = {
+            "appointment_id": TestAppointment.appointmentID,
+            "employee_id": TestAppointment.employeeID,
+            "services": [
+                {
+                "service_id": TestAppointment.serviceID
+                }
+            ]
+        }
+        recordResponse = await auth_client.post(f"/api/v1/appointments-records", json=recordPayload)
+        assert recordResponse.status_code == 201
+        TestAppointment.appointmentRecordID = int(recordResponse.json()["id"])
+
+    async def test_appointmentRecord_create_with_invalid_appointment(self, auth_client):
+        recordPayload = {
+            "appointment_id": 99999,
+            "employee_id": TestAppointment.employeeID,
+            "services": [
+                {
+                "service_id": TestAppointment.serviceID
+                }
+            ]
+        }
+        recordResponse = await auth_client.post(f"/api/v1/appointments-records", json=recordPayload)
+        assert recordResponse.status_code == 404
+
+    async def test_appointmentRecord_create_with_invalid_employee(self, auth_client):
+        recordPayload = {
+            "appointment_id": TestAppointment.appointmentID,
+            "employee_id": 99999,
+            "services": [
+                {
+                "service_id": TestAppointment.serviceID
+                }
+            ]
+        }
+        recordResponse = await auth_client.post(f"/api/v1/appointments-records", json=recordPayload)
+        assert recordResponse.status_code == 404
+
+    async def test_appointmentRecord_create_with_invalid_service(self, auth_client):
+        recordPayload = {
+            "appointment_id": TestAppointment.appointmentID,
+            "employee_id": TestAppointment.employeeID,
+            "services": [
+                {
+                "service_id": 99999
+                }
+            ]
+        }
+        recordResponse = await auth_client.post(f"/api/v1/appointments-records", json=recordPayload)
+        assert recordResponse.status_code == 404
+
+    async def test_appointmentRecord_with_invalid_employee_service(self, auth_client):
+        newService = await auth_client.post("/api/v1/services", json={
+            "name": "for appointment test new employee",
+            "price": 1000
+        })
+        newServiceID = int(newService.json()["id"])
+
+        recordPayload = {
+            "appointment_id": TestAppointment.appointmentID,
+            "employee_id": TestAppointment.employeeID,
+            "services": [
+                {
+                "service_id": newServiceID
+                }
+            ]
+        }
+        recordResponse = await auth_client.post(f"/api/v1/appointments-records", json=recordPayload)
+        assert recordResponse.status_code == 409
+
+    async def test_appointmentRecord_create_with_invalid_material(self, auth_client):
+        recordPayload = {
+            "appointment_id": TestAppointment.appointmentID,
+            "employee_id": TestAppointment.employeeID,
+            "services": [
+                {
+                "material_id": 99999,
+                "quantity": 1
+                }
+            ]
+        }
+        recordResponse = await auth_client.post(f"/api/v1/appointments-records", json=recordPayload)
+        assert recordResponse.status_code == 404
+
+    async def test_appointmentRecord_create_with_material_insufficient_quantity(self, auth_client):
+        recordPayload = {
+            "appointment_id": TestAppointment.appointmentID,
+            "employee_id": TestAppointment.employeeID,
+            "services": [
+                {
+                "material_id": TestAppointment.materialID,
+                "quantity": 100
+                }
+            ]
+        }
+        recordResponse = await auth_client.post(f"/api/v1/appointments-records", json=recordPayload)
+        assert recordResponse.status_code == 400
+
+    async def test_appointmentRecord_create_with_service_price_changed_no_reason(self, auth_client):
+        recordPayload = {
+            "appointment_id": TestAppointment.appointmentID,
+            "employee_id": TestAppointment.employeeID,
+            "services": [
+                {
+                "service_id": TestAppointment.serviceID,
+                "quantity": 1,
+                "price": 5000
+                }
+            ]
+        }
+        recordResponse = await auth_client.post(f"/api/v1/appointments-records", json=recordPayload)
+        assert recordResponse.status_code == 400
+
+    async def test_appointmentRecord_create_with_material_price_changed_no_reason(self, auth_client):
+        recordPayload = {
+            "appointment_id": TestAppointment.appointmentID,
+            "employee_id": TestAppointment.employeeID,
+            "services": [
+                {
+                "material_id": TestAppointment.materialID,
+                "quantity": 1,
+                "price": 5000
+                }
+            ]
+        }
+        recordResponse = await auth_client.post(f"/api/v1/appointments-records", json=recordPayload)
+        assert recordResponse.status_code == 400
+
+    async def test_appointmentRecord_only_service_or_material(self, auth_client):
+        recordPayload = {
+            "appointment_id": TestAppointment.appointmentID,
+            "employee_id": TestAppointment.employeeID,
+            "services": [
+                {
+                "service_id": TestAppointment.serviceID,
+                "material_id": TestAppointment.materialID,
+                "quantity": 1
+                }
+            ]
+        }
+        recordResponse = await auth_client.post(f"/api/v1/appointments-records", json=recordPayload)
+        assert recordResponse.status_code == 400
+
+    async def test_appointmentRecord_delete(self, auth_client):
+        response = await auth_client.delete(f"/api/v1/appointments-records/{TestAppointment.appointmentRecordID}")
+        assert response.status_code == 200
+
+        # Verify the record is actually deleted
+        getResponse = await auth_client.get(f"/api/v1/appointments/{TestAppointment.appointmentID}")
+        assert TestAppointment.appointmentRecordID not in [record["id"] for record in getResponse.json()["records"]]
+
+    # Appointment services
+
+    async def test_appointmentServices_create(self, auth_client):
+        recordPayload = {
+            "appointment_id": TestAppointment.appointmentID,
+            "employee_id": TestAppointment.employeeID,
+            "services": [
+                {
+                "service_id": TestAppointment.serviceID
+                }
+            ]
+        }
+        recordResponse = await auth_client.post(f"/api/v1/appointments-records", json=recordPayload)
+        assert recordResponse.status_code == 201
+
+        data = recordResponse.json()
+        latest_record = max(
+            data["records"],
+            key=lambda record: datetime.fromisoformat(
+                record["created_at"].replace("Z", "+00:00")
+            )
+        )
+        TestAppointment.appointmentRecordID = int(latest_record["id"])
+
+        appointmentServicePayload = {
+            "appointment_record_id": TestAppointment.appointmentRecordID,
+            "service_id": TestAppointment.serviceID
+        }
+
+        response = await auth_client.post("/api/v1/appointments-services", json=appointmentServicePayload)
+        assert response.status_code == 201
+
+        latest_service = max(
+            latest_record["services"],
+            key=lambda service: datetime.fromisoformat(
+                service["created_at"].replace("Z", "+00:00")
+            )
+        )
+        TestAppointment.appointmentServiceID = int(latest_service["id"])
+
+    async def test_appointmentServices_create_invalid_appointment_record(self, auth_client):
+        appointmentServicePayload = {
+            "appointment_record_id": 99999,
+            "service_id": TestAppointment.serviceID
+        }
+        response = await auth_client.post("/api/v1/appointments-services", json=appointmentServicePayload)
+        assert response.status_code == 404
+
+    async def test_appointmentServices_create_service_and_material_incompatible(self, auth_client):
+        appointmentServicePayload = {
+            "appointment_record_id": TestAppointment.appointmentRecordID,
+            "service_id": TestAppointment.serviceID,
+            "material_id": TestAppointment.materialID
+        }
+        response = await auth_client.post("/api/v1/appointments-services", json=appointmentServicePayload)
+        assert response.status_code == 400
+
+    async def test_appointmentServices_create_invalid_service(self, auth_client):
+        appointmentServicePayload = {
+            "appointment_record_id": TestAppointment.appointmentRecordID,
+            "service_id": 99999
+        }
+        response = await auth_client.post("/api/v1/appointments-services", json=appointmentServicePayload)
+        assert response.status_code == 404
+
+    async def test_appointmentServices_create_invalid_service_employee(self, auth_client):
+        newTestService = await auth_client.post("/api/v1/services", json = {
+            "name": "newTestService1",
+            "price": 1000
+        })
+        assert newTestService.status_code == 201
+        testServiceID = int(newTestService.json()["id"])
+
+        appointmentServicePayload = {
+            "appointment_record_id": TestAppointment.appointmentRecordID,
+            "service_id": testServiceID
+        }
+        response = await auth_client.post("/api/v1/appointments-services", json=appointmentServicePayload)
+        print(response.json())
+        assert response.status_code == 409
+    

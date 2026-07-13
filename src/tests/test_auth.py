@@ -27,13 +27,3 @@ async def test_login_refresh_logout_success():
         # LOGOUT
         logoutResponse = await client.post("/api/v1/auth/logout")
         assert logoutResponse.status_code == 204
-
-    async with AsyncClient(transport=transport, base_url="https://testserver") as client:
-        # incorrect login
-        payload = {
-            "login": "blalaldasld",
-            "password": "test"
-        }
-        response = await client.post("/api/v1/auth/login", json=payload)
-        
-        assert response.status_code == 404

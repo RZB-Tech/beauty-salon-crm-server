@@ -22,6 +22,7 @@ class TestMaterial:
 
     async def test_get_material(self, auth_client):
         response = await auth_client.get(f"/api/v1/materials/{TestMaterial.materialID}")
+        print(response.json())
         assert response.status_code == 200
         assert response.json()["article"] == "MT-ASAD"
 
@@ -40,7 +41,6 @@ class TestMaterial:
 
     async def test_get_all_materials(self, auth_client):
         response = await auth_client.post("/api/v1/materials/get-all", json={})
-        print(response.json())
         assert response.status_code ==  200
         assert len(response.json()["items"]) >= 1
 

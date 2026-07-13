@@ -44,15 +44,15 @@ class AppointmentRecordsService():
                 if not serviceObj:
                     raise HTTPException(
                         status_code = 404,
-                        detail = f"Service with id {data.id} not found"
+                        detail = f"Service with id {service.service_id} not found"
                     )
                 if serviceObj.archived: 
                         raise HTTPException(409, f"Нельзя использовать архивированную услуг {serviceObj.name}, ID {serviceObj.id}")
                 
                 if serviceObj.id not in employeeAllowedServices:
                     raise HTTPException(
-                        status_code = 400,
-                        detail = f"Employee {employee.id} does not provide services: {service.id}"
+                        status_code = 409,
+                        detail = f"Employee {employee.id} does not provide services: {service.service_id}"
                     )
                 
                 if service.price is None: service.price = serviceObj.price
@@ -66,7 +66,7 @@ class AppointmentRecordsService():
                 if not materialObj:
                     raise HTTPException(
                         status_code = 404,
-                        detail = f"Service with id {data.id} not found"
+                        detail = f"Material with id {service.material_id} not found"
                     )
                 if materialObj.archived: 
                     raise HTTPException(409, f"Нельзя использовать архивированную услуг {materialObj.name}, ID {materialObj.id}")
@@ -75,8 +75,8 @@ class AppointmentRecordsService():
                         status_code = 400,
                         detail = f"Недостаточное количество {materialObj.article} {materialObj.name} на складе, требуется {service.quantity}, на складе: {materialObj.quantity}"
                     )
-                if service.price is None: service.price = materialObj.price
-                if service.price != materialObj.price and (service.notes is None or len(service.notes.strip()) == 0):
+                if service.price is None: service.price = materialObj.sell_price
+                if service.price != materialObj.sell_price and (service.notes is None or len(service.notes.strip()) == 0):
                     raise HTTPException(
                         status_code = 400,
                         detail = f"Необходимо в комментариях указать причину изменения стоимости товара"

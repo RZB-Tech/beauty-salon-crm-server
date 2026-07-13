@@ -47,10 +47,7 @@ class AppointmentServicesService():
         if service is not None:
             employeeAllowedServices = {i.id for i in employee.services}
             if data.service_id not in employeeAllowedServices:
-                raise HTTPException(
-                    status_code = status.HTTP_404_NOT_FOUND,
-                    detail = f"Employee {employee.id} does not provide services: {service.id}"
-                )
+                raise HTTPException(409, f"Employee {employee.id} does not provide services: {service.id}")
             if data.price is None: data.price = service.price
             if data.price != service.price and (data.price_changed_reason is None or len(data.price_changed_reason.strip()) == 0):
                 raise HTTPException(
