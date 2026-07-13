@@ -6,8 +6,7 @@ from sqlalchemy import (
     CheckConstraint,
     ForeignKeyConstraint,
     Index,
-    Integer, 
-    Enum as SQLEnum,
+    Integer,
     String,
     Text,
     UniqueConstraint,
@@ -20,6 +19,7 @@ from src.database.base import BaseFields
 if TYPE_CHECKING: 
     from src.repository.appointment.appointment_model import Appointment, AppointmentServices
     from src.repository.material.material_model import Material
+    from src.repository.transaction.transaction_model import Transaction
 
 class ReceiptStatus(StrEnum):
     PENDING = "pending"

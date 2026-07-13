@@ -108,7 +108,7 @@ class ReceiptService():
                     )
                 
                 newQuantity = material.quantity - item_data.quantity
-                await self.uow.materials.update(material.id, newQuantity)
+                await self.uow.materials.update(material.id, quantity = newQuantity)
                 
                 item_price = material.sell_price
                 runningTotal += item_price * item_data.quantity
