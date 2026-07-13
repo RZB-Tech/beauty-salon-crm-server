@@ -495,4 +495,87 @@ class TestAppointment:
         response = await auth_client.post("/api/v1/appointments-services", json=appointmentServicePayload)
         print(response.json())
         assert response.status_code == 409
-    
+
+    async def test_appointmentServices_create_with_changed_price(self, auth_client):
+        appointmentServicePayload = {
+            "appointment_record_id": TestAppointment.appointmentRecordID,
+            "service_id": TestAppointment.serviceID,
+            "price": 5000,
+            "price_changed_reason": "some reason"
+        }
+
+        response = await auth_client.post("/api/v1/appointments-services", json=appointmentServicePayload)
+        assert response.status_code == 201
+
+        appointment = response.json()
+        latest_record = max(
+            appointment["records"],
+            key=lambda record: datetime.fromisoformat(
+                record["created_at"].replace("Z", "+00:00")
+            )
+        )
+        latest_service = max(
+            latest_record["services"],
+            key=lambda service: datetime.fromisoformat(
+                service["created_at"].replace("Z", "+00:00")
+            )
+        )
+        assert latest_service["price"] == 5000
+        assert latest_service["price_changed_reason"] == "some reason"
+
+    async def test_appointmentServices_create_with_changed_price_no_reason(self, auth_client):
+        appointmentServicePayload = {
+            "appointment_record_id": TestAppointment.appointmentRecordID,
+            "service_id": TestAppointment.serviceID,
+            "price": 5000
+        }
+
+        response = await auth_client.post("/api/v1/appointments-services", json=appointmentServicePayload)
+        assert response.status_code == 400
+
+    async def test_appointmentServices_create_with_quantity(self, auth_client):
+        appointmentPaylod = {
+            "client_id": TestAppointment.clientID,
+            "start_time_est": "2026-07-12T07:45:06.095Z",
+            "end_time_est": "2026-07-12T07:49:06.095Z",
+            "records": [
+                {
+                "employee_id": TestAppointment.employeeID,
+                "services": [
+                    {
+                    "service_id": TestAppointment.serviceID, # service's price = 1000
+                    }
+                ]
+                }
+            ]
+        }
+        newAppointment = await auth_client.post("/api/v1/appointments", json=appointmentPaylod)
+        assert newAppointment.status_code == 201
+        newAppointmentRecordID = int(newAppointment.json()["records"][0]["id"])
+
+        appointmentServicePayload = {
+            "appointment_record_id": newAppointmentRecordID,
+            "service_id": TestAppointment.serviceID,
+            "quantity": 5
+        }
+
+        response = await auth_client.post("/api/v1/appointments-services", json=appointmentServicePayload)
+        assert response.status_code == 201
+
+        appointment = response.json()
+        latest_record = max(
+            appointment["records"],
+            key=lambda record: datetime.fromisoformat(
+                record["created_at"].replace("Z", "+00:00")
+            )
+        )
+        latest_service = max(
+            latest_record["services"],
+            key=lambda service: datetime.fromisoformat(
+                service["created_at"].replace("Z", "+00:00")
+            )
+        )
+
+        assert latest_service["price"] == 1000
+        assert latest_service["quantity"] == 5
+        assert appointment["total_price"] == 6000 # 6000 because appointment has record with two services, first service's price is 1000, second 1000 * 5, subtotal of appointment = 6000
