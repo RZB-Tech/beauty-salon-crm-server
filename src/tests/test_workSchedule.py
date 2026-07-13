@@ -10,6 +10,7 @@ class TestWorkSchedule:
         employeeResponse = await auth_client.post("/api/v1/employees", 
             json= {
             "firstname": "SOME NAME",
+            "lastname": "SOME LASTNAME",
             "birth_date": "1990-01-01",})
         TestWorkSchedule.employeeID = int(employeeResponse.json()["id"])
 

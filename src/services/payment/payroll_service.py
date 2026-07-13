@@ -71,9 +71,10 @@ class PayrollService():
     async def cancel(self, id: int) -> Payroll:
         payroll = await self.uow.payrolls.get(id)
         if payroll is None: raise HTTPException(404)
+        if payroll.status == PayrollStatus.CANCELLED: raise HTTPException(400, "Выплата уже отменена")
         if payroll.auto_genereted: raise HTTPException(409, "Нельзя отменить автоматически сгенерированную выплату. Требуется отменить связанные с ним Чек")
-        if payroll.payout_id: raise HTTPException(400, "Сначало отмените выплаченную сумму")
-        if payroll.archived: raise HTTPException(400, "Нельзя отменять архивированный объект")
+        if payroll.payout_id: raise HTTPException(409, "Сначало отмените выплаченную сумму")
+        if payroll.archived: raise HTTPException(409, "Нельзя отменять архивированный объект")
 
         result = await self.uow.payrolls.update(id, status = PayrollStatus.CANCELLED)
         if result is None: raise HTTPException(404)

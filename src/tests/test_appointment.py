@@ -21,6 +21,7 @@ class TestAppointment:
     async def test_appointment_create_only_with_client(self, auth_client):
         clientResponse = await auth_client.post("/api/v1/clients", json={
             "firstname": "for appointment test",
+            "lastname": "SOME LASTNAME",
             "sex": "male"
         })
         TestAppointment.clientID = int(clientResponse.json()["id"])
@@ -61,6 +62,7 @@ class TestAppointment:
 
         employeeResponse = await auth_client.post("/api/v1/employees", json={
             "firstname": "for appointment test",
+            "lastname": "SOME LASTNAME",
             "birth_date": "1990-01-01",
             "phone": "123456789540",
             "services_ids": [TestAppointment.serviceID]

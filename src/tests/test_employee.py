@@ -10,6 +10,7 @@ class TestEmployee:
     async def test_employee_create(self, auth_client):
         salon_payload = {
             "firstname": "SOME NAME",
+            "lastname": "SOME LASTNAME",
             "birth_date": "1990-01-01",
             "phone": "1234567890",
         }
@@ -20,6 +21,7 @@ class TestEmployee:
     async def test_employee_duplicate_phone(self, auth_client):
         salon_payload = {
             "firstname": "SOME NAME",
+            "lastname": "SOME LASTNAME",
             "birth_date": "1990-01-01",
             "phone": "1234567890",
         }
@@ -31,6 +33,7 @@ class TestEmployee:
         specializationID = int(specialization.json()["id"])
         salon_payload = {
             "firstname": "SOME NAME 2",
+            "lastname": "SOME LASTNAME",
             "birth_date": "1990-01-01",
             "phone": "0987654321",
             "specialization_id": specializationID
@@ -44,6 +47,7 @@ class TestEmployee:
         TestEmployee.serviceID = int(service.json()["id"])
         salon_payload = {
             "firstname": "SOME NAME 3",
+            "lastname": "SOME LASTNAME",
             "birth_date": "1990-01-01",
             "phone": "1122334455",
             "services_ids": [TestEmployee.serviceID]
@@ -59,6 +63,7 @@ class TestEmployee:
     async def test_employee_create_with_invalid_service(self, auth_client):
         salon_payload = {
             "firstname": "SOME NAME 4",
+            "lastname": "SOME LASTNAME",
             "birth_date": "1990-01-01",
             "phone": "5566778899",
             "services_ids": [99999]
@@ -69,6 +74,7 @@ class TestEmployee:
     async def test_employee_create_with_invalid_specialization(self, auth_client):
         salon_payload = {
             "firstname": "SOME NAME 5",
+            "lastname": "SOME LASTNAME",
             "birth_date": "1990-01-01",
             "phone": "6677889900",
             "specialization_id": 99999

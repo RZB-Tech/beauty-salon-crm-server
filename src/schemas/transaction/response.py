@@ -9,6 +9,7 @@ class TransactionResponseSchema(BaseResponseSchema):
     
     receipt_id: int | None
     payout_id: int | None
+    cancelled: bool
 
     notes: str | None
     auto_generated: bool

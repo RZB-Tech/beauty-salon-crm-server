@@ -71,7 +71,7 @@ class PayoutService():
         return result
     
     async def get(self, id: int) -> Payout:
-        result = await self.uow.payoutss.get(id)
+        result = await self.uow.payouts.get(id)
         if not result:
             raise HTTPException(
                 status_code = 404

@@ -52,6 +52,8 @@ class TransactionService():
     
     async def cancel(self, id: int) -> Transaction:
         transaction = await self.uow.transactions.get(id)
+        if transaction.cancelled:
+            raise HTTPException(400, "Транзакция уже отменена")
         if transaction is None:
             raise HTTPException(404, f"Транзакции с ID {id} не найден")
         if transaction.auto_generated:
