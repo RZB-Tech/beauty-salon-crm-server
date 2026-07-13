@@ -129,16 +129,16 @@ class AppointmentService():
 
         if appointment.status == AppointmentStatus.CANCELLED:
             raise HTTPException(
-                status_code = 400,
+                status_code = 409,
                 detail = f"Посещение уже отменено"
             )
         
-        receipts = await self.uow.receipts.get_by_appointment(data.id)
-        if len(receipts) >= 1: raise HTTPException(400, f"Нельзя отменить посещение с активным чеков, сначало отмените чек.")
+        receipts = await self.uow.receipts.get_by_appointment(data.id, True)
+        if len(receipts) >= 1: raise HTTPException(409, f"Нельзя отменить посещение с активным чеков, сначало отмените чек.")
         
         if appointment.paid:
             raise HTTPException(
-                status_code = 400,
+                status_code = 409,
                 detail = f"Нельзя отменить оплаченое посещение. Сначало отмените чек и уже после само посещение"
             )
         

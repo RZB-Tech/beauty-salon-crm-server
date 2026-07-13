@@ -144,16 +144,10 @@ class ReceiptService():
     async def cancel(self, id: int) -> Receipt:
         receipt = await self.uow.receipts.get(id)
         if not receipt:
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Чек с ID {id} не найден"
-            )
+            raise HTTPException(404, detail = f"Чек с ID {id} не найден")
         
         if receipt.status == ReceiptStatus.CANCELLED:
-            raise HTTPException(
-                status_code = status.HTTP_400_BAD_REQUEST,
-                detail = f"Чек уже отменен"
-            )
+            raise HTTPException(400, detail = f"Чек уже отменен")
 
         await self.ensure_receipt_payments_can_be_cancelled(receipt)
         

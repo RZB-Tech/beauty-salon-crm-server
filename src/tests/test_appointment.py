@@ -2,6 +2,8 @@ import pytest
 import pytest_asyncio
 from datetime import datetime
 
+from src.routes.payment.payroll_router import cancel
+
 pytestmark = pytest.mark.asyncio(loop_scope="session")
 
 class TestAppointment:
@@ -12,6 +14,7 @@ class TestAppointment:
     materialID: int
     appointmentRecordID: int
     appointmentServiceID: int
+    receiptID: int
 
     # Appointment tests
 
@@ -259,6 +262,16 @@ class TestAppointment:
         }
         response = await auth_client.post("/api/v1/appointments", json=appointmentPayload)
         assert response.status_code == 400
+
+    async def test_appointment_get(self, auth_client):
+        response = await auth_client.get(f"/api/v1/appointments/{TestAppointment.appointmentID}")
+        assert response.status_code == 200
+        assert response.json()["id"] == TestAppointment.appointmentID
+
+    async def test_appointment_getAll(self, auth_client):
+        response = await auth_client.post("/api/v1/appointments/get-all", json = {})
+        assert response.status_code == 200
+        assert len(response.json()) >= 1
 
     # Appointment records tests
 
@@ -579,3 +592,61 @@ class TestAppointment:
         assert latest_service["price"] == 1000
         assert latest_service["quantity"] == 5
         assert appointment["total_price"] == 6000 # 6000 because appointment has record with two services, first service's price is 1000, second 1000 * 5, subtotal of appointment = 6000
+
+    async def test_appointmentService_delete(self, auth_client):
+        response = await auth_client.delete(f"/api/v1/appointments-services/{TestAppointment.appointmentServiceID}")
+        assert response.status_code == 200
+
+    # Get appoinments by employee / client
+
+    async def test_employee_get_appointments(self, auth_client):
+        response = await auth_client.get(f"/api/v1/employees/{TestAppointment.employeeID}/appointments")
+        assert response.status_code == 200
+        assert len(response.json()["items"]) >= 1
+
+    async def test_client_get_appointments(self, auth_client):
+        response = await auth_client.get(f"/api/v1/clients/{TestAppointment.clientID}/appointments")
+        assert response.status_code == 200
+        assert len(response.json()["items"]) >= 1
+
+    # Test with receipts
+
+    async def test_appointment_cancel_with_active_receipt(self, auth_client):
+        receiptPayload = {
+            "receipt_type": "appointment",
+            "appointment_id": TestAppointment.appointmentID
+        }
+
+        newReceipt = await auth_client.post("/api/v1/receipts", json = receiptPayload)
+        assert newReceipt.status_code == 201
+        TestAppointment.receiptID = int(newReceipt.json()["id"])
+
+        cancelAppointment = await auth_client.patch(f"/api/v1/appointments/{TestAppointment.appointmentID}/cancel", json = {
+            "id": TestAppointment.appointmentID,
+            "reason": "mistaken input"
+        })
+        assert cancelAppointment.status_code == 409
+
+    async def test_appointment_cancel_with_invalid_reason(self, auth_client):
+        cancelAppointment = await auth_client.patch(f"/api/v1/appointments/{TestAppointment.appointmentID}/cancel", json = {
+            "id": TestAppointment.appointmentID,
+            "reason": "some reason"
+        })
+        assert cancelAppointment.status_code == 422
+
+    async def test_appointment_cancel(self, auth_client):
+        cancelReceipt = await auth_client.post(f"/api/v1/receipts/cancel?id={TestAppointment.receiptID}")
+        assert cancelReceipt.status_code == 200
+        assert cancelReceipt.json()["status"] == "cancelled"
+
+        cancelAppointment = await auth_client.patch(f"/api/v1/appointments/{TestAppointment.appointmentID}/cancel", json = {
+            "id": TestAppointment.appointmentID,
+            "reason": "mistaken input"
+        })
+        assert cancelAppointment.status_code == 200
+        assert cancelAppointment.json()["status"] == "cancelled"
+    
+    async def test_appointment_get_receipts(self, auth_client):
+        response = await auth_client.get(f"/api/v1/appointments/{TestAppointment.appointmentID}/receipts")
+        assert response.status_code == 200
+        assert len(response.json()) >= 1

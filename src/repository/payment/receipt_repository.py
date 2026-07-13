@@ -55,10 +55,14 @@ class ReceiptRepository(BaseRepository[Receipt]):
         items = result.scalars().all()
         return items, total_items
     
-    async def get_by_appointment(self, appointmentID: int) -> list[Receipt]:
+    async def get_by_appointment(self, appointmentID: int, active: bool = False) -> list[Receipt]:
+        conditions = [Receipt.appointment_id == appointmentID]
+        if active: conditions.append(Receipt.status != ReceiptStatus.CANCELLED)
+
         stmt = (
             select(Receipt)
-            .where(Receipt.appointment_id == appointmentID)
+            .where(*conditions)
+            .order_by(Receipt.id.desc())
             .options(selectinload(Receipt.items),
                      selectinload(Receipt.payments)))
         result = await self.db.execute(stmt)

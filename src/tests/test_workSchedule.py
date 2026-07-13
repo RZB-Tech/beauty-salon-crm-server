@@ -65,6 +65,11 @@ class TestWorkSchedule:
         assert response.status_code == 200
         assert response.json()["archived"] == True
 
-    async def delete(self, auth_client):
+    async def test_get_employee_workSchedule(self, auth_client):
+        response = await auth_client.get(f"/api/v1/employees/{TestWorkSchedule.employeeID}/work-schedules")
+        assert response.status_code == 200
+        assert len(response.json()["work_schedules"]) >= 1
+
+    async def test_delete_workSchedule(self, auth_client):
         response = await auth_client.delete(f"/api/v1/work-schedules/{TestWorkSchedule.workScheduleID}")
         assert response.status_code == 204
