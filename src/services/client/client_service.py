@@ -5,10 +5,9 @@ from fastapi import HTTPException, status
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.client.client_model import Client
-from src.repository.transaction.transaction_model import Transaction, TransactionType
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.client.create import ClientCreateSchema
-from src.schemas.client.request import FinanceReportRequest
+from src.schemas.client.request import ClientFinanceReportRequest
 from src.schemas.client.update import ClientDepositUpdateSchema, ClientUpdateSchema, DepositOperation
 
 class ClientService():
@@ -94,7 +93,7 @@ class ClientService():
         }
     
     @require_exists("clients", target_param = "clientID")
-    async def get_finance_report(self, data: FinanceReportRequest) -> dict[str, dict]:
+    async def get_finance_report(self, data: ClientFinanceReportRequest) -> dict[str, dict]:
         transactions = await self.uow.transactions.get_by_client(data)
         grouped = defaultdict(lambda: {
             "income": 0,

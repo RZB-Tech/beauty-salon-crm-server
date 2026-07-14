@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
 from src.core.dependencies.auth import get_current_staff
 from src.repository.registry import MODEL_REGISTRY, get_filter_schema
 from src.routes.employee.employee_router import router as employeeR
@@ -16,7 +15,6 @@ from src.routes.appointment.appointmentRecords_router import router as appointme
 from src.routes.appointment.appointmentServices_router import router as appointmentServicesR
 from src.routes.system.auditLogs_router import router as auditLogsR
 from src.routes.payment.receipt_router import router as ReceiptR
-from src.routes.payment.payment_router import router as PaymentR
 from src.routes.payment.transaction_router import router as TransactionR
 from src.routes.payment.payout_router import router as PayoutR
 from src.routes.system.notification_router import router as notificationR
@@ -95,12 +93,6 @@ protected_router.include_router(
     ReceiptR, 
     prefix="/receipts", 
     tags=["Receipts"]
-)
-
-protected_router.include_router(
-    PaymentR, 
-    prefix="/payments", 
-    tags=["Payments"]
 )
 
 protected_router.include_router(

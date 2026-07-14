@@ -35,11 +35,3 @@ async def get_all(params: RequestAllObject,
 async def get(id: int,
                  payoutService: PayoutService = Depends(get_payout_service)):
     return await payoutService.get(id)
-
-# @router.delete(
-#     "/{id}",
-#     status_code = status.HTTP_204_NO_CONTENT
-# )
-# async def delete(id: int,
-#                  payoutService: PayoutService = Depends(get_payout_service)):
-#     return await payoutService.delete(id)

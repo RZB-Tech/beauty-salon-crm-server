@@ -2,7 +2,7 @@ from sqlalchemy import and_, func, or_, select
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
 from src.repository.appointment.appointment_model import Appointment
-from src.repository.payment.payment_model import Receipt
+from src.repository.receipt.receipt_model import Receipt
 from src.repository.payroll.payroll_model import Payout
 from src.repository.transaction.transaction_model import Transaction
 from src.schemas.base import RequestAllObject
@@ -111,5 +111,3 @@ class TransactionRepository(BaseRepository[Transaction]):
 
         result = await self.db.execute(stmt)
         return list(result.scalars().unique().all())
-    
-    dfef 

@@ -2,11 +2,10 @@ import math
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import raiseload
-from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import Appointment, AppointmentServices
 from src.repository.material.material_model import Material
-from src.repository.payment.payment_model import Receipt, ReceiptStatus
+from src.repository.receipt.receipt_model import Receipt, ReceiptStatus
 from src.repository.service.service_model import Service
 from src.schemas.appointment.create import AppointmentServicesCreateSchema
 from src.schemas.appointment.update import AppointmentServiceUpdateSchema

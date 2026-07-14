@@ -1,5 +1,6 @@
 from __future__ import annotations
 from enum import Enum, StrEnum
+from turtle import back
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
@@ -13,7 +14,6 @@ from sqlalchemy import (
     text
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-
 from src.database.base import BaseFields
 
 if TYPE_CHECKING: 
@@ -100,14 +100,14 @@ class Receipt(BaseFields):
         cascade = "all, delete-orphan",
         primaryjoin = "and_(Receipt.id == ReceiptItem.receipt_id, Receipt.tenant_id == ReceiptItem.tenant_id)",
         foreign_keys = "[ReceiptItem.receipt_id]")
+
+    transactions: Mapped[list["Transaction"]] = relationship(
+        back_populates = "receipt",
+        primaryjoin = "and_(Receipt.id == Transaction.receipt_id, Receipt.tenant_id == Transaction.tenant_id)",
+        foreign_keys = "[Transaction.receipt_id]",
+        lazy = "raise")
     
     receipt_type: Mapped[str] = mapped_column(String(50))
-
-    payments: Mapped[list["Payment"]] = relationship(
-        back_populates = "receipt",
-        primaryjoin = "and_(Receipt.id == Payment.receipt_id, Receipt.tenant_id == Payment.tenant_id)",
-        foreign_keys = "[Payment.receipt_id]")
-    
     total_amount: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(50), default = ReceiptStatus.PENDING)
     
@@ -148,42 +148,10 @@ class Receipt(BaseFields):
 
     @property
     def paid_amount(self) -> int:
-        return sum(payment.amount for payment in self.payments)
+        return sum(transaction.amount for transaction in self.transactions)
     
     @property
     def remaining_amount(self) -> int:
         return max(0, self.total_amount - self.paid_amount)
     
     ALLOWED_FILTERS = {"total_amount", "receipt_type", "status", "archived"}
-
-class PaymentMethodsEnum(StrEnum):
-    CASH = "cash"
-    CARD = "card"
-    DEPOSIT = "deposit"
-
-class Payment(BaseFields):
-    __tablename__ = "payments"
-
-    receipt_id: Mapped[int] = mapped_column(Integer)
-    receipt: Mapped[Receipt] = relationship(
-        back_populates = "payments",
-        primaryjoin = "and_(Payment.receipt_id == Receipt.id, Payment.tenant_id == Receipt.tenant_id)",
-        foreign_keys = [receipt_id]
-        )
-
-    amount: Mapped[int] = mapped_column(Integer)
-    method: Mapped[str] = mapped_column(String(50))
-    
-    cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
-
-    __table_args__ = (
-        UniqueConstraint("id", "tenant_id", name = "uq_payment_tenant"),
-        ForeignKeyConstraint(
-            ["receipt_id", "tenant_id"],
-            ["receipts.id", "receipts.tenant_id"],
-            ondelete = "RESTRICT",
-            name = "fk_payment_receipt"
-        )
-    )
-
-    ALLOWED_FILTERS = {"amount", "receipt_id", "method", "archived"}

@@ -4,7 +4,7 @@ from sqlalchemy import select
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import Appointment, AppointmentStatus
-from src.repository.payment.payment_model import Receipt
+from src.repository.receipt.receipt_model import Receipt
 from src.schemas.appointment.create import AppointmentCreateSchema
 from src.schemas.appointment.update import AppointmentCancelSchema, AppointmentUpdateSchema
 from src.schemas.base import RequestAllObject

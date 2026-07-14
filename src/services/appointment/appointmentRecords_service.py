@@ -4,9 +4,7 @@ from sqlalchemy.orm import raiseload
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.appointment.appointment_model import Appointment, AppointmentRecords
-from src.repository.material.material_model import Material
-from src.repository.payment.payment_model import Receipt, ReceiptStatus
-from src.repository.service.service_model import Service
+from src.repository.receipt.receipt_model import Receipt, ReceiptStatus
 from src.schemas.appointment.create import AppointmentRecordsCreateSchema
 from src.schemas.base import RequestAllObject
 from sqlalchemy import select

@@ -1,17 +1,17 @@
 from typing import Self
 
 from pydantic import BaseModel, Field, model_validator
-
-from src.repository.payment.payment_model import PaymentMethodsEnum, ReceiptType
+from src.repository.receipt.receipt_model import ReceiptType
+from src.repository.transaction.transaction_model import TransactionMethod
 
 class ReceiptItemCreateSchema(BaseModel):
     material_id: int = Field(ge=1)
     quantity: int = Field(default=1, ge=1)
 
-class PaymentCreateSchema(BaseModel):
+class ReceiptPaymentCreateSchema(BaseModel):
     receipt_id: int = Field(ge = 1)
     amount: int = Field(ge = 1)
-    method: PaymentMethodsEnum
+    method: TransactionMethod
     add_change_to_deposit: bool = True
 
 class ReceiptCreateSchema(BaseModel):
@@ -21,7 +21,7 @@ class ReceiptCreateSchema(BaseModel):
     receipt_items: list[ReceiptItemCreateSchema] | None = None
 
     @model_validator(mode="after")
-    def check_exclusive_fields(self) -> "ReceiptCreateSchema":
+    def check_exclusive_fields(self) -> Self:
         has_appointment = self.appointment_id is not None
         has_client = self.client_id is not None
         has_items = bool(self.receipt_items)
