@@ -19,9 +19,9 @@ class ClientResponseSchema(BaseResponseSchema):
 
 class FinanceResponseSchema(BaseModel):
     income: int
-    expense: int
     net: int
     transactions: list[TransactionResponseSchema] = []
 
 class ClientFinanceResponseSchema(BaseModel):
     items: dict[str, FinanceResponseSchema]
+    total: int

@@ -2,7 +2,7 @@ from datetime import date
 
 from pydantic import BaseModel, Field
 
-class ClientFinanceReportRequest(BaseModel):
-    clientID: int = Field(ge = 1)
+class EmployeeFinanceReportRequest(BaseModel):
+    employeeID: int = Field(ge = 1)
     start_date: date | None = None
     end_date: date | None = None

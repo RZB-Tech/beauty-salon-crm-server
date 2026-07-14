@@ -80,7 +80,27 @@ async def get_appointments(id: int,
 @router.post(
     "/finance-report",
     status_code = 200,
-    response_model = ClientFinanceResponseSchema
+    response_model = ClientFinanceResponseSchema,
+    description = """
+Запрос на получение финансового отчета по клиенту. В теле запроса указывается `id`, `start_date` и `end_date` (оба поля опциональны).
+
+Если по клиенту нету никаких отчетов - возращает "items": {}.
+
+Если по клиенту есть отчеты - возвращает:
+```json
+"items": {
+    "yyyy-mm": {
+        "income": integer (общий доход)
+        "expense": integer (общий расход)
+        "net": integer (income - expense)
+        "transactions": [Transaction]
+    },
+    "yyyy-mm": {
+        ...
+    },
+}
+```
+"""
 )
 async def get_finance_report(data: FinanceReportRequest,
                              clientService: ClientService = Depends(get_client_service)):

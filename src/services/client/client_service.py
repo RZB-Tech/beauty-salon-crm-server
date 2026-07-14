@@ -98,23 +98,17 @@ class ClientService():
         transactions = await self.uow.transactions.get_by_client(data)
         grouped = defaultdict(lambda: {
             "income": 0,
-            "expense": 0,
             "net": 0,
             "transactions": []
         })
+        total = 0
 
         for transaction in transactions:
             key = transaction.created_at.strftime("%Y-%m")
-
             grouped[key]["transactions"].append(transaction)
-
-            if transaction.type == TransactionType.INCOME:
-                grouped[key]["income"] += transaction.amount
-            else:
-                grouped[key]["expense"] += transaction.amount
-
+            grouped[key]["income"] += transaction.amount
             grouped[key]["net"] += transaction.amount
+            total += transaction.amount
 
-        print(grouped)
-
-        return {"items": dict(sorted(grouped.items()))}
+        return {"items": dict(sorted(grouped.items())),
+                "total": total}
