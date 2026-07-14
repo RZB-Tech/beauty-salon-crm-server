@@ -24,4 +24,4 @@ class FinanceResponseSchema(BaseModel):
     transactions: list[TransactionResponseSchema] = []
 
 class ClientFinanceResponseSchema(BaseModel):
-    items: dict[date, FinanceResponseSchema]
+    items: dict[str, FinanceResponseSchema]

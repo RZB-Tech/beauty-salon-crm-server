@@ -59,7 +59,7 @@ class PaymentService():
             # create new transcation for income from receipt payment
             await self.uow.transactions.create(Transaction(
                 receipt_id = receipt.id,
-                amount = receipt.total_amount,
+                amount = data.amount,
                 type = TransactionType.INCOME,
                 method = TransactionMethod(new_payment.method),
                 category = TransactionCategory.RECEIPT,
