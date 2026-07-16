@@ -4,7 +4,7 @@ from src.schemas.base import BaseResponseSchema
 
 class WorkScheduleResponseSchema(BaseResponseSchema):
     employee_id: int
-    day: date
+    days: list[int]
     start_time: time
     end_time: time
 

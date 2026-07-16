@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, time
 from typing import Any
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, select
 
 from src.database.base import BaseRepository
 from src.repository.employee.workSchedule_model import WorkSchedule, EmployeeAbsence
@@ -34,21 +34,51 @@ class WorkScheduleRepository(BaseRepository[WorkSchedule]):
             .where(WorkSchedule.id.in_(ids))
         )
         return result.scalars().all()
-    
-    async def is_employee_working(self, employee_id: int, start: datetime, end: datetime) -> bool:
-        appointment_date = start.date()
-        appointment_start_time = start.time()
-        appointment_end_time = end.time()
 
-        stmt = (
+    async def get_group(self, employee_id: int, start_time: time, end_time: time) -> list[WorkSchedule]:
+        result = await self.db.execute(
             select(WorkSchedule)
             .where(
                 WorkSchedule.employee_id == employee_id,
-                WorkSchedule.day == appointment_date,
-                WorkSchedule.start_time <= appointment_start_time,
-                WorkSchedule.end_time >= appointment_end_time
+                WorkSchedule.start_time == start_time,
+                WorkSchedule.end_time == end_time
             )
         )
+        return list(result.scalars().all())
+
+    async def is_employee_working(
+        self, 
+        employee_id: int,
+        start: datetime, 
+        end: datetime
+    ) -> bool:
+        appointment_date = start.date()
+        appointment_start_time = start.time()
+        appointment_end_time = end.time()
+        day_of_week = appointment_date.isoweekday()
+
+        if start.date() != end.date():
+            return False 
+
+        stmt = (
+            select(WorkSchedule)
+            .outerjoin(
+                EmployeeAbsence,
+                and_(
+                    EmployeeAbsence.employee_id == WorkSchedule.employee_id,
+                    EmployeeAbsence.start_date <= appointment_date,
+                    EmployeeAbsence.end_date >= appointment_date
+                )
+            )
+            .where(
+                WorkSchedule.employee_id == employee_id,
+                WorkSchedule.day_of_week == day_of_week,
+                WorkSchedule.start_time <= appointment_start_time,
+                WorkSchedule.end_time >= appointment_end_time,
+                EmployeeAbsence.id.is_(None)
+            )
+        )
+        
         schedule = await self.db.scalar(stmt)
         return schedule is not None
     
@@ -58,6 +88,8 @@ class WorkScheduleRepository(BaseRepository[WorkSchedule]):
             .where(WorkSchedule.employee_id == id)
         )
         workSchedules = workSchedulesStmtResult.scalars().all()
+        for workSchedule in workSchedules:
+            workSchedule.days = [workSchedule.day_of_week]
 
         absencesResult = await self.db.execute(
             select(EmployeeAbsence)

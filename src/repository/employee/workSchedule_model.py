@@ -50,13 +50,14 @@ class WorkSchedule(BaseFields):
 
     employee_id: Mapped[int] = mapped_column(Integer)
     
-    day: Mapped[date] = mapped_column(Date)
+    day_of_week: Mapped[int] = mapped_column(Integer)
     start_time: Mapped[time] = mapped_column(Time)
     end_time: Mapped[time] = mapped_column(Time)
 
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_work_schedule_tenant"),
-        UniqueConstraint("employee_id", "day", name="uq_employee_day_of_week"),
+        UniqueConstraint("employee_id", "day_of_week", name="uq_employee_day_of_week"),
+        CheckConstraint("day_of_week BETWEEN 1 and 7", name = "chk_valid_day"),
         CheckConstraint("start_time < end_time", name="chk_start_before_end"),
         ForeignKeyConstraint(
             ["employee_id", "tenant_id"],

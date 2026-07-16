@@ -35,7 +35,7 @@ class TestReceipt:
 
         workScheduleResponse = await auth_client.post("api/v1/work-schedules", json = {
             "employee_id": TestReceipt.employeeID,
-            "day": "2026-07-13",
+            "days": [1],
             "start_time": "01:00:00",
             "end_time": "23:00:00"
         })

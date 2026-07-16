@@ -16,18 +16,19 @@ class TestWorkSchedule:
 
         salon_payload = {
             "employee_id": TestWorkSchedule.employeeID,
-            "day": "2026-01-01",
+            "days": [1],
             "start_time": "09:00:00",
             "end_time": "17:00:00"
         }
         response = await auth_client.post("/api/v1/work-schedules", json=salon_payload)
-        TestWorkSchedule.workScheduleID = int(response.json()["id"])
         assert response.status_code == 201
+        assert response.json()["days"] == [1]
+        TestWorkSchedule.workScheduleID = int(response.json()["id"])
 
-    async def test_workSchedule_duplicate_name(self, auth_client):
+    async def test_workSchedule_duplicate_day(self, auth_client):
         salon_payload = {
             "employee_id": TestWorkSchedule.employeeID,
-            "day": "2026-01-01",
+            "days": [1],
             "start_time": "09:00:00",
             "end_time": "17:00:00"
         }
@@ -45,26 +46,33 @@ class TestWorkSchedule:
     async def test_workSchedule_patch(self, auth_client):
         patch_payload = {
             "id": TestWorkSchedule.workScheduleID,
-            "start_time": "10:00:00"
+            "days": [1],
+            "start_time": "10:00:00",
+            "end_time": "17:00:00"
         }
         response = await auth_client.patch("/api/v1/work-schedules", json=patch_payload)
         assert response.status_code == 200
         assert response.json()["start_time"] == "10:00:00"
+        assert response.json()["days"] == [1]
+        assert int(response.json()["id"]) == TestWorkSchedule.workScheduleID
+
+    async def test_workSchedule_patch_change_days(self, auth_client):
+        patch_payload = {
+            "id": TestWorkSchedule.workScheduleID,
+            "days": [2, 3],
+            "start_time": "10:00:00",
+            "end_time": "17:00:00"
+        }
+        response = await auth_client.patch("/api/v1/work-schedules", json=patch_payload)
+        assert response.status_code == 200
+        assert sorted(response.json()["days"]) == [2, 3]
+        TestWorkSchedule.workScheduleID = int(response.json()["id"])
 
     async def test_workSchedule_get_all(self, auth_client):
         response = await auth_client.post("/api/v1/work-schedules/get-all", json={})
         print(response.json())
         assert response.status_code ==  200
         assert len(response.json()["items"]) >= 1
-
-    async def test_workSchedule_patch_set_archived(self, auth_client):
-        patch_payload = {
-            "id": TestWorkSchedule.workScheduleID,
-            "archived": True
-        }
-        response = await auth_client.patch("/api/v1/work-schedules", json=patch_payload)
-        assert response.status_code == 200
-        assert response.json()["archived"] == True
 
     async def test_get_employee_workSchedule(self, auth_client):
         response = await auth_client.get(f"/api/v1/employees/{TestWorkSchedule.employeeID}/work-schedules")

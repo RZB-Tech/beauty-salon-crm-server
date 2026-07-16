@@ -4,7 +4,7 @@ from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.work_schedule.create import WorkScheduleCreateSchema
 from src.schemas.work_schedule.response import WorkScheduleResponseSchema
 from src.schemas.work_schedule.update import WorkScheduleUpdateSchema
-from src.services.employee.workSchedule_serivce import WorkScheduleService
+from src.services.employee.workSchedule_service import WorkScheduleService
 
 router = APIRouter()
 

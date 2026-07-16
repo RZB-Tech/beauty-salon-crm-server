@@ -71,7 +71,7 @@ class TestAppointment:
 
         workScheduleResponse = await auth_client.post("/api/v1/work-schedules", json={
             "employee_id": TestAppointment.employeeID,
-            "day": "2026-07-12",
+            "days": [7],
             "start_time": "01:24:01.976Z",
             "end_time": "23:24:01.976Z"
             })

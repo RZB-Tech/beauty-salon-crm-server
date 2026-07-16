@@ -11,9 +11,9 @@ class EmployeeCreateSchema(BaseModel):
     active: bool = True
     specialization_id: int | None = None
     services_ids: list[int] = Field(default_factory = list)
-    salary_fixed: int | None = 0
-    percent_from_services: int | None = 0
-    percent_from_sales: int | None = 0
+    salary_fixed: int | None = Field(None, ge = 0)
+    percent_from_services: int | None = Field(None, ge = 0)
+    percent_from_sales: int | None = Field(None, ge = 0)
 
     @field_validator("birth_date")
     @classmethod

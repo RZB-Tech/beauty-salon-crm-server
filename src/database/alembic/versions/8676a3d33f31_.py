@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 2eadef85b5f7
+Revision ID: 8676a3d33f31
 Revises: 
-Create Date: 2026-07-16 12:27:38.923937
+Create Date: 2026-07-16 20:30:46.769402
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '2eadef85b5f7'
+revision: str = '8676a3d33f31'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -209,6 +209,7 @@ def upgrade() -> None:
     op.create_table('services',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('price', sa.BigInteger(), nullable=False),
+    sa.Column('estimated_time', sa.Integer(), nullable=False),
     sa.Column('category_id', sa.Integer(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
@@ -291,7 +292,7 @@ def upgrade() -> None:
     op.create_index(op.f('ix_employee_services_tenant_id'), 'employee_services', ['tenant_id'], unique=False)
     op.create_table('employee_work_schedules',
     sa.Column('employee_id', sa.Integer(), nullable=False),
-    sa.Column('day', sa.Date(), nullable=False),
+    sa.Column('day_of_week', sa.Integer(), nullable=False),
     sa.Column('start_time', sa.Time(), nullable=False),
     sa.Column('end_time', sa.Time(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -300,11 +301,12 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
+    sa.CheckConstraint('day_of_week BETWEEN 1 and 7', name='chk_valid_day'),
     sa.CheckConstraint('start_time < end_time', name='chk_start_before_end'),
     sa.ForeignKeyConstraint(['employee_id', 'tenant_id'], ['employees.id', 'employees.tenant_id'], name='fk_work_schedule_employee_tenant', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('employee_id', 'day', name='uq_employee_day_of_week'),
+    sa.UniqueConstraint('employee_id', 'day_of_week', name='uq_employee_day_of_week'),
     sa.UniqueConstraint('id', 'tenant_id', name='uq_work_schedule_tenant')
     )
     op.create_index(op.f('ix_employee_work_schedules_tenant_id'), 'employee_work_schedules', ['tenant_id'], unique=False)

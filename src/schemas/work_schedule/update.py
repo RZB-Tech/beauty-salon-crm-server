@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from pydantic import Field
 
 from src.repository.employee.workSchedule_model import AbsenceEnum
@@ -6,10 +8,10 @@ from datetime import date, time
 
 class WorkScheduleUpdateSchema(BaseUpdateSchema):
     id: int = Field(ge = 1)
-    day: date | None = None
-    start_time: time | None = None
-    end_time: time | None = None
-    archived: bool | None = None
+    days: Annotated[list[Annotated[int, Field(ge = 1, le = 7)]],
+                    Field(min_length = 1, max_length = 7)]
+    start_time: time
+    end_time: time
 
 class AbsenceUpdateSchema(BaseUpdateSchema):
     id: int = Field(ge = 1)
