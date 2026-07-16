@@ -6,5 +6,6 @@ class ServiceResponseSchema(BaseResponseSchema):
     name: str
     price: int
     category_id: int | None
+    estimated_time: int
     
     model_config = ConfigDict(from_attributes=True)

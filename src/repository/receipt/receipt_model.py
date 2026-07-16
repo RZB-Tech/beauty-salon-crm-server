@@ -1,6 +1,5 @@
 from __future__ import annotations
-from enum import Enum, StrEnum
-from turtle import back
+from enum import StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,

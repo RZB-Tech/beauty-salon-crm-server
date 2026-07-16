@@ -43,6 +43,7 @@ class Service(BaseFields):
 
     name: Mapped[str] = mapped_column(String(255))
     price: Mapped[int] = mapped_column(BigInteger, default=0)
+    estimated_time: Mapped[int] = mapped_column(Integer, default = 0) 
     
     category_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
     category: Mapped["ServiceCategory"] = relationship(

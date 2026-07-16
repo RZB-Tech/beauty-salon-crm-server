@@ -14,7 +14,8 @@ get_service_service = make_service_dependency(ServiceService)
     "", 
     response_model=ServiceResponseSchema, 
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new service"
+    summary="Create a new service",
+    description = "`estimated_time` указывается в минутах"
 )
 async def create(data: ServiceCreateSchema,
                 serviceService: ServiceService = Depends(get_service_service)):
