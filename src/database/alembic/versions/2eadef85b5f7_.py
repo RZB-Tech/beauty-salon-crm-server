@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 41182658f600
+Revision ID: 2eadef85b5f7
 Revises: 
-Create Date: 2026-07-14 10:45:12.188279
+Create Date: 2026-07-16 12:27:38.923937
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '41182658f600'
+revision: str = '2eadef85b5f7'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -40,6 +40,7 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('TIN', sa.String(length=255), nullable=True),
     sa.Column('active', sa.Boolean(), server_default='true', nullable=False),
+    sa.Column('preferences', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
@@ -235,19 +236,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_tenant_integrations_tenant_id'), 'tenant_integrations', ['tenant_id'], unique=False)
-    op.create_table('tenant_preferences',
-    sa.Column('preferences', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
-    sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_tenant_preferences_created_by_tenant', ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_tenant_preferences_tenant_id'), 'tenant_preferences', ['tenant_id'], unique=False)
     op.create_table('appointment_records',
     sa.Column('appointment_id', sa.Integer(), nullable=False),
     sa.Column('employee_id', sa.Integer(), nullable=False),
@@ -424,23 +412,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('idx_audit_logs_tenant_date', 'audit_logs', ['tenant_id', 'changed_at'], unique=False)
-    op.create_table('payments',
-    sa.Column('receipt_id', sa.Integer(), nullable=False),
-    sa.Column('amount', sa.Integer(), nullable=False),
-    sa.Column('method', sa.String(length=50), nullable=False),
-    sa.Column('cancelled', sa.Boolean(), server_default='false', nullable=False),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
-    sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['receipt_id', 'tenant_id'], ['receipts.id', 'receipts.tenant_id'], name='fk_payment_receipt', ondelete='RESTRICT'),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('id', 'tenant_id', name='uq_payment_tenant')
-    )
-    op.create_index(op.f('ix_payments_tenant_id'), 'payments', ['tenant_id'], unique=False)
     op.create_table('payrolls',
     sa.Column('employee_id', sa.Integer(), nullable=False),
     sa.Column('payout_id', sa.Integer(), nullable=True),
@@ -476,6 +447,9 @@ def upgrade() -> None:
     sa.Column('auto_generated', sa.Boolean(), server_default='false', nullable=False),
     sa.Column('receipt_id', sa.Integer(), nullable=True),
     sa.Column('payout_id', sa.Integer(), nullable=True),
+    sa.Column('gateway', sa.String(length=50), nullable=True),
+    sa.Column('gateway_transaction_id', sa.String(length=255), nullable=True),
+    sa.Column('gateway_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -524,8 +498,6 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_payrolls_tenant_id'), table_name='payrolls')
     op.drop_index('ix_payrolls_tenant_employee', table_name='payrolls')
     op.drop_table('payrolls')
-    op.drop_index(op.f('ix_payments_tenant_id'), table_name='payments')
-    op.drop_table('payments')
     op.drop_index('idx_audit_logs_tenant_date', table_name='audit_logs')
     op.drop_table('audit_logs')
     op.drop_index(op.f('ix_appointment_services_tenant_id'), table_name='appointment_services')
@@ -547,8 +519,6 @@ def downgrade() -> None:
     op.drop_table('employee_absences')
     op.drop_index(op.f('ix_appointment_records_tenant_id'), table_name='appointment_records')
     op.drop_table('appointment_records')
-    op.drop_index(op.f('ix_tenant_preferences_tenant_id'), table_name='tenant_preferences')
-    op.drop_table('tenant_preferences')
     op.drop_index(op.f('ix_tenant_integrations_tenant_id'), table_name='tenant_integrations')
     op.drop_table('tenant_integrations')
     op.drop_index('uq_service_name_lower', table_name='services')

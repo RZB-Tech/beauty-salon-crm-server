@@ -2,10 +2,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
-from src.repository.appointment.appointment_model import Appointment, AppointmentRecords
-from src.repository.payment.payment_model import Receipt, ReceiptItem, ReceiptStatus
-from src.schemas.base import PaginationSchema, RequestAllObject
-from src.schemas.payment.create import ReceiptCreateSchema
+from src.repository.receipt.receipt_model import Receipt, ReceiptStatus
+from src.schemas.base import RequestAllObject
 
 class ReceiptRepository(BaseRepository[Receipt]):
     async def create(self, receipt: Receipt) -> Receipt | None:
@@ -18,7 +16,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
             .where(Receipt.id == receipt.id)
             .options(
                 selectinload(Receipt.items),
-                selectinload(Receipt.payments)
+                selectinload(Receipt.transactions)
             )
         )
 
@@ -31,9 +29,10 @@ class ReceiptRepository(BaseRepository[Receipt]):
             .where(Receipt.id == id)
             .options(
                 selectinload(Receipt.items),
-                selectinload(Receipt.payments),
+                selectinload(Receipt.transactions),
                 selectinload(Receipt.appointment)
             )
+            .execution_options(populate_existing=True)
         )
         return result.scalar_one_or_none()
     
@@ -47,7 +46,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         stmt = (stmt
                 .options(
                     selectinload(Receipt.items),
-                    selectinload(Receipt.payments))
+                    selectinload(Receipt.transactions))
                 .order_by(Receipt.id.desc())
                 .offset(offset_value)
                 .limit(data.pageSize))
@@ -64,6 +63,6 @@ class ReceiptRepository(BaseRepository[Receipt]):
             .where(*conditions)
             .order_by(Receipt.id.desc())
             .options(selectinload(Receipt.items),
-                     selectinload(Receipt.payments)))
+                     selectinload(Receipt.transactions)))
         result = await self.db.execute(stmt)
         return result.scalars().all()

@@ -1,7 +1,6 @@
-from fastapi import HTTPException, status
+from fastapi import HTTPException
 from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
-from src.repository.tenant.tenant_model import TenantPreferences
 from src.schemas.tenant.base import TenantPreferencesSchema
 from src.schemas.tenant.update import TenantPreferencesUpdateSchema
 
@@ -10,48 +9,31 @@ class TenantPreferencesService:
         self.uow = uow
 
     async def get(self) -> TenantPreferencesSchema:
-        preferences = await self._get_or_create()
-        return TenantPreferencesSchema(**preferences.preferences)
+        tenant = await self._get_tenant_or_raise()
+        return TenantPreferencesSchema(**tenant.preferences)
 
     async def update(self, data: TenantPreferencesUpdateSchema) -> TenantPreferencesSchema:
-        tenant_id = self._current_tenant_id()
-        current = await self._get_or_create()
+        tenant = await self._get_tenant_or_raise()
+        current_prefs = TenantPreferencesSchema(**tenant.preferences).model_dump()
         update_data = data.model_dump(exclude_unset=True, exclude_none=True)
+        
         merged_preferences = {
-            **TenantPreferencesSchema(**current.preferences).model_dump(),
+            **current_prefs,
             **update_data,
         }
 
-        updated = await self.uow.tenantPreferences.update_by_tenant_id(
-            tenant_id,
-            merged_preferences,
+        updated_tenant = await self.uow.tenants.update(
+            id=tenant.id,
+            preferences=merged_preferences,
         )
-        if updated is None:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="Настройки организации не найдены",
-            )
-        return TenantPreferencesSchema(**updated.preferences)
+        
+        if updated_tenant is None: raise HTTPException(404, "Организация не найдена")
+            
+        return TenantPreferencesSchema(**updated_tenant.preferences)
 
-    async def _get_or_create(self) -> TenantPreferences:
-        tenant_id = self._current_tenant_id()
-        preferences = await self.uow.tenantPreferences.get_by_tenant_id(tenant_id)
-        if preferences is not None:
-            return preferences
-
-        default_preferences = TenantPreferencesSchema().model_dump()
-        return await self.uow.tenantPreferences.create(
-            TenantPreferences(
-                tenant_id=tenant_id,
-                preferences=default_preferences,
-            )
-        )
-
-    def _current_tenant_id(self) -> int:
+    async def _get_tenant_or_raise(self):
+        """Helper to get the current tenant or raise a 404 if they do not exist."""
         tenant_id = get_current_tenant_id()
-        if tenant_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not resolve tenant context",
-            )
-        return tenant_id
+        tenant = await self.uow.tenants.get(id=tenant_id)
+        if tenant is None: raise HTTPException(404, "Организация не найдена")
+        return tenant

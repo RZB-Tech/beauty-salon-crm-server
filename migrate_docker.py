@@ -102,14 +102,32 @@ def seed_admin_user() -> None:
         "-d", DB_NAME,
         "-c",
         """
-        insert into tenants (name, active)
-        values ('synapse', true);
+        insert into tenants (name, active, preferences)
+        values ('synapse', true, '{
+            "theme": "light",
+            "timezone": "UTC",
+            "currency": "UZS",
+            "enable_telegram_booking": false,
+            "cancel_payment_due": 0
+        }'::jsonb);
 
-        insert into tenants (name, active)
-        values ('rzbtech', true);
+        insert into tenants (name, active, preferences)
+        values ('rzbtech', true, '{
+            "theme": "light",
+            "timezone": "UTC",
+            "currency": "UZS",
+            "enable_telegram_booking": false,
+            "cancel_payment_due": 0
+        }'::jsonb);
+
+        insert into actors (actor_type, tenant_id)
+        values ('staff', 1);
+
+        insert into actors (actor_type, tenant_id)
+        values ('staff', 2);
 
         INSERT INTO staffs
-            (firstname, login, tenant_id, staff_type, active, hashed_password)
+            (firstname, login, tenant_id, staff_type, active, hashed_password, actor_id)
         VALUES
             (
                 'max',
@@ -117,11 +135,12 @@ def seed_admin_user() -> None:
                 1,
                 'administrator',
                 true,
-                '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc'
+                '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc',
+                1
             );
 
         INSERT INTO staffs
-            (firstname, login, tenant_id, staff_type, active, hashed_password)
+            (firstname, login, tenant_id, staff_type, active, hashed_password, actor_id)
         VALUES
             (
                 'eva',
@@ -129,8 +148,19 @@ def seed_admin_user() -> None:
                 2,
                 'administrator',
                 true,
-                '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc'
+                '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc',
+                2
             );
+
+        insert into tenant_integrations
+            (tenant_id, telegram_bot_token)
+        values
+            (1, null);
+
+        insert into tenant_integrations
+            (tenant_id, telegram_bot_token)
+        values
+            (2, null);
         """,
     ])
 

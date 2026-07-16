@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, status
 from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_service_dependency
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
-from src.schemas.payment.create import ReceiptCreateSchema
+from src.schemas.payment.create import ReceiptCreateSchema, ReceiptPaymentCreateSchema
 from src.schemas.payment.response import ReceiptResponseSchema
 from src.services.payment.receipt_service import ReceiptService
 
@@ -18,15 +18,33 @@ async def create(data: ReceiptCreateSchema,
                  receiptService: ReceiptService = Depends(get_receipt_service)):
     return await receiptService.create(data)
 
+@router.get(
+    "/{id}",
+    response_model = ReceiptResponseSchema,
+    status_code = 200
+)
+async def get(id: int,
+              receiptService: ReceiptService = Depends(get_receipt_service)):
+    return await receiptService.get(id)
+
 @router.post(
     "/get-all",
     response_model=PaginatedResponseSchema[ReceiptResponseSchema], 
-    status_code=status.HTTP_200_OK,
+    status_code= 200,
     summary="Get all categories"
 )
 async def get_all(params: RequestAllObject,
                  receiptService: ReceiptService = Depends(get_receipt_service)):
     return await receiptService.get_all(params)
+
+@router.post(
+    "/make_payment",
+    response_model = ReceiptResponseSchema,
+    status_code = 201
+)
+async def make_payment(data: ReceiptPaymentCreateSchema,
+                       receiptService: ReceiptService = Depends(get_receipt_service)):
+    return await receiptService.make_payment(data)
 
 @router.post(
     "/cancel",

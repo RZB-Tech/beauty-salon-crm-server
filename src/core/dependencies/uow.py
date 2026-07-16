@@ -9,16 +9,14 @@ from src.repository.employee.employee_repository import EmployeeRepository
 from src.repository.employee.specialization_repository import SpecializationRepository
 from src.repository.employee.workSchedule_repository import WorkScheduleRepository
 from src.repository.material.material_repository import MaterialRepository
-from src.repository.payment.payment_repository import PaymentRepository
 from src.repository.service.serviceCategory_repository import ServiceCategoryRepository
 from src.repository.service.service_repository import ServiceRepository
 from src.repository.staff.staff_repository import StaffRepository
 from src.repository.payroll.payroll_repository import PayrollRepository
 from src.repository.payroll.payout_repository import PayoutRepository
-from src.repository.payment.receipt_repository import ReceiptRepository
+from src.repository.receipt.receipt_repository import ReceiptRepository
 from src.repository.tenant.tenantIntergrations_repository import TenantIntegrationsRepository
 from src.repository.tenant.tenant_repository import TenantRepository
-from src.repository.tenant.tenantPreferences_repository import TenantPreferencesRepository
 from src.repository.transaction.transaction_repository import TransactionRepository
 from src.repository.notification.notification_repository import NotificationRepository
 from typing import AsyncGenerator, TypeVar, Type, Callable
@@ -46,13 +44,11 @@ class UnitOfWork:
         self.payrolls = PayrollRepository()
         self.payouts = PayoutRepository()
         self.receipts = ReceiptRepository()
-        self.payments = PaymentRepository()
         self.transactions = TransactionRepository()
         
         self.notifications = NotificationRepository()
 
         self.tenants = TenantRepository()
-        self.tenantPreferences = TenantPreferencesRepository()
         self.tenantIntegrations = TenantIntegrationsRepository()
     @property
     def db(self):

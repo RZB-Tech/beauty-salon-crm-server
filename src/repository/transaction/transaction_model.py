@@ -3,7 +3,6 @@ from enum import StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
-    Enum as SQLEnum,
     ForeignKeyConstraint,
     Integer,
     String,
@@ -11,10 +10,12 @@ from sqlalchemy import (
     UniqueConstraint
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import JSONB
 from src.database.base import BaseFields
 
 if TYPE_CHECKING: 
     from src.repository.payroll.payroll_model import Payout
+    from src.repository.receipt.receipt_model import Receipt
 
 class TransactionType(StrEnum):
     INCOME = "income"
@@ -47,11 +48,21 @@ class Transaction(BaseFields):
     auto_generated: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
     receipt_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
+    receipt: Mapped["Receipt"] = relationship(
+        back_populates = "transactions",
+        primaryjoin = "and_(Receipt.id == Transaction.receipt_id, Receipt.tenant_id == Transaction.tenant_id)",
+        foreign_keys = [receipt_id]
+    )
+
     payout_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
     payout: Mapped["Payout"] = relationship(
         back_populates = "transactions",
         primaryjoin = "and_(Transaction.payout_id == Payout.id, Transaction.tenant_id == Payout.tenant_id)",
         foreign_keys = [payout_id])
+    
+    gateway: Mapped[str | None] = mapped_column(String(50), nullable = True, default = "manual")
+    gateway_transaction_id: Mapped[str | None] = mapped_column(String(255), nullable = True)
+    gateway_metadata: Mapped[dict | None] = mapped_column(JSONB, nullable = True)
 
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_transaction_tenant"),

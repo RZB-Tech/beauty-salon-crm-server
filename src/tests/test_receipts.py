@@ -24,8 +24,8 @@ class TestReceipt:
 
         employeeResponse = await auth_client.post("/api/v1/employees", 
             json= {
-            "firstname": "RECEIPT SOME NAME",
-            "lastname": "RECEIPT SOME LASTNAME",
+            "firstname": "receipt SOME NAME",
+            "lastname": "receipt SOME LASTNAME",
             "birth_date": "1990-01-01",
             "services_ids": [TestReceipt.serviceID]
         })
@@ -83,7 +83,7 @@ class TestReceipt:
             "receipt_id": TestReceipt.receiptID,
             "method": "invalid method"
         }
-        paymentResponse = await auth_client.post("/api/v1/payments", json = paymentPayload)
+        paymentResponse = await auth_client.post("/api/v1/receipts/make_payment", json = paymentPayload)
         assert paymentResponse.status_code == 422
 
     async def test_receipt_make_full_payment(self, auth_client):
@@ -92,7 +92,7 @@ class TestReceipt:
             "method": "cash",
             "amount": 1500
         }
-        paymentResponse = await auth_client.post("/api/v1/payments", json = paymentPayload)
+        paymentResponse = await auth_client.post("/api/v1/receipts/make_payment", json = paymentPayload)
         assert paymentResponse.status_code == 201
         assert paymentResponse.json()["paid_amount"] == 1500
         assert paymentResponse.json()["remaining_amount"] == 0
@@ -152,7 +152,7 @@ class TestReceipt:
             "method": "cash",
             "amount": 1500
         }
-        paymentResponse = await auth_client.post("/api/v1/payments", json = paymentPayload)
+        paymentResponse = await auth_client.post("/api/v1/receipts/make_payment", json = paymentPayload)
         assert paymentResponse.status_code == 201
         assert paymentResponse.json()["paid_amount"] == 1500
         assert paymentResponse.json()["remaining_amount"] == 3500
@@ -186,7 +186,7 @@ class TestReceipt:
             # field add_change_to_deposit by default is True
             "add_change_to_deposit": False
         }
-        paymentResponse = await auth_client.post("/api/v1/payments", json = paymentPayload)
+        paymentResponse = await auth_client.post("/api/v1/receipts/make_payment", json = paymentPayload)
         assert paymentResponse.status_code == 400
 
     async def test_receipt_overpayment(self, auth_client):
@@ -195,5 +195,5 @@ class TestReceipt:
             "method": "cash",
             "amount": 10000
         }
-        paymentResponse = await auth_client.post("/api/v1/payments", json = paymentPayload)
+        paymentResponse = await auth_client.post("/api/v1/receipts/make_payment", json = paymentPayload)
         assert paymentResponse.status_code == 201

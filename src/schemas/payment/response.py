@@ -1,6 +1,6 @@
 from pydantic import ConfigDict
-
-from src.repository.payment.payment_model import PaymentMethodsEnum, ReceiptStatus, ReceiptType
+from src.repository.receipt.receipt_model import ReceiptStatus, ReceiptType
+from src.repository.transaction.transaction_model import TransactionMethod
 from src.schemas.base import BaseResponseSchema
 
 class ReceiptItemResponseSchema(BaseResponseSchema):
@@ -31,6 +31,6 @@ class ReceiptResponseSchema(BaseResponseSchema):
 class PaymentResponseSchema(BaseResponseSchema):
     receipt_id: int
     amount: int
-    method: PaymentMethodsEnum
+    method: TransactionMethod
 
     model_config = ConfigDict(from_attributes = True)

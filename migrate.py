@@ -102,11 +102,23 @@ def seed_admin_user() -> None:
         "-d", DB_NAME,
         "-c",
         """
-        insert into tenants (name, active)
-        values ('synapse', true);
+        insert into tenants (name, active, preferences)
+        values ('synapse', true, '{
+            "theme": "light",
+            "timezone": "UTC",
+            "currency": "UZS",
+            "enable_telegram_booking": false,
+            "cancel_payment_due": 0
+        }'::jsonb);
 
-        insert into tenants (name, active)
-        values ('rzbtech', true);
+        insert into tenants (name, active, preferences)
+        values ('rzbtech', true, '{
+            "theme": "light",
+            "timezone": "UTC",
+            "currency": "UZS",
+            "enable_telegram_booking": false,
+            "cancel_payment_due": 0
+        }'::jsonb);
 
         insert into actors (actor_type, tenant_id)
         values ('staff', 1);

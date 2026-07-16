@@ -3,11 +3,14 @@ from datetime import datetime, timedelta, timezone
 from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 from src.core.dependencies.uow import UnitOfWork
-from src.repository.payment.payment_model import Payment, PaymentMethodsEnum, Receipt, ReceiptItem, ReceiptStatus, ReceiptType
+from src.repository.appointment.appointment_model import AppointmentServices
+from src.repository.receipt.receipt_model import Receipt, ReceiptItem, ReceiptStatus, ReceiptType
 from src.repository.payroll.payroll_model import Payroll, PayrollStatus, PayrollType
+from src.repository.transaction.transaction_model import Transaction, TransactionCategory, TransactionMethod, TransactionType
 from src.schemas.base import RequestAllObject
-from src.schemas.payment.create import ReceiptCreateSchema
+from src.schemas.payment.create import ReceiptCreateSchema, ReceiptPaymentCreateSchema
 from src.schemas.tenant.base import TenantPreferencesSchema
 from src.core.utils.common import as_utc
 
@@ -141,6 +144,132 @@ class ReceiptService():
                 detail=f"Database integrity violation: {error_msg}"
             )
     
+    async def make_payment(self, data: ReceiptPaymentCreateSchema) -> Receipt: 
+        stmt = await self.uow.db.execute(select(Receipt)
+            .where(Receipt.id == data.receipt_id)
+            .options(
+                selectinload(Receipt.transactions),
+                selectinload(Receipt.appointment),
+                selectinload(Receipt.items)
+                    .selectinload(ReceiptItem.appointment_service)
+                    .selectinload(AppointmentServices.appointment_record)
+            ))
+        
+        # get receipt info
+        receipt = stmt.scalar_one_or_none()
+        if not receipt: 
+            raise HTTPException(400, f"Чек с ID {data.receipt_id} не найден")
+            
+        # check if receipt is already paid
+        if receipt.remaining_amount == 0:
+            raise HTTPException(409, "Чек полностью оплачен, дальнейшие оплаты не принимаются")
+        
+        # create temp deposit adjustment to substract payment sum in case if payment method is deposit
+        depositAdjustment = 0
+        if data.method == TransactionMethod.DEPOSIT:
+            depositAdjustment -= data.amount
+
+        # add overpaid sum to client's deposit
+        if receipt.paid_amount + data.amount > receipt.total_amount:
+            receipt.status = ReceiptStatus.PAID
+
+            # create new transcation for income from receipt payment
+            await self.uow.transactions.create(Transaction(
+                receipt_id = receipt.id,
+                amount = data.amount,
+                type = TransactionType.INCOME,
+                method = TransactionMethod(data.method),
+                category = TransactionCategory.RECEIPT,
+                auto_generated = True
+            ))
+
+            if receipt.appointment:
+                receipt.appointment.paid = True
+            
+            overpayment = (receipt.paid_amount + data.amount) - receipt.total_amount
+            if overpayment > 0:
+                if not data.add_change_to_deposit: raise HTTPException(400, "Переплата, измените сумму или оплатите с учетом перевода сдачи в депозит клиента")
+                receipt.change_amount = overpayment
+                receipt.change_to_deposit = True
+                
+                if data.add_change_to_deposit: depositAdjustment += overpayment
+
+                # create new transaction for deposit
+                
+            # add commission to employees
+            if receipt.receipt_type == ReceiptType.APPOINTMENT:
+                for item in receipt.items:
+                    if not item.appointment_service_id:
+                        continue
+                        
+                    appointment_service = item.appointment_service
+                    appointment_record = appointment_service.appointment_record
+                    employee_id = appointment_record.employee_id
+                    
+                    employee = await self.uow.employees.get(employee_id)
+                    if not employee:
+                        raise HTTPException(
+                            status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f"Employee with id {employee.id} not found."
+                        )
+                    
+                    if employee and employee.percent_from_services > 0:
+                        commission_earned = int(item.subtotal * (employee.percent_from_services / 100))
+                        if commission_earned > 0:
+                            payroll_record = Payroll(
+                                employee_id = employee.id,
+                                appointment_id = appointment_record.appointment_id,
+                                type = PayrollType.COMMISSION,
+                                amount = commission_earned,
+                                auto_generated = True
+                            )
+                            await self.uow.payrolls.create(payroll_record)
+        else:
+            receipt.change_amount = 0
+            receipt.change_to_deposit = False
+
+            await self.uow.transactions.create(Transaction(
+                receipt_id = receipt.id,
+                amount = data.amount,
+                type = TransactionType.INCOME,
+                method = TransactionMethod(data.method),
+                category = TransactionCategory.RECEIPT,
+                auto_generated = True
+            ))
+
+        # substract payment sum from client's deposit
+        if depositAdjustment != 0:
+            client_id: int
+            client_id = (receipt.appointment.client_id
+                         if receipt.appointment_id
+                         else receipt.client_id)
+            client = await self.uow.clients.get(client_id)
+
+            if not client:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"During payment client with id {client_id} not found"
+                )
+
+            if data.method == TransactionMethod.DEPOSIT and data.amount > client.deposit:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Client does not have enough deposit to make payment."
+                )
+            
+            final_deposit_balance = client.deposit + depositAdjustment
+            await self.uow.clients.update(client.id, deposit = final_deposit_balance)
+            await self.uow.transactions.create(Transaction(
+                    receipt_id = receipt.id,
+                    amount = overpayment,
+                    type = TransactionType.INCOME,
+                    method = TransactionMethod.DEPOSIT,
+                    category = TransactionCategory.RECEIPT,
+                    auto_generated = True
+                ))
+
+        return await self.uow.receipts.get(receipt.id)
+
     async def cancel(self, id: int) -> Receipt:
         receipt = await self.uow.receipts.get(id)
         if not receipt:
@@ -152,8 +281,8 @@ class ReceiptService():
         await self.ensure_receipt_payments_can_be_cancelled(receipt)
         
         deposit_to_refund = 0
-        for payment in receipt.payments:
-            if payment.method == PaymentMethodsEnum.DEPOSIT:
+        for payment in receipt.transactions:
+            if payment.method == TransactionMethod.DEPOSIT:
                 deposit_to_refund += payment.amount
             await self.uow.payments.cancel(payment.id)
 
@@ -181,10 +310,6 @@ class ReceiptService():
             for payroll in payrolls:
                 payroll.status = PayrollStatus.CANCELLED
 
-            # cancel payments
-            for payment in receipt.payments:
-                payment.cancelled = True
-
         # return used materials to stock
         if receipt.receipt_type == ReceiptType.DIRECT_SALE:
             for receiptItem in receipt.items:
@@ -201,13 +326,13 @@ class ReceiptService():
         receipt.change_to_deposit = False
 
         # cancel all related transcations
-        transactions = await self.uow.transactions.get_by_receipt(receipt.id)
-        for transaction in transactions: transaction.cancelled = True
+        # transactions = await self.uow.transactions.get_by_receipt(receipt.id)
+        for transaction in receipt.transactions: transaction.cancelled = True
             
         return await self.uow.receipts.get(id)
 
     async def ensure_receipt_payments_can_be_cancelled(self, receipt: Receipt) -> None:
-        if not receipt.payments:
+        if not receipt.transactions:
             return
 
         preferences = await self.uow.tenantPreferences.get_by_tenant_id(receipt.tenant_id)
@@ -220,24 +345,22 @@ class ReceiptService():
 
         expired_payment = next(
             (
-                payment
-                for payment in receipt.payments
-                if self.is_payment_cancel_expired(payment, cancel_payment_due)
+                transaction
+                for transaction in receipt.transactions
+                if self.is_payment_cancel_expired(transaction, cancel_payment_due)
             ),
             None,
         )
         if expired_payment is None:
             return
 
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
+        raise HTTPException(400, (
                 "Время для отмены чека истекло: в чеке есть оплата, "
                 f"которую можно отменить только в течение {cancel_payment_due} ч. после создания."
             ),
         )
 
-    def is_payment_cancel_expired(self, payment: Payment, cancel_payment_due: int) -> bool:
+    def is_payment_cancel_expired(self, payment: Transaction, cancel_payment_due: int) -> bool:
         cancel_deadline = as_utc(payment.created_at) + timedelta(hours=cancel_payment_due)
         return datetime.now(timezone.utc) > cancel_deadline
 

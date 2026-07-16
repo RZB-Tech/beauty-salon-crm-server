@@ -23,7 +23,7 @@ class Tenant(Base):
     TIN: Mapped[str] = mapped_column(String(255), nullable = True)
     
     active: Mapped[bool] = mapped_column(Boolean, default = True, server_default="true")
-
+    preferences: Mapped[dict] = mapped_column(JSONB, default = dict)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -36,10 +36,6 @@ class Tenant(Base):
         onupdate=func.now(),
         nullable=False,
     )
-
-class TenantPreferences(BaseFields):
-    __tablename__ = "tenant_preferences"
-    preferences: Mapped[dict] = mapped_column(JSONB, default = dict)
 
 class TenantIntegration(BaseFields):
     __tablename__ = "tenant_integrations"

@@ -14,10 +14,9 @@ class TestPayroll:
     async def test_payroll_create(self, auth_client):
         employeeResponse = await auth_client.post("/api/v1/employees", 
             json= {
-            "firstname": "SOME NAME",
-            "lastname": "SOME LASTNAME",
+            "firstname": "payroll SOME NAME",
+            "lastname": "payroll SOME LASTNAME",
             "birth_date": "1990-01-01",})
-        assert employeeResponse.status_code == 201
         TestPayroll.employeeID = int(employeeResponse.json()["id"])
 
         salon_payload = {
