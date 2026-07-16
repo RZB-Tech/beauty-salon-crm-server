@@ -14,7 +14,7 @@ def build_model_registry(base_models: list[Type[BaseFields]]) -> dict[str, Type[
     return registry
 
 MODEL_REGISTRY = build_model_registry([Employee, Service, Client, Appointment,
-    Material, Receipt, Payout, Transaction, Notification, ServiceCategory, WorkSchedule, EmployeeAbsence])  # list all your models once
+    Material, Receipt, Payout, Transaction, Notification, ServiceCategory, WorkSchedule, EmployeeAbsence, Role])  # list all your models once
 
 _TYPE_MAP = {
     str: "string",

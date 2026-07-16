@@ -4,7 +4,9 @@ import json
 from fastapi import APIRouter, Depends, Request, status
 from sse_starlette import EventSourceResponse
 from src.core.dependencies.auth import get_current_staff
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.notification.create import NotificationCreateSchema
 from src.schemas.notification.response import NotificationResponseSchema
@@ -17,9 +19,10 @@ router = APIRouter()
 get_notification_service = make_service_dependency(NotificationService)
 
 @router.post(
-    "", 
-    response_model=NotificationResponseSchema, 
+    "",
+    response_model=NotificationResponseSchema,
     status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_CREATE]))]
 )
 async def create(data: NotificationCreateSchema,
                  notificationService: NotificationService = Depends(get_notification_service)):
@@ -27,14 +30,18 @@ async def create(data: NotificationCreateSchema,
 
 @router.post(
     "/get-all",
-    response_model=PaginatedResponseSchema[NotificationResponseSchema], 
+    response_model=PaginatedResponseSchema[NotificationResponseSchema],
     status_code = 200,
+    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_READ]))]
 )
 async def get_all(params: RequestAllObject,
                  notificationService: NotificationService = Depends(get_notification_service)):
     return await notificationService.get_all(params)
 
-@router.get("/stream")
+@router.get(
+    "/stream",
+    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_READ]))]
+)
 async def notification_stream(
     request: Request,
     current_staff: dict = Depends(get_current_staff)):
@@ -67,8 +74,9 @@ async def notification_stream(
 
 @router.get(
     "/{id}",
-    response_model=NotificationResponseSchema, 
-    status_code = 200
+    response_model=NotificationResponseSchema,
+    status_code = 200,
+    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_READ]))]
 )
 async def get(id: int,
                  notificationService: NotificationService = Depends(get_notification_service)):
@@ -77,7 +85,8 @@ async def get(id: int,
 @router.delete(
     "/{id}",
     response_model = NotificationResponseSchema,
-    status_code = 200
+    status_code = 200,
+    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_ARCHIVE]))]
 )
 async def archive(id: int,
                  notificationService: NotificationService = Depends(get_notification_service)):
@@ -85,7 +94,8 @@ async def archive(id: int,
 
 @router.delete(
     "/{id}",
-    status_code = 204
+    status_code = 204,
+    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_DELETE]))]
 )
 async def delete(id: int,
                  notificationService: NotificationService = Depends(get_notification_service)):

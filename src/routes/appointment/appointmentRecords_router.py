@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, status
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import  make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.appointment.create import AppointmentRecordsCreateSchema
 from src.schemas.appointment.response import AppointmentRecordsResponseSchema, AppointmentResponseSchema
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
@@ -10,9 +12,10 @@ router = APIRouter()
 get_appointment_records_service = make_service_dependency(AppointmentRecordsService)
 
 @router.post(
-    "", 
-    response_model=AppointmentResponseSchema, 
-    status_code=status.HTTP_201_CREATED
+    "",
+    response_model=AppointmentResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_RECORDS_CREATE]))]
 )
 async def create(data: AppointmentRecordsCreateSchema,
                  appointmentRecordsService: AppointmentRecordsService = Depends(get_appointment_records_service)):
@@ -56,7 +59,8 @@ async def create(data: AppointmentRecordsCreateSchema,
 @router.delete(
     "/{id}",
     status_code = 200,
-    response_model = AppointmentResponseSchema
+    response_model = AppointmentResponseSchema,
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_RECORDS_DELETE]))]
 )
 async def delete(id: int,
                  appointmentRecordsService: AppointmentRecordsService = Depends(get_appointment_records_service)):

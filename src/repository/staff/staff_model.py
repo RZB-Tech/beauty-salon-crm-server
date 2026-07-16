@@ -3,10 +3,13 @@ from typing import TYPE_CHECKING
 from enum import Enum, StrEnum
 from sqlalchemy import ForeignKeyConstraint, Integer, String, Boolean, Enum as SQLEnum, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship, validates
+from sqlalchemy.dialects.postgresql import ARRAY
 from src.database.base import BaseFields
+from src.repository.staff.staff_roles_model import StaffRole
 
 if TYPE_CHECKING:
     from src.database.base import Actor
+    from src.repository.staff.roles_model import Role
 
 class StaffType(StrEnum):
     ADMIN = "administrator"
@@ -34,7 +37,15 @@ class Staff(BaseFields):
         foreign_keys=[actor_id],
         lazy = "joined"
     )
-    
+
+    permissions: Mapped[list[int]] = mapped_column(ARRAY(Integer), default = list, server_default = "{}")
+
+    roles: Mapped[list["Role"]] = relationship(
+        secondary = StaffRole.__table__,
+        primaryjoin = "and_(Staff.id == foreign(staffs_roles.c.staff_id), Staff.tenant_id == foreign(staffs_roles.c.tenant_id))",
+        secondaryjoin = "and_(Role.id == foreign(staffs_roles.c.role_id), Role.tenant_id == foreign(staffs_roles.c.tenant_id))"
+    )
+
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_staff_tenant"),
         ForeignKeyConstraint(
@@ -55,3 +66,5 @@ class Staff(BaseFields):
     def validate_login_lowercase(self, key: str, value: str) -> str:
         if value is not None: return value.strip().lower()
         return value
+
+    ALLOWED_FILTERS = {"login", "firstname", "lastname", "staff_type", "active", "employee_id", "archived"}

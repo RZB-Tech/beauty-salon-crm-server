@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, status
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import  make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.appointment.response import AppointmentResponseSchema
 from src.schemas.base import PaginatedResponseSchema, PaginationSchema, RequestAllObject
 from src.schemas.client.create import ClientCreateSchema
@@ -13,9 +15,10 @@ router = APIRouter()
 get_client_service = make_service_dependency(ClientService)
 
 @router.post(
-    "", 
-    response_model=ClientResponseSchema, 
-    status_code=status.HTTP_201_CREATED
+    "",
+    response_model=ClientResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission([PermissionCode.CLIENT_CREATE]))]
 )
 async def create(data: ClientCreateSchema,
                  clientService: ClientService = Depends(get_client_service)):
@@ -23,8 +26,9 @@ async def create(data: ClientCreateSchema,
 
 @router.patch(
     "",
-    response_model=ClientResponseSchema, 
-    status_code=status.HTTP_200_OK
+    response_model=ClientResponseSchema,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_permission([PermissionCode.CLIENT_UPDATE]))]
 )
 async def update(data: ClientUpdateSchema,
                  clientService: ClientService = Depends(get_client_service)):
@@ -32,8 +36,9 @@ async def update(data: ClientUpdateSchema,
 
 @router.post(
     "/get-all",
-    response_model=PaginatedResponseSchema[ClientResponseSchema], 
-    status_code=status.HTTP_200_OK
+    response_model=PaginatedResponseSchema[ClientResponseSchema],
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_permission([PermissionCode.CLIENT_READ]))]
 )
 async def get_all(params: RequestAllObject,
                  clientService: ClientService = Depends(get_client_service)):
@@ -41,8 +46,9 @@ async def get_all(params: RequestAllObject,
 
 @router.get(
     "/{id}",
-    response_model=ClientResponseSchema, 
-    status_code=status.HTTP_200_OK
+    response_model=ClientResponseSchema,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_permission([PermissionCode.CLIENT_READ]))]
 )
 async def get(id: int,
                  clientService: ClientService = Depends(get_client_service)):
@@ -61,7 +67,8 @@ async def get(id: int,
     status_code = status.HTTP_200_OK,
     response_model = ClientResponseSchema,
     description = "Для добавления суммы: operaion: 1\nДля отнятия суммы: operataion: -1",
-    name = "Обновить депозит"
+    name = "Обновить депозит",
+    dependencies=[Depends(require_permission([PermissionCode.CLIENT_UPDATE_DEPOSIT]))]
 )
 async def update_deposit(data: ClientDepositUpdateSchema,
                  clientService: ClientService = Depends(get_client_service)):
@@ -70,7 +77,8 @@ async def update_deposit(data: ClientDepositUpdateSchema,
 @router.get(
     "/{id}/appointments",
     status_code = status.HTTP_200_OK,
-    response_model=PaginatedResponseSchema[AppointmentResponseSchema]
+    response_model=PaginatedResponseSchema[AppointmentResponseSchema],
+    dependencies=[Depends(require_permission([PermissionCode.CLIENT_READ]))]
 )
 async def get_appointments(id: int,
                            params: PaginationSchema = Depends(),
@@ -100,7 +108,8 @@ async def get_appointments(id: int,
     },
 }
 ```
-"""
+""",
+    dependencies=[Depends(require_permission([PermissionCode.CLIENT_FINANCE_REPORT]))]
 )
 async def get_finance_report(data: ClientFinanceReportRequest,
                              clientService: ClientService = Depends(get_client_service)):

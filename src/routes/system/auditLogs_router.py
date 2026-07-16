@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, status
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.auditLogs.request import AuditLogsRequestSchema
 from src.schemas.auditLogs.response import AuditLogsResponseSchema
 from src.schemas.base import PaginatedResponseSchema, PaginationSchema
@@ -12,8 +14,9 @@ get_auditLogs_service = make_service_dependency(AuditLogsService)
 
 @router.get(
     "",
-    response_model=PaginatedResponseSchema[AuditLogsResponseSchema], 
-    status_code=status.HTTP_200_OK
+    response_model=PaginatedResponseSchema[AuditLogsResponseSchema],
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_permission([PermissionCode.AUDIT_LOGS_READ]))]
 )
 async def get_all(data: AuditLogsRequestSchema = Depends(),
                 params: PaginationSchema = Depends(),

@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, status
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.appointment.response import AppointmentResponseSchema
 from src.schemas.base import PaginatedResponseSchema, PaginationSchema, RequestAllObject
 from src.schemas.employee.create import EmployeeCreateSchema
@@ -13,10 +15,11 @@ router = APIRouter()
 get_employee_service = make_service_dependency(EmployeeService)
 
 @router.post(
-    "", 
-    response_model=EmployeeResponseBase, 
+    "",
+    response_model=EmployeeResponseBase,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new employee with assigned services"
+    summary="Create a new employee with assigned services",
+    dependencies=[Depends(require_permission([PermissionCode.EMPLOYEE_CREATE]))]
 )
 async def create(
     data: EmployeeCreateSchema,
@@ -26,8 +29,9 @@ async def create(
 
 @router.post(
     "/get-all",
-    response_model=PaginatedResponseSchema[EmployeeResponseBase], 
-    status_code=status.HTTP_200_OK
+    response_model=PaginatedResponseSchema[EmployeeResponseBase],
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_permission([PermissionCode.EMPLOYEE_READ]))]
 )
 async def get_all(params: RequestAllObject,
     employeeService: EmployeeService = Depends(get_employee_service)):
@@ -46,6 +50,7 @@ async def get_all(params: RequestAllObject,
     "/{id}",
     response_model = EmployeeResponseBase,
     status_code = status.HTTP_200_OK,
+    dependencies=[Depends(require_permission([PermissionCode.EMPLOYEE_READ]))]
 )
 async def get(id: int,
     employeeService: EmployeeService = Depends(get_employee_service)):
@@ -53,8 +58,9 @@ async def get(id: int,
 
 @router.patch(
     "",
-    response_model=EmployeeResponseBase, 
-    status_code=status.HTTP_200_OK
+    response_model=EmployeeResponseBase,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_permission([PermissionCode.EMPLOYEE_UPDATE]))]
 )
 async def update(data: EmployeeUpdateSchema,
     employeeService: EmployeeService = Depends(get_employee_service)):
@@ -72,7 +78,8 @@ async def update(data: EmployeeUpdateSchema,
     "/{id}/work-schedules",
     status_code = status.HTTP_200_OK,
     response_model = EmployeeWorkScheduleResponse,
-    description = "Returns employee's work schedules and absences"
+    description = "Returns employee's work schedules and absences",
+    dependencies=[Depends(require_permission([PermissionCode.EMPLOYEE_READ]))]
 )
 async def get_workSchedules(id: int,
     employeeService: EmployeeService = Depends(get_employee_service)):
@@ -82,7 +89,8 @@ async def get_workSchedules(id: int,
     "/{id}/payrolls",
     status_code = status.HTTP_200_OK,
     response_model = PaginatedResponseSchema[PayrollResponseSchema],
-    description = "Returns employee's payrolls"
+    description = "Returns employee's payrolls",
+    dependencies=[Depends(require_permission([PermissionCode.PAYROLL_READ]))]
 )
 async def get_payrolls(id: int,
                        params: PaginationSchema = Depends(),
@@ -92,7 +100,8 @@ async def get_payrolls(id: int,
 @router.get(
     "/{id}/appointments",
     status_code = status.HTTP_200_OK,
-    response_model=PaginatedResponseSchema[AppointmentResponseSchema]
+    response_model=PaginatedResponseSchema[AppointmentResponseSchema],
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_READ]))]
 )
 async def get_appointments(id: int,
                            params: PaginationSchema = Depends(),

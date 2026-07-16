@@ -1,4 +1,6 @@
 from src.repository.staff.staff_model import Staff
+from src.repository.staff.roles_model import Role
+from src.repository.staff.staff_roles_model import StaffRole
 from src.repository.audit.auditLog_model import AuditLogs
 from src.repository.employee.employee_model import Employee, EmployeeServices
 from src.repository.service.service_model import Service, ServiceCategory

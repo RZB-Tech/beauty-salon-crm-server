@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 2eadef85b5f7
+Revision ID: 2f1ec37759cc
 Revises: 
-Create Date: 2026-07-16 12:27:38.923937
+Create Date: 2026-07-17 02:02:40.121924
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '2eadef85b5f7'
+revision: str = '2f1ec37759cc'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -99,6 +99,21 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_materials_tenant_id'), 'materials', ['tenant_id'], unique=False)
     op.create_index('uq_material_article_name_lower', 'materials', [sa.literal_column('lower(article)'), sa.literal_column('lower(name)'), 'tenant_id'], unique=False)
+    op.create_table('roles',
+    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('permissions', postgresql.ARRAY(sa.Integer()), server_default='{}', nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
+    sa.Column('tenant_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('id', 'tenant_id', name='uq_roles_tenant')
+    )
+    op.create_index(op.f('ix_roles_tenant_id'), 'roles', ['tenant_id'], unique=False)
     op.create_table('service_categories',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -209,6 +224,7 @@ def upgrade() -> None:
     op.create_table('services',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('price', sa.BigInteger(), nullable=False),
+    sa.Column('estimated_time', sa.Integer(), nullable=False),
     sa.Column('category_id', sa.Integer(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
@@ -361,6 +377,7 @@ def upgrade() -> None:
     sa.Column('staff_type', sa.String(length=50), nullable=False),
     sa.Column('employee_id', sa.Integer(), nullable=True),
     sa.Column('actor_id', sa.Integer(), nullable=True),
+    sa.Column('permissions', postgresql.ARRAY(sa.Integer()), server_default='{}', nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -437,6 +454,22 @@ def upgrade() -> None:
     )
     op.create_index('ix_payrolls_tenant_employee', 'payrolls', ['tenant_id', 'employee_id'], unique=False)
     op.create_index(op.f('ix_payrolls_tenant_id'), 'payrolls', ['tenant_id'], unique=False)
+    op.create_table('staffs_roles',
+    sa.Column('staff_id', sa.Integer(), nullable=False),
+    sa.Column('role_id', sa.Integer(), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
+    sa.Column('tenant_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['role_id', 'tenant_id'], ['roles.id', 'roles.tenant_id'], name='fk_staffs_roles_to_role', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['staff_id', 'tenant_id'], ['staffs.id', 'staffs.tenant_id'], name='fk_staffs_roles_to_staff', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('staff_id', 'role_id', name='pk_staffs_roles')
+    )
+    op.create_index(op.f('ix_staffs_roles_tenant_id'), 'staffs_roles', ['tenant_id'], unique=False)
     op.create_table('transactions',
     sa.Column('amount', sa.Integer(), nullable=False),
     sa.Column('type', sa.String(length=50), nullable=False),
@@ -495,6 +528,8 @@ def downgrade() -> None:
     op.drop_table('receipt_items')
     op.drop_index(op.f('ix_transactions_tenant_id'), table_name='transactions')
     op.drop_table('transactions')
+    op.drop_index(op.f('ix_staffs_roles_tenant_id'), table_name='staffs_roles')
+    op.drop_table('staffs_roles')
     op.drop_index(op.f('ix_payrolls_tenant_id'), table_name='payrolls')
     op.drop_index('ix_payrolls_tenant_employee', table_name='payrolls')
     op.drop_table('payrolls')
@@ -537,6 +572,8 @@ def downgrade() -> None:
     op.drop_index('uq_service_category_name_lower', table_name='service_categories')
     op.drop_index(op.f('ix_service_categories_tenant_id'), table_name='service_categories')
     op.drop_table('service_categories')
+    op.drop_index(op.f('ix_roles_tenant_id'), table_name='roles')
+    op.drop_table('roles')
     op.drop_index('uq_material_article_name_lower', table_name='materials')
     op.drop_index(op.f('ix_materials_tenant_id'), table_name='materials')
     op.drop_table('materials')

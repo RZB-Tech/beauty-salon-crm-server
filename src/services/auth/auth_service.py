@@ -1,11 +1,16 @@
 import string
 
 from fastapi import HTTPException, Request, Response, status
+from src.core.cache.permission_cache import delete_staff_permissions, set_staff_permissions
+from src.core.config import settings
 from src.core.dependencies.context import get_current_staff_id
 from src.core.dependencies.uow import UnitOfWork
-from src.repository.staff.staff_model import StaffType
+from src.core.permissions import compute_effective_permissions
+from src.repository.employee.employee_model import Employee
+from src.repository.staff.staff_model import Staff, StaffType
 from src.schemas.auth.login import LoginResponseSchema, LoginSchema
 from src.core.auth.security import hash_password, verify_password, create_access_token, create_refresh_token, decode_token
+from src.schemas.auth.response import MeResponseSchema
 from src.schemas.base import ActorResponseSchema
 from src.schemas.employee.response import EmployeeResponseBase
 import secrets
@@ -31,7 +36,7 @@ class AuthService():
                 headers = {"WWW-Authenticate": "Bearer"}
             )
         
-        employee = None
+        employee: Employee | None = None
         if staff.employee_id:
             employee = await self.uow.employees.get(staff.employee_id)
 
@@ -65,6 +70,13 @@ class AuthService():
             samesite = "lax"
         )
 
+        await set_staff_permissions(
+            staff.id,
+            staff.staff_type,
+            compute_effective_permissions(staff),
+            ttl = settings.ACCESS_TOKEN_EXPIRE_SECONDS
+        )
+
         tenant = await self.uow.tenants.get(id = staff.tenant_id)
         return LoginResponseSchema(
             id = staff.id,
@@ -74,6 +86,8 @@ class AuthService():
             creator = ActorResponseSchema.model_validate(staff.actor) if staff.actor else None,
             archived = staff.archived,
             login=staff.login,
+            permissions = staff.permissions,
+            roles = staff.roles,
             employee=EmployeeResponseBase.model_validate(employee) if employee else None,
             firstname=staff.firstname,
             lastname=staff.lastname,
@@ -141,14 +155,22 @@ class AuthService():
             samesite="lax"
         )
         response.set_cookie(
-            key="refresh_token", 
-            value=refreshToken, 
-            httponly=True, 
-            secure=True, 
+            key="refresh_token",
+            value=refreshToken,
+            httponly=True,
+            secure=True,
             samesite="lax"
         )
 
+        await set_staff_permissions(
+            user.id,
+            user.staff_type,
+            compute_effective_permissions(user),
+            ttl = settings.ACCESS_TOKEN_EXPIRE_SECONDS
+        )
+
     async def logout(self, response: Response):
+        staff_id = get_current_staff_id()
         response.delete_cookie(
             key="access_token",
             httponly=True,
@@ -161,22 +183,25 @@ class AuthService():
             secure=True,
             samesite="lax"
         )
+        await delete_staff_permissions(staff_id)
 
     async def change_password(self, data: StaffUpdatePasswordSchema):
-        print(data)
-        user = await self.uow.staffs.get(id = data.id)
+        selfUser = get_current_staff_id()
+        targetID = data.id if data.id is not None else selfUser
+
+        user = await self.uow.staffs.get(id = targetID)
         if user is None: raise HTTPException(404)
 
-        selfUser = get_current_staff_id()
-        if selfUser != user.id and user.staff_type != StaffType.ADMIN:
-            raise HTTPException(400, "Только администратор может изменять пароли других пользователей!")
+        if targetID != selfUser:
+            actor = await self.uow.staffs.get(id = selfUser)
+            if actor is None or actor.staff_type != StaffType.ADMIN:
+                raise HTTPException(400, "Только администратор может изменять пароли других пользователей!")
 
         verify = verify_password(user.hashed_password, data.oldPassword)
-        print("reached service")
         if not verify: raise HTTPException(401)
 
         hashed = hash_password(data.newPassword)
-        await self.uow.staffs.update(data.id, hashed_password = hashed)
+        await self.uow.staffs.update(user.id, hashed_password = hashed)
     
     async def reset_password(self, id: int) -> str:
         user = await self.uow.staffs.get(id = id)
@@ -193,3 +218,30 @@ class AuthService():
         hashed = hash_password(newPassword)
         await self.uow.staffs.update(id, hashed_password = hashed)
         return newPassword
+    
+    async def get_me(self) -> MeResponseSchema:
+        staff_id = get_current_staff_id()
+        staff = await self.uow.staffs.get(id = staff_id)
+        if staff is None: raise HTTPException(404, "Пользователь не найден")
+
+        employee: Employee | None = None
+        if staff.employee_id:
+            employee = await self.uow.employees.get(staff.employee_id)
+
+        return MeResponseSchema(
+            id = staff.id,
+            tenant_id = staff.tenant_id,
+            created_at = staff.created_at,
+            updated_at = staff.updated_at,
+            creator = ActorResponseSchema.model_validate(staff.actor) if staff.actor else None,
+            archived = staff.archived,
+            login=staff.login,
+            permissions = staff.permissions,
+            roles = staff.roles,
+            employee=EmployeeResponseBase.model_validate(employee) if employee else None,
+            firstname=staff.firstname,
+            lastname=staff.lastname,
+            middlename=staff.middlename,
+            active=staff.active,
+            staff_type=staff.staff_type
+        )
