@@ -92,15 +92,15 @@ class ClientService():
             "totalPages": total_pages
         }
     
-    # @require_exists("clients", target_param = "clientID")
-    # async def get_finance_report(self, data: ClientClientFinanceReportRequest) -> dict[str, dict]:
-    #     transactions = await self.uow.transactions.get_by_client(data)
-    #     grouped = defaultdict(lambda: {
-    #         "income": 0,
-    #         "net": 0,
-    #         "transactions": []
-    #     })
-    #     total = 0
+    @require_exists("clients", target_param = "clientID")
+    async def get_finance_report(self, data: ClientFinanceReportRequest) -> dict[str, dict]:
+        transactions = await self.uow.transactions.get_by_client(data)
+        grouped = defaultdict(lambda: {
+            "income": 0,
+            "net": 0,
+            "transactions": []
+        })
+        total = 0
 
         for transaction in transactions:
             key = transaction.created_at.strftime("%Y-%m")

@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 import pytest
 
 pytestmark = pytest.mark.asyncio(loop_scope="session")
@@ -64,7 +65,6 @@ class TestReceipt:
             ]
         }
         appointmentResponse = await auth_client.post("/api/v1/appointments", json = appointmentPayload)
-        print(appointmentResponse.json())
         assert appointmentResponse.status_code == 201
         TestReceipt.appointmentID = int(appointmentResponse.json()["id"])
 
@@ -73,7 +73,6 @@ class TestReceipt:
             "appointment_id": TestReceipt.appointmentID
         }
         receiptResponse = await auth_client.post("/api/v1/receipts", json = receiptPayload)
-        print(receiptResponse.json())
         assert receiptResponse.status_code == 201
         assert receiptResponse.json()["total_amount"] == 1500
         TestReceipt.receiptID = int(receiptResponse.json()["id"])
@@ -197,3 +196,20 @@ class TestReceipt:
         }
         paymentResponse = await auth_client.post("/api/v1/receipts/make_payment", json = paymentPayload)
         assert paymentResponse.status_code == 201
+
+    async def test_client_finance_report(self, auth_client):
+        financeReportPayload = {
+            "clientID": TestReceipt.clientID
+        }
+        financeReportResponse = await auth_client.post("/api/v1/clients/finance-report", json = financeReportPayload)
+        assert financeReportResponse.status_code == 200
+
+        body = financeReportResponse.json()
+        # 1500 (full payment) + 1500 (part payment) + 3500 (overpayment applied to receipt) + 6500 (change to deposit)
+        assert body["total"] == 13000
+
+        month_key = datetime.now().strftime("%Y-%m")
+        assert month_key in body["items"]
+        assert body["items"][month_key]["income"] == 13000
+        assert body["items"][month_key]["net"] == 13000
+        assert len(body["items"][month_key]["transactions"]) == 4

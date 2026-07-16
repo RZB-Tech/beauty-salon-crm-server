@@ -170,13 +170,16 @@ class ReceiptService():
             depositAdjustment -= data.amount
 
         # add overpaid sum to client's deposit
-        if receipt.paid_amount + data.amount > receipt.total_amount:
+        if receipt.paid_amount + data.amount >= receipt.total_amount:
             receipt.status = ReceiptStatus.PAID
+
+            overpayment = (receipt.paid_amount + data.amount) - receipt.total_amount
+            applied_amount = data.amount - overpayment
 
             # create new transcation for income from receipt payment
             await self.uow.transactions.create(Transaction(
                 receipt_id = receipt.id,
-                amount = data.amount,
+                amount = applied_amount,
                 type = TransactionType.INCOME,
                 method = TransactionMethod(data.method),
                 category = TransactionCategory.RECEIPT,
@@ -185,16 +188,13 @@ class ReceiptService():
 
             if receipt.appointment:
                 receipt.appointment.paid = True
-            
-            overpayment = (receipt.paid_amount + data.amount) - receipt.total_amount
+
             if overpayment > 0:
                 if not data.add_change_to_deposit: raise HTTPException(400, "Переплата, измените сумму или оплатите с учетом перевода сдачи в депозит клиента")
                 receipt.change_amount = overpayment
                 receipt.change_to_deposit = True
                 
                 if data.add_change_to_deposit: depositAdjustment += overpayment
-
-                # create new transaction for deposit
                 
             # add commission to employees
             if receipt.receipt_type == ReceiptType.APPOINTMENT:
