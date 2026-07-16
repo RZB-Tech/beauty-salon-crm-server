@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 7ddf390e72f1
+Revision ID: 2eadef85b5f7
 Revises: 
-Create Date: 2026-07-14 18:29:00.433971
+Create Date: 2026-07-16 12:27:38.923937
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '7ddf390e72f1'
+revision: str = '2eadef85b5f7'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -40,6 +40,7 @@ def upgrade() -> None:
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('TIN', sa.String(length=255), nullable=True),
     sa.Column('active', sa.Boolean(), server_default='true', nullable=False),
+    sa.Column('preferences', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
@@ -235,19 +236,6 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_tenant_integrations_tenant_id'), 'tenant_integrations', ['tenant_id'], unique=False)
-    op.create_table('tenant_preferences',
-    sa.Column('preferences', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
-    sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_tenant_preferences_created_by_tenant', ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_tenant_preferences_tenant_id'), 'tenant_preferences', ['tenant_id'], unique=False)
     op.create_table('appointment_records',
     sa.Column('appointment_id', sa.Integer(), nullable=False),
     sa.Column('employee_id', sa.Integer(), nullable=False),
@@ -531,8 +519,6 @@ def downgrade() -> None:
     op.drop_table('employee_absences')
     op.drop_index(op.f('ix_appointment_records_tenant_id'), table_name='appointment_records')
     op.drop_table('appointment_records')
-    op.drop_index(op.f('ix_tenant_preferences_tenant_id'), table_name='tenant_preferences')
-    op.drop_table('tenant_preferences')
     op.drop_index(op.f('ix_tenant_integrations_tenant_id'), table_name='tenant_integrations')
     op.drop_table('tenant_integrations')
     op.drop_index('uq_service_name_lower', table_name='services')
