@@ -24,8 +24,8 @@ class TestReceipt:
 
         employeeResponse = await auth_client.post("/api/v1/employees", 
             json= {
-            "firstname": "SOME NAME",
-            "lastname": "SOME LASTNAME",
+            "firstname": "RECEIPT SOME NAME",
+            "lastname": "RECEIPT SOME LASTNAME",
             "birth_date": "1990-01-01",
             "services_ids": [TestReceipt.serviceID]
         })
@@ -35,8 +35,8 @@ class TestReceipt:
         workScheduleResponse = await auth_client.post("api/v1/work-schedules", json = {
             "employee_id": TestReceipt.employeeID,
             "day": "2026-07-13",
-            "start_time": "09:00:00",
-            "end_time": "18:00:00"
+            "start_time": "01:00:00",
+            "end_time": "23:00:00"
         })
         assert workScheduleResponse.status_code == 201
 
@@ -50,20 +50,21 @@ class TestReceipt:
 
         appointmentPayload = {
             "client_id": TestReceipt.clientID,
-            "start_time_est": "2026-07-13T10:16:16.089Z",
-            "end_time_est": "2026-07-13T11:16:16.089Z",
+            "start_time_est": "2026-07-13T03:16:16.089Z",
+            "end_time_est": "2026-07-13T04:16:16.089Z",
             "records": [
                 {
                 "employee_id": TestReceipt.employeeID,
                 "services": [
                     {
-                    "service_id": 1
+                    "service_id": TestReceipt.serviceID
                     }
                 ]
                 }
             ]
         }
         appointmentResponse = await auth_client.post("/api/v1/appointments", json = appointmentPayload)
+        print(appointmentResponse.json())
         assert appointmentResponse.status_code == 201
         TestReceipt.appointmentID = int(appointmentResponse.json()["id"])
 
@@ -72,6 +73,7 @@ class TestReceipt:
             "appointment_id": TestReceipt.appointmentID
         }
         receiptResponse = await auth_client.post("/api/v1/receipts", json = receiptPayload)
+        print(receiptResponse.json())
         assert receiptResponse.status_code == 201
         assert receiptResponse.json()["total_amount"] == 1500
         TestReceipt.receiptID = int(receiptResponse.json()["id"])
@@ -124,7 +126,7 @@ class TestReceipt:
                 "employee_id": TestReceipt.employeeID,
                 "services": [
                     {
-                    "service_id": 1,
+                    "service_id": TestReceipt.serviceID,
                     "price": 5000,
                     "price_changed_reason": "some reason"
                     }

@@ -16,7 +16,8 @@ class TestPayroll:
             json= {
             "firstname": "SOME NAME",
             "lastname": "SOME LASTNAME",
-            "birthk_date": "1990-01-01",})
+            "birth_date": "1990-01-01",})
+        assert employeeResponse.status_code == 201
         TestPayroll.employeeID = int(employeeResponse.json()["id"])
 
         salon_payload = {
@@ -25,6 +26,7 @@ class TestPayroll:
             "type": "bonus"
         }
         response = await auth_client.post("/api/v1/payrolls", json=salon_payload)
+        print(response.json())
         TestPayroll.payrollID = int(response.json()["id"])
         assert response.status_code == 201
 

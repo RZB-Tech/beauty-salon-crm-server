@@ -8,7 +8,7 @@ from src.repository.client.client_model import Client
 from src.repository.transaction.transaction_model import Transaction, TransactionType
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.client.create import ClientCreateSchema
-from src.schemas.client.request import FinanceReportRequest
+from src.schemas.client.request import ClientFinanceReportRequest
 from src.schemas.client.update import ClientDepositUpdateSchema, ClientUpdateSchema, DepositOperation
 
 class ClientService():
@@ -93,22 +93,22 @@ class ClientService():
             "totalPages": total_pages
         }
     
-    @require_exists("clients", target_param = "clientID")
-    async def get_finance_report(self, data: FinanceReportRequest) -> dict[str, dict]:
-        transactions = await self.uow.transactions.get_by_client(data)
-        grouped = defaultdict(lambda: {
-            "income": 0,
-            "net": 0,
-            "transactions": []
-        })
-        total = 0
+    # @require_exists("clients", target_param = "clientID")
+    # async def get_finance_report(self, data: ClientFinanceReportRequest) -> dict[str, dict]:
+    #     transactions = await self.uow.transactions.get_by_client(data)
+    #     grouped = defaultdict(lambda: {
+    #         "income": 0,
+    #         "net": 0,
+    #         "transactions": []
+    #     })
+    #     total = 0
 
-        for transaction in transactions:
-            key = transaction.created_at.strftime("%Y-%m")
-            grouped[key]["transactions"].append(transaction)
-            grouped[key]["income"] += transaction.amount
-            grouped[key]["net"] += transaction.amount
-            total += transaction.amount
+    #     for transaction in transactions:
+    #         key = transaction.created_at.strftime("%Y-%m")
+    #         grouped[key]["transactions"].append(transaction)
+    #         grouped[key]["income"] += transaction.amount
+    #         grouped[key]["net"] += transaction.amount
+    #         total += transaction.amount
 
-        return {"items": dict(sorted(grouped.items())),
-                "total": total}
+    #     return {"items": dict(sorted(grouped.items())),
+    #             "total": total}

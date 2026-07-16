@@ -111,5 +111,3 @@ class TransactionRepository(BaseRepository[Transaction]):
 
         result = await self.db.execute(stmt)
         return list(result.scalars().unique().all())
-    
-    dfef 
