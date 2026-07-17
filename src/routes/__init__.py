@@ -20,6 +20,9 @@ from src.routes.payment.payout_router import router as PayoutR
 from src.routes.system.notification_router import router as notificationR
 from src.routes.system.tenantPreferences_router import router as tenantPreferencesR
 from src.routes.employee.specialization_router import router as specializationR
+from src.routes.system.role_router import router as roleR
+from src.routes.system.permission_router import router as permissionR
+from src.routes.system.staff_router import router as staffR
 from src.schemas.base import FilterFieldSchema, FilterTables
 
 open_router = APIRouter(prefix = "/api/v1")
@@ -145,7 +148,25 @@ protected_router.include_router(
 )
 
 protected_router.include_router(
-    auditLogsR, 
-    prefix="/audit-logs", 
+    auditLogsR,
+    prefix="/audit-logs",
     tags=["Audit logs"]
+)
+
+protected_router.include_router(
+    roleR,
+    prefix = "/roles",
+    tags = ["Roles"]
+)
+
+protected_router.include_router(
+    permissionR,
+    prefix = "/permissions",
+    tags = ["Permissions"]
+)
+
+protected_router.include_router(
+    staffR,
+    prefix = "/staff",
+    tags = ["Staffs"]
 )

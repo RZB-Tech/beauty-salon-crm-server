@@ -143,6 +143,19 @@ def seed_admin_user() -> None:
             (firstname, login, tenant_id, staff_type, active, hashed_password, actor_id)
         VALUES
             (
+                'moderator',
+                'moderator',
+                1,
+                'employee',
+                true,
+                '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc',
+                1
+            );
+
+        INSERT INTO staffs
+            (firstname, login, tenant_id, staff_type, active, hashed_password, actor_id)
+        VALUES
+            (
                 'eva',
                 'admin1',
                 2,

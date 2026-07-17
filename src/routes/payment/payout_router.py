@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, status
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import  make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.payout.create import PayoutCreateSchema
 from src.schemas.payout.response import PayoutResponseSchema
@@ -10,9 +12,10 @@ router = APIRouter()
 get_payout_service = make_service_dependency(PayoutService)
 
 @router.post(
-    "", 
-    response_model=PayoutResponseSchema, 
-    status_code=status.HTTP_201_CREATED
+    "",
+    response_model=PayoutResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission([PermissionCode.PAYOUT_CREATE]))]
 )
 async def create(data: PayoutCreateSchema,
                  payoutService: PayoutService = Depends(get_payout_service)):
@@ -20,8 +23,9 @@ async def create(data: PayoutCreateSchema,
 
 @router.post(
     "/get-all",
-    response_model=PaginatedResponseSchema[PayoutResponseSchema], 
-    status_code=status.HTTP_200_OK
+    response_model=PaginatedResponseSchema[PayoutResponseSchema],
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_permission([PermissionCode.PAYOUT_READ]))]
 )
 async def get_all(params: RequestAllObject,
                  payoutService: PayoutService = Depends(get_payout_service)):
@@ -29,8 +33,9 @@ async def get_all(params: RequestAllObject,
 
 @router.get(
     "/{id}",
-    response_model=PayoutResponseSchema, 
-    status_code=status.HTTP_200_OK
+    response_model=PayoutResponseSchema,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_permission([PermissionCode.PAYOUT_READ]))]
 )
 async def get(id: int,
                  payoutService: PayoutService = Depends(get_payout_service)):

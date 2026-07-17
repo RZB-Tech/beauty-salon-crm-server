@@ -1,3 +1,4 @@
+from fastapi import Depends
 from src.database.session import get_repository_db, transaction_scope
 from src.repository.appointment.appointmentRecords_repository import AppointmentRecordsRepository
 from src.repository.appointment.appointment_repository import AppointmentRepository
@@ -11,6 +12,7 @@ from src.repository.employee.workSchedule_repository import WorkScheduleReposito
 from src.repository.material.material_repository import MaterialRepository
 from src.repository.service.serviceCategory_repository import ServiceCategoryRepository
 from src.repository.service.service_repository import ServiceRepository
+from src.repository.staff.role_repository import RoleRepository
 from src.repository.staff.staff_repository import StaffRepository
 from src.repository.payroll.payroll_repository import PayrollRepository
 from src.repository.payroll.payout_repository import PayoutRepository
@@ -36,6 +38,7 @@ class UnitOfWork:
         self.absences = EmployeeAbsenceRepository()
         self.clients = ClientRepository()
         self.materials = MaterialRepository()
+        self.roles = RoleRepository()
 
         self.appointments = AppointmentRepository()
         self.appointmentRecords = AppointmentRecordsRepository()
@@ -58,15 +61,19 @@ async def get_uow_with_context():
     """Single dependency that provides both session context AND uow."""
     yield UnitOfWork()
 
+async def get_request_uow() -> AsyncGenerator[UnitOfWork, None]:
+    """
+    Single per-request UnitOfWork/transaction, shared by every dependency that
+    depends on this exact callable (FastAPI caches it within the request) -
+    e.g. permission checks and the endpoint's service both see the same session.
+    """
+    async with transaction_scope():
+        yield UnitOfWork()
+
 T = TypeVar("T")
 
 def make_service_dependency(service_cls: Type[T]) -> Callable[..., AsyncGenerator[T, None]]:
-    async def dependency() -> AsyncGenerator[T, None]:
-        # This keeps the transaction open for the ENTIRE duration 
-        # of the router request handling.
-        async with transaction_scope():
-            # Create a clean UnitOfWork instance bound to this specific request transaction context
-            uow = UnitOfWork()
-            yield service_cls(uow=uow)
-            
+    async def dependency(uow: UnitOfWork = Depends(get_request_uow)) -> AsyncGenerator[T, None]:
+        yield service_cls(uow=uow)
+
     return dependency

@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, File, UploadFile, status
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.specialization.create import SpecializationCreateSchema
 from src.schemas.specialization.response import SpecializationResponseSchema
@@ -11,10 +13,11 @@ router = APIRouter()
 get_specialization_service = make_service_dependency(SpecializationService)
 
 @router.post(
-    "", 
-    response_model=SpecializationResponseSchema, 
+    "",
+    response_model=SpecializationResponseSchema,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new specialization"
+    summary="Create a new specialization",
+    dependencies=[Depends(require_permission([PermissionCode.SPECIALIZATION_CREATE]))]
 )
 async def create(data: SpecializationCreateSchema,
                 specializationService: SpecializationService = Depends(get_specialization_service)):
@@ -22,9 +25,10 @@ async def create(data: SpecializationCreateSchema,
 
 @router.patch(
     "",
-    response_model=SpecializationResponseSchema, 
+    response_model=SpecializationResponseSchema,
     status_code= 200,
-    summary="Update specialization"
+    summary="Update specialization",
+    dependencies=[Depends(require_permission([PermissionCode.SPECIALIZATION_UPDATE]))]
 )
 async def update(data: SpecializationUpdateSchema,
                 specializationService: SpecializationService = Depends(get_specialization_service)):
@@ -32,9 +36,10 @@ async def update(data: SpecializationUpdateSchema,
 
 @router.post(
     "/get-all",
-    response_model=PaginatedResponseSchema[SpecializationResponseSchema], 
+    response_model=PaginatedResponseSchema[SpecializationResponseSchema],
     status_code=status.HTTP_200_OK,
-    summary="Get all specializations"
+    summary="Get all specializations",
+    dependencies=[Depends(require_permission([PermissionCode.SPECIALIZATION_READ]))]
 )
 async def get_all(params: RequestAllObject,
                 specializationService: SpecializationService = Depends(get_specialization_service)):
@@ -42,15 +47,20 @@ async def get_all(params: RequestAllObject,
 
 @router.get(
     "/{id}",
-    response_model=SpecializationResponseSchema, 
+    response_model=SpecializationResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Get "
+    summary="Get ",
+    dependencies=[Depends(require_permission([PermissionCode.SPECIALIZATION_READ]))]
 )
 async def get(id: int,
                 specializationService: SpecializationService = Depends(get_specialization_service)):
     return await specializationService.get(id)
 
-@router.delete("/{id}", status_code = 204)
+@router.delete(
+    "/{id}",
+    status_code = 204,
+    dependencies=[Depends(require_permission([PermissionCode.SPECIALIZATION_DELETE]))]
+)
 async def delete(id: int,
                 specializationService: SpecializationService = Depends(get_specialization_service)):
     return await specializationService.delete(id)

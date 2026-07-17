@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, status
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.work_schedule.create import AbsenceCreateSchema
 from src.schemas.work_schedule.response import AbsenceResponseSchema
@@ -11,9 +13,10 @@ router = APIRouter()
 get_absence_service = make_service_dependency(EmployeeAbsenceService)
 
 @router.post(
-    "", 
-    response_model=AbsenceResponseSchema, 
-    status_code=status.HTTP_201_CREATED
+    "",
+    response_model=AbsenceResponseSchema,
+    status_code=status.HTTP_201_CREATED,
+    dependencies=[Depends(require_permission([PermissionCode.ABSENCE_CREATE]))]
 )
 async def create(data: AbsenceCreateSchema,
                  absenceService: EmployeeAbsenceService = Depends(get_absence_service)):
@@ -21,9 +24,10 @@ async def create(data: AbsenceCreateSchema,
 
 @router.patch(
     "",
-    response_model=AbsenceResponseSchema, 
+    response_model=AbsenceResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Update category"
+    summary="Update category",
+    dependencies=[Depends(require_permission([PermissionCode.ABSENCE_UPDATE]))]
 )
 async def update(data: AbsenceUpdateSchema,
                  absenceService: EmployeeAbsenceService = Depends(get_absence_service)):
@@ -31,9 +35,10 @@ async def update(data: AbsenceUpdateSchema,
 
 @router.post(
     "/get-all",
-    response_model = PaginatedResponseSchema[AbsenceResponseSchema], 
+    response_model = PaginatedResponseSchema[AbsenceResponseSchema],
     status_code = 200,
-    summary="Get all absences"
+    summary="Get all absences",
+    dependencies=[Depends(require_permission([PermissionCode.ABSENCE_READ]))]
 )
 async def get_all(params: RequestAllObject,
                  absenceService: EmployeeAbsenceService = Depends(get_absence_service)):
@@ -41,9 +46,10 @@ async def get_all(params: RequestAllObject,
 
 @router.get(
     "/{id}",
-    response_model=AbsenceResponseSchema, 
+    response_model=AbsenceResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Get "
+    summary="Get ",
+    dependencies=[Depends(require_permission([PermissionCode.ABSENCE_READ]))]
 )
 async def get(id: int,
                  absenceService: EmployeeAbsenceService = Depends(get_absence_service)):
@@ -51,7 +57,8 @@ async def get(id: int,
 
 @router.delete(
     "/{id}",
-    status_code = status.HTTP_204_NO_CONTENT
+    status_code = status.HTTP_204_NO_CONTENT,
+    dependencies=[Depends(require_permission([PermissionCode.ABSENCE_DELETE]))]
 )
 async def delete(id: int,
                  absenceService: EmployeeAbsenceService = Depends(get_absence_service)):

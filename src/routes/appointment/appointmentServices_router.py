@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, status
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import  make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.appointment.create import AppointmentServicesCreateSchema
 from src.schemas.appointment.response import AppointmentResponseSchema, AppointmentServicesResponseSchema
 from src.schemas.appointment.update import AppointmentServiceUpdateSchema
@@ -11,9 +13,10 @@ router = APIRouter()
 get_appointment_services_service = make_service_dependency(AppointmentServicesService)
 
 @router.post(
-    "", 
-    response_model=AppointmentResponseSchema, 
-    status_code = 201
+    "",
+    response_model=AppointmentResponseSchema,
+    status_code = 201,
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_SERVICES_CREATE]))]
 )
 async def create(data: AppointmentServicesCreateSchema,
                  appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):
@@ -21,8 +24,9 @@ async def create(data: AppointmentServicesCreateSchema,
 
 @router.patch(
     "",
-    response_model=AppointmentResponseSchema, 
-    status_code = 200
+    response_model=AppointmentResponseSchema,
+    status_code = 200,
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_SERVICES_UPDATE]))]
 )
 async def update(data: AppointmentServiceUpdateSchema,
     appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):
@@ -58,7 +62,8 @@ async def update(data: AppointmentServiceUpdateSchema,
 @router.delete(
     "/{id}",
     status_code = 200,
-    response_model = AppointmentResponseSchema
+    response_model = AppointmentResponseSchema,
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_SERVICES_DELETE]))]
 )
 async def delete(id: int,
                  appointmentServicesService: AppointmentServicesService = Depends(get_appointment_services_service)):

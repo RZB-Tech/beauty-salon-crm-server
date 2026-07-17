@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, status
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.base import PaginatedResponseSchema
 from src.schemas.service_category.create import ServiceCategoryCreateSchema
 from src.schemas.service_category.response import ServiceCategoryResponseSchema
@@ -12,10 +14,11 @@ router = APIRouter()
 get_category_service = make_service_dependency(ServiceCategoryService)
 
 @router.post(
-    "", 
-    response_model=ServiceCategoryResponseSchema, 
+    "",
+    response_model=ServiceCategoryResponseSchema,
     status_code= 201,
-    summary="Create a new service category"
+    summary="Create a new service category",
+    dependencies=[Depends(require_permission([PermissionCode.SERVICE_CATEGORY_CREATE]))]
 )
 async def create(data: ServiceCategoryCreateSchema,
                  categoryService: ServiceCategoryService = Depends(get_category_service)):
@@ -23,9 +26,10 @@ async def create(data: ServiceCategoryCreateSchema,
 
 @router.patch(
     "",
-    response_model=ServiceCategoryResponseSchema, 
+    response_model=ServiceCategoryResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Update category"
+    summary="Update category",
+    dependencies=[Depends(require_permission([PermissionCode.SERVICE_CATEGORY_UPDATE]))]
 )
 async def update(data: ServiceCategoryUpdateSchema,
                  categoryService: ServiceCategoryService = Depends(get_category_service)):
@@ -33,9 +37,10 @@ async def update(data: ServiceCategoryUpdateSchema,
 
 @router.post(
     "/get-all",
-    response_model=PaginatedResponseSchema[ServiceCategoryResponseSchema], 
+    response_model=PaginatedResponseSchema[ServiceCategoryResponseSchema],
     status_code=status.HTTP_200_OK,
-    summary="Get all categories"
+    summary="Get all categories",
+    dependencies=[Depends(require_permission([PermissionCode.SERVICE_CATEGORY_READ]))]
 )
 async def get_all(params: RequestAllObject,
                   categoryService: ServiceCategoryService = Depends(get_category_service)):
@@ -43,9 +48,10 @@ async def get_all(params: RequestAllObject,
 
 @router.get(
     "/{id}",
-    response_model=ServiceCategoryResponseSchema, 
+    response_model=ServiceCategoryResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Get category"
+    summary="Get category",
+    dependencies=[Depends(require_permission([PermissionCode.SERVICE_CATEGORY_READ]))]
 )
 async def get(id: int, categoryService: ServiceCategoryService = Depends(get_category_service)):
     return await categoryService.get(id)

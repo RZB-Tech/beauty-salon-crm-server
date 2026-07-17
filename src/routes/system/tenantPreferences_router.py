@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, status
 
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.tenant.base import TenantPreferencesSchema
 from src.schemas.tenant.update import TenantPreferencesUpdateSchema
 from src.services.system.tenantPreferences_service import TenantPreferencesService
@@ -16,6 +18,7 @@ get_tenant_preferences_service = make_service_dependency(TenantPreferencesServic
     response_model=TenantPreferencesSchema,
     status_code=status.HTTP_200_OK,
     summary="Get tenant preferences",
+    dependencies=[Depends(require_permission([PermissionCode.TENANT_PREFERENCES_READ]))]
 )
 async def get(
     tenantPreferencesService: TenantPreferencesService = Depends(get_tenant_preferences_service),
@@ -28,6 +31,7 @@ async def get(
     response_model=TenantPreferencesSchema,
     status_code=status.HTTP_200_OK,
     summary="Update tenant preferences",
+    dependencies=[Depends(require_permission([PermissionCode.TENANT_PREFERENCES_UPDATE]))]
 )
 async def update(
     data: TenantPreferencesUpdateSchema,

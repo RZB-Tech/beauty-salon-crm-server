@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Depends, status
+from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_service_dependency
+from src.core.permissions import PermissionCode
 from src.schemas.appointment.create import AppointmentCreateSchema
 from src.schemas.appointment.response import AppointmentResponseSchema
 from src.schemas.appointment.update import AppointmentCancelSchema, AppointmentUpdateSchema
@@ -12,9 +14,10 @@ router = APIRouter()
 get_appointment_service = make_service_dependency(AppointmentService)
 
 @router.post(
-    "", 
-    response_model=AppointmentResponseSchema, 
-    status_code = 201
+    "",
+    response_model=AppointmentResponseSchema,
+    status_code = 201,
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_CREATE]))]
 )
 async def create(data: AppointmentCreateSchema,
                  appointmentService: AppointmentService = Depends(get_appointment_service)):
@@ -22,8 +25,9 @@ async def create(data: AppointmentCreateSchema,
 
 @router.patch(
     "",
-    response_model = AppointmentResponseSchema, 
-    status_code= 200
+    response_model = AppointmentResponseSchema,
+    status_code= 200,
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_UPDATE]))]
 )
 async def update(data: AppointmentUpdateSchema,
                 appointmentService: AppointmentService = Depends(get_appointment_service)):
@@ -31,8 +35,9 @@ async def update(data: AppointmentUpdateSchema,
 
 @router.post(
     "/get-all",
-    response_model=PaginatedResponseSchema[AppointmentResponseSchema], 
-    status_code=status.HTTP_200_OK
+    response_model=PaginatedResponseSchema[AppointmentResponseSchema],
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_READ]))]
 )
 async def get_all(params: RequestAllObject,
                  appointmentService: AppointmentService = Depends(get_appointment_service)):
@@ -40,8 +45,9 @@ async def get_all(params: RequestAllObject,
 
 @router.get(
     "/{id}",
-    response_model=AppointmentResponseSchema, 
-    status_code=status.HTTP_200_OK
+    response_model=AppointmentResponseSchema,
+    status_code=status.HTTP_200_OK,
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_READ]))]
 )
 async def get(id: int,
                  appointmentService: AppointmentService = Depends(get_appointment_service)):
@@ -59,9 +65,10 @@ async def get(id: int,
 @router.patch(
     "/{id}/cancel",
     response_model = AppointmentResponseSchema,
-    status_code = 200
+    status_code = 200,
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_CANCEL]))]
 )
-async def cancel(data: AppointmentCancelSchema, 
+async def cancel(data: AppointmentCancelSchema,
         appointmentService: AppointmentService = Depends(get_appointment_service)):
     return await appointmentService.cancel(data)
 
@@ -74,9 +81,10 @@ async def cancel(data: AppointmentCancelSchema,
 #     return await appointmentService.delete(id)
 
 @router.get(
-    "/{id}/receipts", 
-    status_code = 200, 
-    response_model = list[ReceiptResponseSchema])
+    "/{id}/receipts",
+    status_code = 200,
+    response_model = list[ReceiptResponseSchema],
+    dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_READ]))])
 async def get_receipts(id: int,
                        appointmentService: AppointmentService = Depends(get_appointment_service)):
     return await appointmentService.get_receipts(id)

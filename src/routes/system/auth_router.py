@@ -2,8 +2,9 @@ from fastapi import APIRouter, Body, Depends, Request, Response
 from src.core.dependencies.auth import get_current_staff
 from src.core.dependencies.uow import make_service_dependency
 from src.schemas.auth.login import LoginResponseSchema, LoginSchema
+from src.schemas.auth.response import MeResponseSchema
 from src.schemas.staff.request import StaffUpdatePasswordSchema
-from src.services.system.auth_service import AuthService
+from src.services.auth.auth_service import AuthService
 
 router = APIRouter()
 
@@ -29,7 +30,7 @@ async def refresh_tokens(
 
 @router.post("/logout", status_code = 204)
 async def logout_user(
-    response: Response, 
+    response: Response,
     authService: AuthService = Depends(get_auth_service),
     current_staff: dict = Depends(get_current_staff)
 ):
@@ -52,3 +53,8 @@ async def reset_password(
         authService: AuthService = Depends(get_auth_service),
         current_staff: dict = Depends(get_current_staff)):
     return await authService.reset_password(id)
+
+@router.get("/me", status_code = 200, response_model = MeResponseSchema)
+async def get_me(authService: AuthService = Depends(get_auth_service),
+                current_staff: dict = Depends(get_current_staff)):
+    return await authService.get_me()
