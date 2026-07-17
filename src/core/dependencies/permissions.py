@@ -4,7 +4,7 @@ from src.core.cache.permission_cache import get_staff_permissions, set_staff_per
 from src.core.config import settings
 from src.core.dependencies.auth import get_current_staff
 from src.core.dependencies.uow import UnitOfWork, get_request_uow
-from src.core.permissions import compute_effective_permissions
+from src.core.permissions import PERMISSIONS, PermissionCode, compute_effective_permissions
 from src.repository.staff.staff_model import StaffType
 
 async def _resolve_staff_type_and_permissions(staff_id: int, uow: UnitOfWork) -> tuple[str, set[int]]:
@@ -36,15 +36,17 @@ def require_permission(codes: list[int], condition: Literal["all", "or"] = "all"
         if condition == "all":
             missing = [code for code in codes if code not in permissions]
             if missing:
+                missing_names = [PERMISSIONS[PermissionCode(code)]["name"] for code in missing]
                 raise HTTPException(
                     status_code = status.HTTP_403_FORBIDDEN,
-                    detail = f"Недостаточно прав для выполнения действия (требуются разрешения {missing})"
+                    detail = f"Недостаточно прав для выполнения действия (требуемые разрешения: {', '.join(missing_names)})"
                 )
         else:
             if not any(code in permissions for code in codes):
+                code_names = [PERMISSIONS[PermissionCode(code)]["name"] for code in codes]
                 raise HTTPException(
                     status_code = status.HTTP_403_FORBIDDEN,
-                    detail = f"Недостаточно прав для выполнения действия (требуется одно из разрешений {codes})"
+                    detail = f"Недостаточно прав для выполнения действия (требуется одно из разрешений: {', '.join(code_names)})"
                 )
     return dependency
 
