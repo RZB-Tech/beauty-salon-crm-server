@@ -4,7 +4,7 @@ import logging
 from sqlalchemy import and_, func, select, update
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
-from src.repository.notification.notification_model import Notification
+from src.repository.notification.notification_model import Notification, NotificationStatus
 from src.schemas.base import RequestAllObject
 
 logger = logging.getLogger(__name__)
@@ -47,8 +47,9 @@ class NotificationRepository(BaseRepository[Notification]):
                     Notification.delivered_at.is_(None),
                     Notification.archived != True,
                     Notification.scheduled_at <= now,
-                    Notification.cancelled == False,
-                    Notification.read == False
+                    Notification.status.notin_(
+                        [NotificationStatus.CANCELLED, NotificationStatus.READ]
+                    )
                 )
             )
             .values(delivered_at=now)

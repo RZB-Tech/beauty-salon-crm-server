@@ -3,7 +3,7 @@ import math
 from fastapi import HTTPException, status
 from src.core.dependencies.uow import UnitOfWork
 from src.core.utils import sse_manager
-from src.repository.notification.notification_model import Notification
+from src.repository.notification.notification_model import Notification, NotificationStatus
 from src.schemas.base import RequestAllObject
 from src.schemas.notification.create import NotificationCreateSchema
 from src.core.utils.sse_manager import sse_manager
@@ -47,19 +47,21 @@ class NotificationService():
         if notification is None: raise HTTPException(404, f"Уведомление с ID {id} не найдено")
         if notification.read: raise HTTPException(400, f"Уведомление уже прочитано")
 
-        result = await self.uow.notifications.update(id, read = True)
+        result = await self.uow.notifications.update(id, status = NotificationStatus.READ)
         if result is None: raise HTTPException(500, "Произошла ошибка при попытке обновить запись")
         return result
     
     async def archive(self, id: int) -> Notification:
-        return await self.uow.notifications.archive(id)
+        result = await self.uow.notifications.archive(id)
+        if result is None: raise HTTPException(500, "Не получилось обновить запись")
+        return result
     
     async def cancel(self, id: int) -> Notification:
         notification = await self.uow.notifications.get(id)
         if notification is None: raise HTTPException(404, f"Уведомление с ID {id} не найдено")
         if notification.cancelled: raise HTTPException(400, f"Уведомление уже отменено")
 
-        result = await self.uow.notifications.update(id, cancelled = True)
+        result = await self.uow.notifications.update(id, status = NotificationStatus.CANCELLED)
         if result is None: raise HTTPException(500, "Произошла ошибка при попытке обновить запись")
         return result
     

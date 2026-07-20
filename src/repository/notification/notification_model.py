@@ -3,7 +3,6 @@ from datetime import datetime
 from enum import Enum, StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
-    Boolean,
     ForeignKeyConstraint,
     DateTime,
     Integer,
@@ -12,11 +11,15 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import Mapped, mapped_column
 from src.database.base import BaseFields
-from sqlalchemy import Enum as SQLEnum
 
 class NotificationType(StrEnum):
     REMINDER = "reminder"
     OTHER = "other"
+
+class NotificationStatus(StrEnum):
+    PENDING = "pending"
+    READ = "read"
+    CANCELLED = "cancelled"
 
 class Notification(BaseFields):
     __tablename__ = "notifications"
@@ -29,8 +32,7 @@ class Notification(BaseFields):
 
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone = True))
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone = True), nullable = True, default = None)
-    read: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
-    cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
+    status: Mapped[str] = mapped_column(String(50), default = NotificationStatus.PENDING)
 
     __table_args__ = (
         ForeignKeyConstraint(
@@ -41,4 +43,4 @@ class Notification(BaseFields):
         ),
     )
 
-    ALLOWED_FILTERS = {"client_id", "type", "scheduled_at", "delivered_at", "archived"}
+    ALLOWED_FILTERS = {"client_id", "type", "scheduled_at", "delivered_at", "archived", "status"}

@@ -168,7 +168,10 @@ class BaseRepository(Generic[T]):
         except Exception as e:
             print(f"Database integrity error: {e}")
             raise
-    
+
+    async def archive(self, id: int) -> T | None:
+        return self.update(id, archived = True)
+            
     async def delete(self, id: int) -> bool:
         """returns None if object with provided ID does not exists"""
         obj = await self.get(id)
