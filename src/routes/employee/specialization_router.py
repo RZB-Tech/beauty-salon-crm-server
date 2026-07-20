@@ -56,11 +56,11 @@ async def get(id: int,
                 specializationService: SpecializationService = Depends(get_specialization_service)):
     return await specializationService.get(id)
 
-@router.delete(
-    "/{id}",
-    status_code = 204,
-    dependencies=[Depends(require_permission([PermissionCode.SPECIALIZATION_DELETE]))]
-)
-async def delete(id: int,
-                specializationService: SpecializationService = Depends(get_specialization_service)):
-    return await specializationService.delete(id)
+# @router.delete(
+#     "/{id}",
+#     status_code = 204,
+#     dependencies=[Depends(require_permission([PermissionCode.SPECIALIZATION_DELETE]))]
+# )
+# async def delete(id: int,
+#                 specializationService: SpecializationService = Depends(get_specialization_service)):
+#     return await specializationService.delete(id)

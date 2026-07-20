@@ -82,21 +82,22 @@ async def get(id: int,
                  notificationService: NotificationService = Depends(get_notification_service)):
     return await notificationService.get(id)
 
-@router.delete(
-    "/{id}",
+@router.post(
+    "/{id}/read",
     response_model = NotificationResponseSchema,
     status_code = 200,
-    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_ARCHIVE]))]
+    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_CREATE]))]
 )
-async def archive(id: int,
-                 notificationService: NotificationService = Depends(get_notification_service)):
-    return await notificationService.archive(id)
+async def read(id: int,
+               notificationService: NotificationService = Depends(get_notification_service)):
+    return await notificationService.read(id)
 
-@router.delete(
-    "/{id}",
-    status_code = 204,
-    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_DELETE]))]
+@router.post(
+    "/{id}/cancel",
+    response_model = NotificationResponseSchema,
+    status_code = 200,
+    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_CANCEL]))]
 )
-async def delete(id: int,
+async def cancel(id: int,
                  notificationService: NotificationService = Depends(get_notification_service)):
-    return await notificationService.delete(id)
+    return await notificationService.cancel(id)

@@ -88,7 +88,7 @@ class PermissionCode(IntEnum):
     NOTIFICATION_CREATE = 10001
     NOTIFICATION_READ = 10002
     NOTIFICATION_ARCHIVE = 10003
-    NOTIFICATION_DELETE = 10004
+    NOTIFICATION_CANCEL = 10004
     NOTIFICATION_MANAGE = 10005
 
     AUDIT_LOGS_READ = 11001
@@ -181,7 +181,6 @@ PERMISSIONS: dict[int, dict[str, str]] = {
     PermissionCode.NOTIFICATION_CREATE: {"resource": "уведомление", "name": "Создать уведомление"},
     PermissionCode.NOTIFICATION_READ: {"resource": "уведомление", "name": "Просмотр уведомления"},
     PermissionCode.NOTIFICATION_ARCHIVE: {"resource": "уведомление", "name": "Архивировать уведомление"},
-    PermissionCode.NOTIFICATION_DELETE: {"resource": "уведомление", "name": "Удалить уведомление"},
     PermissionCode.NOTIFICATION_MANAGE: {"resource": "уведомление", "name": "Полный доступ к уведомлениям"},
 
     PermissionCode.AUDIT_LOGS_READ: {"resource": "журнал аудита", "name": "Просмотр журнала аудита"},

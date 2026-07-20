@@ -3,6 +3,7 @@ from datetime import datetime
 from enum import Enum, StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
+    Boolean,
     ForeignKeyConstraint,
     DateTime,
     Integer,
@@ -28,6 +29,8 @@ class Notification(BaseFields):
 
     scheduled_at: Mapped[datetime] = mapped_column(DateTime(timezone = True))
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone = True), nullable = True, default = None)
+    read: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
+    cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
     __table_args__ = (
         ForeignKeyConstraint(

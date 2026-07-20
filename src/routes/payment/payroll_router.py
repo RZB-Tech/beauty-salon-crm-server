@@ -52,14 +52,14 @@ async def get(id: int,
                  payrollService: PayrollService = Depends(get_payroll_service)):
     return await payrollService.get(id)
 
-@router.delete(
-    "/{id}",
-    status_code = 204,
-    dependencies=[Depends(require_permission([PermissionCode.PAYROLL_DELETE]))]
-)
-async def delete(id: int,
-                 payrollService: PayrollService = Depends(get_payroll_service)):
-    return await payrollService.delete(id)
+# @router.delete(
+#     "/{id}",
+#     status_code = 204,
+#     dependencies=[Depends(require_permission([PermissionCode.PAYROLL_DELETE]))]
+# )
+# async def delete(id: int,
+#                  payrollService: PayrollService = Depends(get_payroll_service)):
+#     return await payrollService.delete(id)
 
 @router.post(
     "/cancel",

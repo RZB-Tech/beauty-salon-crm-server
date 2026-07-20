@@ -41,12 +41,27 @@ class NotificationService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
+
+    async def read(self, id: int) -> Notification:
+        notification = await self.uow.notifications.get(id)
+        if notification is None: raise HTTPException(404, f"Уведомление с ID {id} не найдено")
+        if notification.read: raise HTTPException(400, f"Уведомление уже прочитано")
+
+        result = await self.uow.notifications.update(id, read = True)
+        if result is None: raise HTTPException(500, "Произошла ошибка при попытке обновить запись")
+        return result
     
     async def archive(self, id: int) -> Notification:
         return await self.uow.notifications.archive(id)
+    
+    async def cancel(self, id: int) -> Notification:
+        notification = await self.uow.notifications.get(id)
+        if notification is None: raise HTTPException(404, f"Уведомление с ID {id} не найдено")
+        if notification.cancelled: raise HTTPException(400, f"Уведомление уже отменено")
 
-    async def delete(self, id: int) -> bool:
-        return await self.uow.notifications.delete(id)
+        result = await self.uow.notifications.update(id, cancelled = True)
+        if result is None: raise HTTPException(500, "Произошла ошибка при попытке обновить запись")
+        return result
     
     async def deliver(self, notification: Notification) -> None:
         staff = await self.uow.staffs.get(notification.created_by)

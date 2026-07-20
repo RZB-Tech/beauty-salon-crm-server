@@ -47,10 +47,12 @@ class NotificationRepository(BaseRepository[Notification]):
                     Notification.delivered_at.is_(None),
                     Notification.archived != True,
                     Notification.scheduled_at <= now,
+                    Notification.cancelled == False,
+                    Notification.read == False
                 )
             )
             .values(delivered_at=now)
-            .returning(Notification)  # ← return full model, not just id
+            .returning(Notification)
             .execution_options(synchronize_session=False)
         )
         result = await self.db.execute(stmt)

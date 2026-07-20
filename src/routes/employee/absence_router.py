@@ -55,11 +55,11 @@ async def get(id: int,
                  absenceService: EmployeeAbsenceService = Depends(get_absence_service)):
     return await absenceService.get(id)
 
-@router.delete(
-    "/{id}",
-    status_code = status.HTTP_204_NO_CONTENT,
-    dependencies=[Depends(require_permission([PermissionCode.ABSENCE_DELETE]))]
-)
-async def delete(id: int,
-                 absenceService: EmployeeAbsenceService = Depends(get_absence_service)):
-    return await absenceService.delete(id)
+# @router.delete(
+#     "/{id}",
+#     status_code = status.HTTP_204_NO_CONTENT,
+#     dependencies=[Depends(require_permission([PermissionCode.ABSENCE_DELETE]))]
+# )
+# async def delete(id: int,
+#                  absenceService: EmployeeAbsenceService = Depends(get_absence_service)):
+#     return await absenceService.delete(id)
