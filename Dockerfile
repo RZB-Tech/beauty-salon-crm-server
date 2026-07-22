@@ -12,7 +12,7 @@ RUN pip install uv && uv sync --frozen --no-dev
 COPY src ./src
 COPY alembic.ini .
 COPY entrypoint.sh .
-COPY migrate.py .
+COPY migrate_docker.py .
 
 RUN chmod +x entrypoint.sh
 
