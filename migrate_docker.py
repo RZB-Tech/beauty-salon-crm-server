@@ -188,7 +188,7 @@ async def seed_employees(count: int = 10) -> None:
                 percent_from_services=random.randint(5, 30),
                 percent_from_sales=random.randint(0, 15),
                 notes=fake.text(max_nb_chars=100),
-                created_by = 1,
+                created_by_actor_id = 1,
                 tenant_id = 1
             )
 
@@ -219,7 +219,7 @@ async def seed_clients(count: int = 100) -> None:
                 ]),
                 notes=fake.text(max_nb_chars=100),
                 deposit=random.randint(0, 1_000_000),
-                created_by = 1,
+                created_by_actor_id = 1,
                 tenant_id = 1
             )
 
@@ -277,7 +277,7 @@ async def seed_materials(count: int = 100) -> None:
                     20_000,
                     100_000
                 ),
-                created_by = 1,
+                created_by_actor_id = 1,
                 tenant_id = 1
             )
 
@@ -336,7 +336,7 @@ async def seed_work_schedules() -> None:
                         day=current_day,
                         start_time=start_time,
                         end_time=end_time,
-                        created_by = 1,
+                        created_by_actor_id = 1,
                         tenant_id = 1
                     )
                 )
@@ -394,7 +394,7 @@ async def seed_payrolls(count_per_employee: int = 3) -> None:
                         amount=amount,
                         type=payroll_type,
                         notes=note,
-                        created_by = 1,
+                        created_by_actor_id = 1,
                         tenant_id = 1
                     )
                 )
@@ -414,7 +414,7 @@ async def main():
     await seed_employees()
     await seed_clients()
     await seed_materials()
-    await seed_work_schedules()
+    # await seed_work_schedules()
     await seed_payrolls()
 
     print("Done.")
