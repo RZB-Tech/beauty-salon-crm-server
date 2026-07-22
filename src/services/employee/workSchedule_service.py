@@ -1,7 +1,9 @@
+from datetime import date
 import math
 from fastapi import HTTPException, status
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
+from src.repository.employee.employee_model import Employee
 from src.repository.employee.workSchedule_model import WorkSchedule
 from src.schemas.base import RequestAllObject
 from src.schemas.work_schedule.create import WorkScheduleCreateSchema
@@ -100,3 +102,6 @@ class WorkScheduleService():
         if result is None:
             raise HTTPException(404, f"Рабочее время с ID {id} не найден")
         return result
+    
+    async def getEmployeesByDate(self, day: date) -> list[Employee]:
+        return await self.uow.work_schedules.get_employees_by_date(day)

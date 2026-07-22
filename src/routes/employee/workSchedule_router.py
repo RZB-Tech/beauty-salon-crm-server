@@ -1,8 +1,11 @@
+from datetime import date
+
 from fastapi import APIRouter, Depends, status
 from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import UnitOfWork, get_uow_with_context, make_service_dependency
 from src.core.permissions import PermissionCode
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
+from src.schemas.employee.response import EmployeeResponseBase
 from src.schemas.work_schedule.create import WorkScheduleCreateSchema
 from src.schemas.work_schedule.response import WorkScheduleResponseSchema
 from src.schemas.work_schedule.update import WorkScheduleUpdateSchema
@@ -43,6 +46,16 @@ async def update(data: WorkScheduleUpdateSchema,
 async def get_all(params: RequestAllObject,
                   workScheduleService: WorkScheduleService = Depends(get_workSchedule_service)):
     return await workScheduleService.get_all(params)
+
+@router.get(
+    "/get-assigned-employees-by-date",
+    status_code = 200,
+    response_model = list[EmployeeResponseBase],
+    dependencies=[Depends(require_permission([PermissionCode.WORK_SCHEDULE_READ]))]
+)
+async def get_assigned_employees_with_day(day: date,
+                                          workScheduleService: WorkScheduleService = Depends(get_workSchedule_service)):
+    return await workScheduleService.getEmployeesByDate(day)
 
 @router.get(
     "/{id}",

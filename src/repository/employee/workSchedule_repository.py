@@ -1,9 +1,11 @@
-from datetime import datetime, time
+from datetime import date, datetime, time
 from typing import Any
 
 from sqlalchemy import and_, func, select
+from sqlalchemy.orm import selectinload
 
 from src.database.base import BaseRepository
+from src.repository.employee.employee_model import Employee
 from src.repository.employee.workSchedule_model import WorkSchedule, EmployeeAbsence
 from src.schemas.base import RequestAllObject
 
@@ -101,3 +103,26 @@ class WorkScheduleRepository(BaseRepository[WorkSchedule]):
             "work_schedules": workSchedules,
             "absences": absences
         }
+    
+    async def get_employees_by_date(self, day: date) -> list[Employee]:
+        day_of_week = day.isoweekday()
+        stmt = (
+            select(Employee)
+            .join(WorkSchedule, WorkSchedule.employee_id == Employee.id)
+            .outerjoin(
+                EmployeeAbsence,
+                and_(
+                    EmployeeAbsence.employee_id == Employee.id,
+                    EmployeeAbsence.start_date <= day,
+                    EmployeeAbsence.end_date >= day
+                )
+            )
+            .where(
+                WorkSchedule.day_of_week == day_of_week,
+                EmployeeAbsence.id.is_(None)
+            )
+            .options(selectinload(Employee.services))
+            .distinct()
+        )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())
