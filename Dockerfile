@@ -13,6 +13,7 @@ COPY src ./src
 COPY alembic.ini .
 COPY entrypoint.sh .
 COPY migrate_docker.py .
+COPY manage_tenants.py .
 
 RUN chmod +x entrypoint.sh
 
