@@ -3,7 +3,7 @@ import string
 
 from src.core.auth.security import hash_password
 from sqlalchemy.ext.asyncio import AsyncSession
-from src.repository import Tenant, TenantPreferences, TenantIntegration, Staff
+from src.repository import Tenant, TenantIntegration, Staff
 from src.schemas.tenant.base import TenantPreferencesSchema
 
 async def provision_tenant(db: AsyncSession, 
@@ -12,16 +12,10 @@ async def provision_tenant(db: AsyncSession,
                            admin_firstname: str, 
                            admin_password: str | None = None,
                            company_tin: str | None = None, ) -> Tenant:
-    tenant = Tenant(name=company_name, TIN=company_tin)
+    defaultPreferences = TenantPreferencesSchema().model_dump()
+    tenant = Tenant(name=company_name, TIN=company_tin, preferences = defaultPreferences)
     db.add(tenant)
     await db.flush()
-
-    defaultPreferecnes = TenantPreferencesSchema().model_dump()
-    preferences = TenantPreferences(
-        tenant_id = tenant.id,
-        preferences= defaultPreferecnes
-    )
-    db.add(preferences)
 
     integrations = TenantIntegration(tenant_id=tenant.id)
     db.add(integrations)
