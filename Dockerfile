@@ -19,4 +19,3 @@ RUN chmod +x entrypoint.sh
 
 EXPOSE 8000
 CMD ["./entrypoint.sh"]
-# CMD ["uv", "run", "--", "uvicorn", "src.app:app", "--host", "0.0.0.0", "--port", "8000"]
