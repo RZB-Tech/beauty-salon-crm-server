@@ -7,6 +7,7 @@ from src.repository.employee.employee_model import Employee
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.employee.create import EmployeeCreateSchema
 from src.schemas.employee.update import EmployeeUpdateSchema
+from src.services.employee.workSchedule_service import WorkScheduleService
 
 class EmployeeService():
     def __init__(self, uow: UnitOfWork):
@@ -91,8 +92,15 @@ class EmployeeService():
         return await self.uow.employees.delete(id)
     
     @require_exists("employees")
-    async def get_workSchedules(self, id: int):
-        return await self.uow.work_schedules.get_workSchedules(id)
+    async def get_workSchedules(self, id: int) -> dict:
+        result = await self.uow.work_schedules.get_workSchedules(id)
+        return {
+            "work_schedules": [
+                WorkScheduleService._to_response_schedule(schedule)
+                for schedule in result["work_schedules"]
+            ],
+            "absences": result["absences"]
+        }
     
     @require_exists("employees")
     async def get_payrolls(self, data: PaginationSchema, id: int) -> dict:

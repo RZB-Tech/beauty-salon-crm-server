@@ -2,7 +2,7 @@ from datetime import date
 from pydantic import  BaseModel, ConfigDict, Field
 from src.schemas.base import BaseResponseSchema
 from src.schemas.service.response import ServiceResponseSchema
-from src.schemas.work_schedule.response import AbsenceResponseSchema, WorkScheduleResponseSchema
+from src.schemas.work_schedule.response import AbsenceResponseSchema, WorkScheduleBaseResponseSchema
 
 class EmployeeResponseBase(BaseResponseSchema):
     firstname: str = Field(..., max_length=100, description="Employee's first name")
@@ -20,7 +20,7 @@ class EmployeeResponseBase(BaseResponseSchema):
     model_config = ConfigDict(from_attributes=True)
 
 class EmployeeWorkScheduleResponse(BaseModel):
-    work_schedules: list[WorkScheduleResponseSchema]
+    work_schedules: list[WorkScheduleBaseResponseSchema]
     absences: list[AbsenceResponseSchema]
 
     class ConfigDict: from_attributes = True

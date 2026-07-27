@@ -71,9 +71,9 @@ class TestAppointment:
 
         workScheduleResponse = await auth_client.post("/api/v1/work-schedules", json={
             "employee_id": TestAppointment.employeeID,
-            "days": [7],
-            "start_time": "01:24:01.976Z",
-            "end_time": "23:24:01.976Z"
+            "work_schedules": [
+                {"day": 7, "start_time": "01:24:01.976Z", "end_time": "23:24:01.976Z"}
+            ]
             })
         assert workScheduleResponse.status_code == 201
 

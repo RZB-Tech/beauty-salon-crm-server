@@ -1,4 +1,4 @@
-from datetime import date, datetime, time
+from datetime import date, datetime
 from typing import Any
 
 from sqlalchemy import and_, func, select
@@ -37,19 +37,8 @@ class WorkScheduleRepository(BaseRepository[WorkSchedule]):
         )
         return result.scalars().all()
 
-    async def get_group(self, employee_id: int, start_time: time, end_time: time) -> list[WorkSchedule]:
-        result = await self.db.execute(
-            select(WorkSchedule)
-            .where(
-                WorkSchedule.employee_id == employee_id,
-                WorkSchedule.start_time == start_time,
-                WorkSchedule.end_time == end_time
-            )
-        )
-        return list(result.scalars().all())
-
     async def is_employee_working(
-        self, 
+        self,
         employee_id: int,
         start: datetime, 
         end: datetime
@@ -90,8 +79,6 @@ class WorkScheduleRepository(BaseRepository[WorkSchedule]):
             .where(WorkSchedule.employee_id == id)
         )
         workSchedules = workSchedulesStmtResult.scalars().all()
-        for workSchedule in workSchedules:
-            workSchedule.days = [workSchedule.day_of_week]
 
         absencesResult = await self.db.execute(
             select(EmployeeAbsence)

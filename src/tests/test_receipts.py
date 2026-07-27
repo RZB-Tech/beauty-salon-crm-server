@@ -35,9 +35,9 @@ class TestReceipt:
 
         workScheduleResponse = await auth_client.post("api/v1/work-schedules", json = {
             "employee_id": TestReceipt.employeeID,
-            "days": [1],
-            "start_time": "01:00:00",
-            "end_time": "23:00:00"
+            "work_schedules": [
+                {"day": 1, "start_time": "01:00:00", "end_time": "23:00:00"}
+            ]
         })
         assert workScheduleResponse.status_code == 201
 

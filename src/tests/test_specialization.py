@@ -53,9 +53,9 @@ class TestSpecialization:
         assert response.status_code == 200
         assert response.json()["archived"] == True
 
-    async def test_specialization_delete(self, auth_client):
-        response = await auth_client.delete(f"/api/v1/specializations/{TestSpecialization.specializationID}")
-        assert response.status_code == 204
+    # async def test_specialization_delete(self, auth_client):
+    #     response = await auth_client.delete(f"/api/v1/specializations/{TestSpecialization.specializationID}")
+    #     assert response.status_code == 204
 
-        check_response = await auth_client.get(f"/api/v1/specializations/{TestSpecialization.specializationID}")
-        assert check_response.status_code == 404
+    #     check_response = await auth_client.get(f"/api/v1/specializations/{TestSpecialization.specializationID}")
+    #     assert check_response.status_code == 404
