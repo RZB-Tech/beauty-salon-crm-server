@@ -1,4 +1,4 @@
-from src.repository.notification.notification_model import NotificationType
+from src.repository.notification.notification_model import NotificationStatus, NotificationType
 from datetime import datetime
 
 from src.schemas.base import BaseResponseSchema
@@ -8,5 +8,6 @@ class NotificationResponseSchema(BaseResponseSchema):
     title: str | None = None
     body: str
     type: NotificationType
+    status: NotificationStatus
     scheduled_at: datetime
     delivered_at: datetime | None = None
