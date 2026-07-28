@@ -45,7 +45,7 @@ class NotificationService():
     async def read(self, id: int) -> Notification:
         notification = await self.uow.notifications.get(id)
         if notification is None: raise HTTPException(404, f"Уведомление с ID {id} не найдено")
-        if notification.read: raise HTTPException(400, f"Уведомление уже прочитано")
+        if notification.status == NotificationStatus.READ: raise HTTPException(400, f"Уведомление уже прочитано")
 
         result = await self.uow.notifications.update(id, status = NotificationStatus.READ)
         if result is None: raise HTTPException(500, "Произошла ошибка при попытке обновить запись")
@@ -59,7 +59,7 @@ class NotificationService():
     async def cancel(self, id: int) -> Notification:
         notification = await self.uow.notifications.get(id)
         if notification is None: raise HTTPException(404, f"Уведомление с ID {id} не найдено")
-        if notification.cancelled: raise HTTPException(400, f"Уведомление уже отменено")
+        if notification.status == NotificationStatus.CANCELLED: raise HTTPException(400, f"Уведомление уже отменено")
 
         result = await self.uow.notifications.update(id, status = NotificationStatus.CANCELLED)
         if result is None: raise HTTPException(500, "Произошла ошибка при попытке обновить запись")
