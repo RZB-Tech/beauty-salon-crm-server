@@ -109,4 +109,6 @@ class WorkScheduleService():
         return result
     
     async def getEmployeesByDate(self, day: date) -> list[Employee]:
-        return await self.uow.work_schedules.get_employees_by_date(day)
+        employees = await self.uow.work_schedules.get_employees_by_date(day)
+        result = [employee for employee in employees if len(employee.services) >= 1]
+        return result
