@@ -16,6 +16,8 @@ get_payroll_service = make_service_dependency(PayrollService)
     "",
     response_model=PayrollResponseSchema,
     status_code=status.HTTP_201_CREATED,
+    summary = "Создать начисление сотруднику",
+    description = "Создает разовое начисление сотруднику: премию, штраф или комиссию (`type`).",
     dependencies=[Depends(require_permission([PermissionCode.PAYROLL_CREATE]))]
 )
 async def create(data: PayrollCreateSchema,
@@ -26,6 +28,8 @@ async def create(data: PayrollCreateSchema,
     "",
     response_model=PayrollResponseSchema,
     status_code=status.HTTP_200_OK,
+    summary = "Обновить начисление",
+    description = "Обновляет сумму, тип или заметку начисления по его `id`. Нельзя изменить автоматически сгенерированное, уже выплаченное или архивированное начисление.",
     dependencies=[Depends(require_permission([PermissionCode.PAYROLL_UPDATE]))]
 )
 async def update(data: PayrollUpdateSchema,
@@ -36,6 +40,8 @@ async def update(data: PayrollUpdateSchema,
     "/get-all",
     response_model=PaginatedResponseSchema[PayrollResponseSchema],
     status_code=status.HTTP_200_OK,
+    summary = "Получить все начисления",
+    description = "Возвращает постраничный список начислений сотрудникам с поддержкой фильтрации.",
     dependencies=[Depends(require_permission([PermissionCode.PAYROLL_READ]))]
 )
 async def get_all(params: RequestAllObject,
@@ -46,6 +52,7 @@ async def get_all(params: RequestAllObject,
     "/{id}",
     response_model=PayrollResponseSchema,
     status_code=status.HTTP_200_OK,
+    summary = "Получить начисление по ID",
     dependencies=[Depends(require_permission([PermissionCode.PAYROLL_READ]))]
 )
 async def get(id: int,
@@ -65,6 +72,8 @@ async def get(id: int,
     "/cancel",
     status_code = 200,
     response_model = PayrollResponseSchema,
+    summary = "Отменить начисление",
+    description = "Отменяет начисление по `id` (передается как query-параметр). Нельзя отменить автоматически сгенерированное или уже выплаченное начисление — сначала нужно отменить связанную выплату/чек.",
     dependencies=[Depends(require_permission([PermissionCode.PAYROLL_CANCEL]))]
 )
 async def cancel(id: int,

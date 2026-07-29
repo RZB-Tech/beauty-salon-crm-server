@@ -9,7 +9,8 @@ router = APIRouter(dependencies = [Depends(require_admin)])
     "",
     response_model = list[PermissionResponseSchema],
     status_code = 200,
-    summary = "List available permission codes"
+    summary = "Список доступных кодов разрешений",
+    description = "Возвращает справочник всех кодов разрешений, доступных в системе, с их названием и относящимся к ним ресурсом. Используется для построения форм назначения ролей и прямых разрешений."
 )
 async def get_all() -> list[PermissionResponseSchema]:
     return [

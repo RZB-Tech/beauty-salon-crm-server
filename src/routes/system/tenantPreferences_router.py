@@ -17,7 +17,8 @@ get_tenant_preferences_service = make_service_dependency(TenantPreferencesServic
     "",
     response_model=TenantPreferencesSchema,
     status_code=status.HTTP_200_OK,
-    summary="Get tenant preferences",
+    summary="Получить настройки организации",
+    description="Возвращает настройки текущей организации: тема оформления, часовой пояс, валюта, разрешена ли запись через Telegram-бота, срок отмены оплаты по чеку в часах.",
     dependencies=[Depends(require_permission([PermissionCode.TENANT_PREFERENCES_READ]))]
 )
 async def get(
@@ -30,7 +31,8 @@ async def get(
     "",
     response_model=TenantPreferencesSchema,
     status_code=status.HTTP_200_OK,
-    summary="Update tenant preferences",
+    summary="Обновить настройки организации",
+    description="Обновляет настройки организации. Передаются только изменяемые поля, остальные сохраняют текущее значение.",
     dependencies=[Depends(require_permission([PermissionCode.TENANT_PREFERENCES_UPDATE]))]
 )
 async def update(

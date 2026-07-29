@@ -14,7 +14,8 @@ get_staff_service = make_service_dependency(StaffService)
     "/create-user",
     response_model = StaffCreateResponseSchema,
     status_code = 201,
-    summary = "Create a new staff member"
+    summary = "Создать учетную запись сотрудника",
+    description = "Создает учетную запись для входа в систему (логин/пароль). Можно привязать к уже существующему сотруднику (`employee_id`) или указать имя вручную. Если `password` не передан, генерируется случайный пароль, который возвращается в ответе в открытом виде."
 )
 async def create_user(data: StaffCreateAPISchema,
                       staffService: StaffService = Depends(get_staff_service)):
@@ -24,7 +25,8 @@ async def create_user(data: StaffCreateAPISchema,
     "/get-all",
     response_model = PaginatedResponseSchema[StaffResponseSchema],
     status_code = 200,
-    summary = "Get all staff members"
+    summary = "Получить все учетные записи сотрудников",
+    description = "Возвращает постраничный список учетных записей сотрудников текущей организации с поддержкой фильтрации."
 )
 async def get_all(params: RequestAllObject,
                   staffService: StaffService = Depends(get_staff_service)):
@@ -34,7 +36,8 @@ async def get_all(params: RequestAllObject,
     "/roles",
     response_model = StaffResponseSchema,
     status_code = 200,
-    summary = "Assign roles to a staff member"
+    summary = "Назначить роли сотруднику",
+    description = "Полностью заменяет список ролей сотрудника на переданный `role_ids`. Пустой список снимает с сотрудника все роли."
 )
 async def assign_roles(data: StaffRolesAssignSchema,
                  staffService: StaffService = Depends(get_staff_service)):
@@ -44,7 +47,8 @@ async def assign_roles(data: StaffRolesAssignSchema,
     "/permissions",
     response_model = StaffResponseSchema,
     status_code = 200,
-    summary = "Set a staff member's direct permission overrides"
+    summary = "Задать прямые разрешения сотрудника",
+    description = "Полностью заменяет список индивидуальных разрешений сотрудника (не связанных с ролями) на переданный `permissions`."
 )
 async def update_permissions(data: StaffPermissionsUpdateSchema,
                  staffService: StaffService = Depends(get_staff_service)):

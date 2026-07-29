@@ -6,8 +6,7 @@ class SegmentationService:
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
 
-    async def create_segmentation(self, payload: SegmentationCreateSchema) -> Segmentation:
-        # 1. Instantiate the ORM model from the Pydantic payload
+    async def create(self, payload: SegmentationCreateSchema) -> Segmentation:
         new_segment = Segmentation(
             name=payload.name,
             description=payload.description,

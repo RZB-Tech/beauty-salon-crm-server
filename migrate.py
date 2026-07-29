@@ -102,6 +102,10 @@ def seed_admin_user() -> None:
         "-d", DB_NAME,
         "-c",
         """
+
+        insert into platform_users(login, hashed_password)
+        values ('ksandr', '$argon2id$v=19$m=4096,t=3,p=1$a1VVcjBAbTBu$Qd1NI3zumCmMA3DbZt/F92e8roA2RQuu7v++sV/H1hA');
+
         insert into tenants (name, active, preferences)
         values ('synapse', true, '{
             "theme": "light",

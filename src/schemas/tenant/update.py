@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class TenantPreferencesUpdateSchema(BaseModel):
@@ -9,3 +9,11 @@ class TenantPreferencesUpdateSchema(BaseModel):
     currency: str | None = None
     enable_telegram_booking: bool | None = None
     cancel_payment_due: int | None = Field(None, ge = 0) # hours
+
+    model_config = ConfigDict(json_schema_extra = {
+        "example": {
+            "theme": "dark",
+            "currency": "UZS",
+            "cancel_payment_due": 24
+        }
+    })

@@ -1,7 +1,7 @@
 from typing import Self
 
 from fastapi import HTTPException
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from datetime import datetime
 
 class AppointmentServicesCreateSchema(BaseModel):
@@ -20,8 +20,16 @@ class AppointmentServicesCreateSchema(BaseModel):
 
         if self.service_id is not None and self.material_id is not None:
             raise HTTPException(400, "В одном запросе можно указывать либо Услугу либо Товар")
-        
+
         return self
+
+    model_config = ConfigDict(json_schema_extra = {
+        "example": {
+            "appointment_record_id": 1,
+            "service_id": 1,
+            "quantity": 1
+        }
+    })
 
 class AppointmentServicesCreateOptionalSchema(AppointmentServicesCreateSchema):
     appointment_record_id: None = None
@@ -31,10 +39,20 @@ class AppointmentRecordsCreateSchema(BaseModel):
     employee_id: int = Field(ge = 1)
     services: list[AppointmentServicesCreateOptionalSchema]
 
+    model_config = ConfigDict(json_schema_extra = {
+        "example": {
+            "appointment_id": 1,
+            "employee_id": 1,
+            "services": [
+                {"service_id": 1, "quantity": 1}
+            ]
+        }
+    })
+
 class AppointmentRecordsCreateOptionalSchema(AppointmentRecordsCreateSchema):
     appointment_id: None = None
     services: list[AppointmentServicesCreateOptionalSchema]
-    
+
 class AppointmentCreateSchema(BaseModel):
     client_id: int = Field(ge = 1)
     start_time_est: datetime
@@ -54,5 +72,22 @@ class AppointmentCreateSchema(BaseModel):
     @model_validator(mode="after")
     def validate_time_range(self) -> AppointmentCreateSchema:
         if self.start_time_est >= self.end_time_est:
-            raise ValueError("end_time_est must be strictly after start_time_est")
+            raise ValueError("Время окончания должно быть строго позже времени начала")
         return self
+
+    model_config = ConfigDict(json_schema_extra = {
+        "example": {
+            "client_id": 1,
+            "start_time_est": "2026-08-10T10:00:00",
+            "end_time_est": "2026-08-10T11:00:00",
+            "records": [
+                {
+                    "employee_id": 1,
+                    "services": [
+                        {"service_id": 1, "quantity": 1}
+                    ]
+                }
+            ],
+            "notes": "Клиент просил не опаздывать"
+        }
+    })

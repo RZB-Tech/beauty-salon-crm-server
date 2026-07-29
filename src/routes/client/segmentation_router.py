@@ -14,7 +14,8 @@ get_segmentation_service = make_service_dependency(SegmentationService)
     "",
     response_model=SegmentationResponseSchema,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new service",
+    summary="Создать сегментацию",
+    description="Создает именованную группу клиентов (`client_ids`) с произвольными критериями отбора (`criteria`) для последующего таргетинга рассылок/акций.",
     dependencies=[Depends(require_permission([PermissionCode.SEGMENTATION_CREATE]))]
 )
 async def create(data: SegmentationCreateSchema,

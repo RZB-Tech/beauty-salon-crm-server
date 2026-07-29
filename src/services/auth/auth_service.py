@@ -3,6 +3,7 @@ import string
 from fastapi import HTTPException, Request, Response, status
 from src.core.cache.permission_cache import delete_staff_permissions, set_staff_permissions
 from src.core.config import settings
+from src.core.dependencies.auth import is_tenant_active
 from src.core.dependencies.context import get_current_staff_id
 from src.core.dependencies.uow import UnitOfWork
 from src.core.permissions import compute_effective_permissions
@@ -35,7 +36,10 @@ class AuthService():
                 detail = "Некорректный логин или пароль",
                 headers = {"WWW-Authenticate": "Bearer"}
             )
-        
+
+        if not await is_tenant_active(staff.tenant_id):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, detail = "Организация деактивирована")
+
         employee: Employee | None = None
         if staff.employee_id:
             employee = await self.uow.employees.get(staff.employee_id)
@@ -102,7 +106,7 @@ class AuthService():
         if not refreshToken:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Refresh token missing"
+                detail="Отсутствует refresh token"
             )
 
         payload = decode_token(refreshToken) 
@@ -133,6 +137,9 @@ class AuthService():
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Пользователь неактивен"
             )
+
+        if not await is_tenant_active(user.tenant_id):
+            raise HTTPException(status.HTTP_403_FORBIDDEN, detail = "Организация деактивирована")
 
         accessTokenPayload = {
             "sub": user.login,

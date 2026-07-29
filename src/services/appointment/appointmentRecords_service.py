@@ -21,7 +21,7 @@ class AppointmentRecordsService():
             .where(Receipt.appointment_id == data.appointment_id)
         )
         if any(receipt.status != ReceiptStatus.CANCELLED for receipt in receipts):
-            raise HTTPException(400, "Необходимо сначало отменить активный чек для этого посещения")
+            raise HTTPException(400, "Необходимо сначала отменить активный чек для этого посещения")
 
         employee = await self.uow.employees.get(data.employee_id)
         if not employee:
@@ -42,15 +42,15 @@ class AppointmentRecordsService():
                 if not serviceObj:
                     raise HTTPException(
                         status_code = 404,
-                        detail = f"Service with id {service.service_id} not found"
+                        detail = f"Услуга с ID {service.service_id} не найдена"
                     )
-                if serviceObj.archived: 
-                        raise HTTPException(409, f"Нельзя использовать архивированную услуг {serviceObj.name}, ID {serviceObj.id}")
-                
+                if serviceObj.archived:
+                        raise HTTPException(409, f"Нельзя использовать архивированную услугу {serviceObj.name}, ID {serviceObj.id}")
+
                 if serviceObj.id not in employeeAllowedServices:
                     raise HTTPException(
                         status_code = 409,
-                        detail = f"Employee {employee.id} does not provide services: {service.service_id}"
+                        detail = f"Сотрудник {employee.id} не оказывает услугу с ID {service.service_id}"
                     )
                 
                 if service.price is None: service.price = serviceObj.price
@@ -64,10 +64,10 @@ class AppointmentRecordsService():
                 if not materialObj:
                     raise HTTPException(
                         status_code = 404,
-                        detail = f"Material with id {service.material_id} not found"
+                        detail = f"Товар с ID {service.material_id} не найден"
                     )
-                if materialObj.archived: 
-                    raise HTTPException(409, f"Нельзя использовать архивированную услуг {materialObj.name}, ID {materialObj.id}")
+                if materialObj.archived:
+                    raise HTTPException(409, f"Нельзя использовать архивированный Товар {materialObj.name}, ID {materialObj.id}")
                 if service.quantity > materialObj.quantity:
                     raise HTTPException(
                         status_code = 400,
@@ -119,7 +119,7 @@ class AppointmentRecordsService():
         )
 
         if any(receipt.status != ReceiptStatus.CANCELLED for receipt in receipts):
-            raise HTTPException(400, "Необходимо сначало отменить активный чек для этого посещения")
+            raise HTTPException(400, "Необходимо сначала отменить активный чек для этого посещения")
         
         appointmentID = check.appointment_id
 

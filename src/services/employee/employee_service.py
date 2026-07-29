@@ -23,14 +23,14 @@ class EmployeeService():
             found_services = await self.uow.services.get_by_ids(services_ids)
             
             if len(found_services) != len(services_ids):
-                raise HTTPException(404, detail="One or more provided service_ids do not exist.")
+                raise HTTPException(404, detail="Одна или несколько указанных услуг не найдены")
                 
             new_employee.services = found_services
 
         if data.specialization_id:
             specialization = await self.uow.specializations.get(data.specialization_id)
             if specialization is None: raise HTTPException(404, f"Специализация с ID {data.specialization_id} не найдена")
-            if specialization.archived: raise HTTPException(409, f"Нелья использовать архивированную специализацию")
+            if specialization.archived: raise HTTPException(409, f"Нельзя использовать архивированную специализацию")
 
         result = await self.uow.employees.create(new_employee)
         return await self.uow.employees.get(result.id)
@@ -56,13 +56,13 @@ class EmployeeService():
                 if len(services) != len(data.services):
                     raise HTTPException( 404, detail="Один или более из указанных услуг не найден")
                 for service in services: 
-                    if service.archived: raise HTTPException(409, f"Нельзя привязать архивированную услугу {service.name} (ID {service.ID}) к сотруднику")
+                    if service.archived: raise HTTPException(409, f"Нельзя привязать архивированную услугу {service.name} (ID {service.id}) к сотруднику")
             dataDict["services"] = services
 
         if data.specialization_id:
             specialization = await self.uow.specializations.get(data.specialization_id)
             if specialization is None: raise HTTPException(404, f"Специализация с ID {data.specialization_id} не найдена")
-            if specialization.archived: raise HTTPException(409, f"Нелья использовать архивированную специализацию")
+            if specialization.archived: raise HTTPException(409, f"Нельзя использовать архивированную специализацию")
         
         result = await self.uow.employees.update(data.id, **dataDict)
         if result is None:

@@ -49,7 +49,7 @@ def apply_dynamic_filters(stmt: Select, model: ModelT, filters: dict[str, Any] |
                 try:
                     value = enum_class(value)
                 except ValueError:
-                    raise ValueError(f"Invalid value '{value}' for enum {enum_class.__name__}")
+                    raise ValueError(f"Недопустимое значение '{value}' для поля {enum_class.__name__}")
             filter_clauses.append(column == value)
             continue
 
@@ -57,7 +57,7 @@ def apply_dynamic_filters(stmt: Select, model: ModelT, filters: dict[str, Any] |
         if isinstance(value, dict):
             for op, op_value in value.items():
                 if op not in _OPERATORS:
-                    raise ValueError(f"Unsupported operator '{op}' for field '{field_name}'")
+                    raise ValueError(f"Неподдерживаемый оператор '{op}' для поля '{field_name}'")
                 coerced = _coerce_value(col_type, op_value)
                 filter_clauses.append(_OPERATORS[op](column, coerced))
             continue

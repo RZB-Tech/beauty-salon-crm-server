@@ -1,7 +1,7 @@
 from typing import Annotated, Self
 
 from fastapi import HTTPException
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from src.repository.payroll.payroll_model import PayoutMethod, PayoutType
 from datetime import date
@@ -37,5 +37,23 @@ class PayoutCreateSchema(BaseModel):
 
             if self.start_date or self.end_date:
                 raise HTTPException(400, "Нельзя указывать период времени для выплаты заработной платы / аванса")
-        
+
         return self
+
+    model_config = ConfigDict(json_schema_extra = {
+        "examples": [
+            {
+                "employee_id": 1,
+                "type": "other",
+                "method": "cash",
+                "start_date": "2026-07-01",
+                "end_date": "2026-07-31"
+            },
+            {
+                "employee_id": 1,
+                "type": "advance salary",
+                "amount": 1000000,
+                "method": "card"
+            }
+        ]
+    })

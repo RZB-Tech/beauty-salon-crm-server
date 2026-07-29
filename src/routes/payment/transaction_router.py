@@ -14,7 +14,8 @@ get_transaction_service = make_service_dependency(TransactionService)
     "",
     response_model=TransactionResponseSchema,
     status_code = 201,
-    summary="Create a new service",
+    summary="Создать новую транзакцию",
+    description="Создает ручную транзакцию дохода/расхода (например, оплата коммунальных услуг). Транзакции с категорией `receipt` или `employee payment` создавать вручную нельзя — система генерирует их автоматически при оплате чеков и выплатах сотрудникам.",
     dependencies=[Depends(require_permission([PermissionCode.TRANSACTION_CREATE]))]
 )
 async def create(data: TransactionCreateSchema,
@@ -25,7 +26,8 @@ async def create(data: TransactionCreateSchema,
     "/get-all",
     response_model=PaginatedResponseSchema[TransactionResponseSchema],
     status_code = 200,
-    summary="Get all categories",
+    summary="Получить все транзакции",
+    description="Возвращает постраничный список транзакций организации с поддержкой фильтрации.",
     dependencies=[Depends(require_permission([PermissionCode.TRANSACTION_READ]))]
 )
 async def get_all(params: RequestAllObject,
@@ -37,7 +39,8 @@ async def get_all(params: RequestAllObject,
     "/{id}",
     response_model=TransactionResponseSchema,
     status_code = 200,
-    summary="Get ",
+    summary="Получить транзакцию по ID",
+    description="Возвращает транзакцию по её `id`.",
     dependencies=[Depends(require_permission([PermissionCode.TRANSACTION_READ]))]
 )
 async def get(id: int,
@@ -48,6 +51,8 @@ async def get(id: int,
     "/{id}/cancel",
     response_model = TransactionResponseSchema,
     status_code = 200,
+    summary = "Отменить транзакцию",
+    description = "Отменяет ручную транзакцию по её `id`. Автоматически сгенерированные транзакции (связанные с чеками или выплатами) отменить нельзя — нужно отменить связанный чек или выплату.",
     dependencies=[Depends(require_permission([PermissionCode.TRANSACTION_CANCEL]))]
 )
 async def cancel(id: int,

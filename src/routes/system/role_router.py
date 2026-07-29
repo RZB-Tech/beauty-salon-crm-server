@@ -14,7 +14,8 @@ get_role_service = make_service_dependency(RoleService)
     "",
     response_model = RoleResponseSchema,
     status_code = 201,
-    summary = "Create a new role"
+    summary = "Создать новую роль",
+    description = "Создает роль с заданным набором разрешений. Роль можно затем назначить одному или нескольким сотрудникам."
 )
 async def create(data: RoleCreateSchema,
                  roleService: RoleService = Depends(get_role_service)):
@@ -24,7 +25,8 @@ async def create(data: RoleCreateSchema,
     "",
     response_model = RoleResponseSchema,
     status_code = status.HTTP_200_OK,
-    summary = "Update role"
+    summary = "Обновить роль",
+    description = "Обновляет название, описание, набор разрешений или статус архивации роли по её `id`. Передаются только изменяемые поля."
 )
 async def update(data: RoleUpdateSchema,
                  roleService: RoleService = Depends(get_role_service)):
@@ -34,7 +36,8 @@ async def update(data: RoleUpdateSchema,
     "/get-all",
     response_model = PaginatedResponseSchema[RoleResponseSchema],
     status_code = 200,
-    summary = "Get all roles"
+    summary = "Получить все роли",
+    description = "Возвращает постраничный список ролей организации с поддержкой фильтрации."
 )
 async def get_all(params: RequestAllObject,
                  roleService: RoleService = Depends(get_role_service)):
@@ -44,7 +47,8 @@ async def get_all(params: RequestAllObject,
     "/{id}",
     response_model = RoleResponseSchema,
     status_code = 200,
-    summary = "Get role"
+    summary = "Получить роль по ID",
+    description = "Возвращает роль вместе со списком её разрешений."
 )
 async def get(id: int,
                  roleService: RoleService = Depends(get_role_service)):

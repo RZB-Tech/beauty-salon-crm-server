@@ -16,5 +16,5 @@ class RoleUpdateSchema(BaseUpdateSchema):
             return permissions
         unknown = [code for code in permissions if code not in PERMISSIONS]
         if unknown:
-            raise ValueError(f"Unknown permission codes: {unknown}")
+            raise ValueError(f"Неизвестные коды разрешений: {unknown}")
         return permissions

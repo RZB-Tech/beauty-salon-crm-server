@@ -34,9 +34,9 @@ class ReceiptService():
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail=(
-                        f"Appointment {data.appointment_id} already has an active bill "
-                        f"(Receipt #{existing_active_receipt.id} is {existing_active_receipt.status}). "
-                        f"Cancel it before issuing a new one."
+                        f"У посещения {data.appointment_id} уже есть активный чек "
+                        f"(Чек №{existing_active_receipt.id} в статусе {existing_active_receipt.status}). "
+                        f"Отмените его перед созданием нового."
                     )
                 )
 
@@ -48,27 +48,27 @@ class ReceiptService():
         if data.receipt_type == ReceiptType.APPOINTMENT:
             if not data.appointment_id:
                 raise HTTPException(
-                    status_code= 400, 
-                    detail="appointment_id is required for APPOINTMENT receipt type."
+                    status_code= 400,
+                    detail="Для чека типа APPOINTMENT необходимо указать appointment_id"
                 )
-            
+
             if data.client_id:
                 raise HTTPException(
-                    status_code = 400, 
-                    detail="Client cannot be provided when appointment provided"
+                    status_code = 400,
+                    detail="Нельзя указывать клиента, если указано посещение"
                 )
-            
+
             appointment = await self.uow.appointments.get(data.appointment_id)
             if not appointment:
                 raise HTTPException(
-                    status_code= 404, 
-                    detail=f"Appointment with id {data.appointment_id} not found"
+                    status_code= 404,
+                    detail=f"Посещение с ID {data.appointment_id} не найдено"
                 )
-            
+
             if len(appointment.records) == 0:
                 raise HTTPException(
-                    status_code= 400, 
-                    detail=f"Cannot createt receipt for appointment which does not have records"
+                    status_code= 400,
+                    detail=f"Нельзя создать чек для посещения, в котором нет записей"
                 )
 
             newReceipt.appointment_id = appointment.id
@@ -107,7 +107,7 @@ class ReceiptService():
                 if material.quantity < item_data.quantity:
                     raise HTTPException(
                         status_code= 400, 
-                        detail=f"Не достаточное количество материала ID {material.id}, {material.article}. Доступо: {material.quantity}, запрашивается: {item_data.quantity}."
+                        detail=f"Недостаточное количество материала ID {material.id}, {material.article}. Доступно: {material.quantity}, запрашивается: {item_data.quantity}."
                     )
                 
                 newQuantity = material.quantity - item_data.quantity
@@ -135,13 +135,13 @@ class ReceiptService():
             if "idx_unique_active_receipt_per_appointment" in error_msg:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Concurrency conflict: An active receipt was just generated for this appointment elsewhere."
+                    detail="Конфликт: для этого посещения уже был создан активный чек параллельно."
                 )
-            
+
             # If it's a different database error (like a bad check constraint), bubble up the real truth
             raise HTTPException(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Database integrity violation: {error_msg}"
+                detail=f"Нарушение целостности базы данных: {error_msg}"
             )
     
     async def make_payment(self, data: ReceiptPaymentCreateSchema) -> Receipt: 
@@ -210,7 +210,7 @@ class ReceiptService():
                     if not employee:
                         raise HTTPException(
                             status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Employee with id {employee.id} not found."
+                            detail=f"Сотрудник с ID {employee_id} не найден"
                         )
                     
                     if employee and employee.percent_from_services > 0:
@@ -248,13 +248,13 @@ class ReceiptService():
             if not client:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"During payment client with id {client_id} not found"
+                    detail=f"Клиент с ID {client_id} не найден при проведении оплаты"
                 )
 
             if data.method == TransactionMethod.DEPOSIT and data.amount > client.deposit:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Client does not have enough deposit to make payment."
+                    detail="Недостаточно средств на депозите клиента для проведения оплаты"
                 )
             
             final_deposit_balance = client.deposit + depositAdjustment

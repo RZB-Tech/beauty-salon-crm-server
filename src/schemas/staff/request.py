@@ -1,7 +1,7 @@
 from typing import Self
 
 from fastapi import HTTPException
-from pydantic import BaseModel, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from src.core.permissions import PERMISSIONS
 
 class StaffRequestSchema(BaseModel):
@@ -28,9 +28,23 @@ class StaffUpdatePasswordSchema(BaseModel):
             raise HTTPException(400, "Текущий и новый пароль одинаковы")
         return self
 
+    model_config = ConfigDict(json_schema_extra = {
+        "example": {
+            "oldPassword": "OldSecurePass123!",
+            "newPassword": "NewSecurePass456!"
+        }
+    })
+
 class StaffRolesAssignSchema(BaseModel):
     id: int = Field(..., ge = 1)
     role_ids: list[int] = Field(default_factory = list)
+
+    model_config = ConfigDict(json_schema_extra = {
+        "example": {
+            "id": 1,
+            "role_ids": [1, 2]
+        }
+    })
 
 class StaffPermissionsUpdateSchema(BaseModel):
     id: int = Field(..., ge = 1)
@@ -41,5 +55,12 @@ class StaffPermissionsUpdateSchema(BaseModel):
     def validate_permissions(cls, permissions: list[int]) -> list[int]:
         unknown = [code for code in permissions if code not in PERMISSIONS]
         if unknown:
-            raise ValueError(f"Unknown permission codes: {unknown}")
+            raise ValueError(f"Неизвестные коды разрешений: {unknown}")
         return permissions
+
+    model_config = ConfigDict(json_schema_extra = {
+        "example": {
+            "id": 1,
+            "permissions": [3001, 3002]
+        }
+    })

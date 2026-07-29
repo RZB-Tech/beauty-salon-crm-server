@@ -94,7 +94,7 @@ class BaseFields(TenantMixin, Base):
         # Note: Ensure "system" is a valid value in your ActorType Enum so Pydantic can parse it.
         return {
             "id": self.created_by_actor_id or 0,
-            "display_name": "Unknown system",
+            "display_name": "Неизвестная система",
             "actor_type": "system"  # Fixed key name from "type" to "actor_type"
         }
 
@@ -103,7 +103,7 @@ class BaseFields(TenantMixin, Base):
         # Fixed: Compare the integer ID, not the dictionary property
         if self.id is not None and self.created_by_actor_id is not None:
             if self.created_by_actor_id != value:
-                raise ValueError("Restricted to change creator of object")
+                raise ValueError("Запрещено изменять создателя объекта")
         return value
             
     @validates("created_at")
@@ -112,7 +112,7 @@ class BaseFields(TenantMixin, Base):
             current_val = self.created_at.astimezone() if hasattr(self.created_at, 'astimezone') else self.created_at
             new_val = value.astimezone() if hasattr(value, 'astimezone') else value
             if current_val != new_val:
-                raise ValueError("Restricted to change creation date of object")
+                raise ValueError("Запрещено изменять дату создания объекта")
             
     @declared_attr
     def __table_args__(cls):

@@ -34,7 +34,7 @@ class ClientService():
         if not result:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Client with id {id} not found"
+                detail = f"Клиент с ID {id} не найден"
             )
         return result
     
@@ -63,18 +63,18 @@ class ClientService():
         if not client:
             raise HTTPException(
                 status_code = 404,
-                detail = f"Client with id {data.id} not found"
+                detail = f"Клиент с ID {data.id} не найден"
             )
-        
+
         if data.operation not in DepositOperation:
             raise HTTPException(
                 status_code = status.HTTP_400_BAD_REQUEST,
-                detail = "Operation has to be 1 (increment) or -1 (decrement)"
+                detail = "Операция должна быть 1 (прибавить) или -1 (убавить)"
             )
-        
+
         newDeposit = client.deposit + (data.operation * data.amount)
         if newDeposit < 0:
-            raise HTTPException(409, "Deposit cannot be negative")
+            raise HTTPException(409, "Депозит не может быть отрицательным")
         
         return await self.uow.clients.update(client.id, deposit = newDeposit)
     

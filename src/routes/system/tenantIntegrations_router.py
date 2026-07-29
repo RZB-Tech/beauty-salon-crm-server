@@ -3,8 +3,7 @@ from fastapi import APIRouter, Depends, status
 from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import make_service_dependency
 from src.core.permissions import PermissionCode
-from src.schemas.tenant.base import TenantPreferencesSchema
-from src.schemas.tenant.update import TenantPreferencesUpdateSchema
+from src.schemas.tenant.response import TenantIntegrationsResponseSchema
 from src.services.system.tenantIntegrations_service import TenantIntegrationsService
 
 router = APIRouter()
@@ -13,9 +12,10 @@ get_tenant_integrations_service = make_service_dependency(TenantIntegrationsServ
 
 @router.get(
     "",
-    response_model=TenantPreferencesSchema,
+    response_model=TenantIntegrationsResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Get tenant preferences",
+    summary="Получить интеграции организации",
+    description="Возвращает настройки внешних интеграций организации (например, токен Telegram-бота).",
     dependencies=[Depends(require_permission([PermissionCode.TENANT_INTEGRATIONS_READ]))]
 )
 async def get(
@@ -28,7 +28,7 @@ async def get(
 #     "",
 #     response_model=TenantPreferencesSchema,
 #     status_code=status.HTTP_200_OK,
-#     summary="Update tenant preferences",
+#     summary="Обновить интеграции организации",
 # )
 # async def update(
 #     data: TenantPreferencesUpdateSchema,

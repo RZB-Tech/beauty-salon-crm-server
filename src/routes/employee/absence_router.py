@@ -16,6 +16,8 @@ get_absence_service = make_service_dependency(EmployeeAbsenceService)
     "",
     response_model=AbsenceResponseSchema,
     status_code=status.HTTP_201_CREATED,
+    summary="Создать отсутствие",
+    description="Регистрирует отсутствие сотрудника (`absence_type`: sick / vacation / day off / weekend / other) на период с `start_date` по `end_date`.",
     dependencies=[Depends(require_permission([PermissionCode.ABSENCE_CREATE]))]
 )
 async def create(data: AbsenceCreateSchema,
@@ -26,7 +28,8 @@ async def create(data: AbsenceCreateSchema,
     "",
     response_model=AbsenceResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Update category",
+    summary="Обновить отсутствие",
+    description="Обновляет период, тип, причину или статус архивации отсутствия по его `id`.",
     dependencies=[Depends(require_permission([PermissionCode.ABSENCE_UPDATE]))]
 )
 async def update(data: AbsenceUpdateSchema,
@@ -37,7 +40,8 @@ async def update(data: AbsenceUpdateSchema,
     "/get-all",
     response_model = PaginatedResponseSchema[AbsenceResponseSchema],
     status_code = 200,
-    summary="Get all absences",
+    summary="Получить все отсутствия",
+    description="Возвращает постраничный список отсутствий сотрудников с поддержкой фильтрации.",
     dependencies=[Depends(require_permission([PermissionCode.ABSENCE_READ]))]
 )
 async def get_all(params: RequestAllObject,
@@ -48,7 +52,8 @@ async def get_all(params: RequestAllObject,
     "/{id}",
     response_model=AbsenceResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Get ",
+    summary="Получить отсутствие по ID",
+    description="Возвращает отсутствие по его `id`.",
     dependencies=[Depends(require_permission([PermissionCode.ABSENCE_READ]))]
 )
 async def get(id: int,

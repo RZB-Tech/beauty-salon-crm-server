@@ -15,7 +15,8 @@ get_material_service = make_service_dependency(MaterialService)
     "",
     response_model=MaterialResponseSchema,
     status_code= 201,
-    summary="Create a new material",
+    summary="Создать новый материал",
+    description="Создает материал (товар для продажи или расходник) с указанным начальным количеством на складе.",
     dependencies=[Depends(require_permission([PermissionCode.MATERIAL_CREATE]))]
 )
 async def create(data: MaterialCreateSchema,
@@ -26,7 +27,8 @@ async def create(data: MaterialCreateSchema,
     "",
     response_model=MaterialResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Update category",
+    summary="Обновить материал",
+    description="Обновляет артикул, название, описание, единицу измерения, объем, цену продажи или статус архивации материала по его `id`.",
     dependencies=[Depends(require_permission([PermissionCode.MATERIAL_UPDATE]))]
 )
 async def update(data: MaterialUpdateSchema,
@@ -37,7 +39,8 @@ async def update(data: MaterialUpdateSchema,
     "/get-all",
     response_model=PaginatedResponseSchema[MaterialResponseSchema],
     status_code = 200,
-    summary="Get all categories",
+    summary="Получить все материалы",
+    description="Возвращает постраничный список материалов организации с поддержкой фильтрации.",
     dependencies=[Depends(require_permission([PermissionCode.MATERIAL_READ]))]
 )
 async def get_all(params: RequestAllObject,
@@ -48,7 +51,8 @@ async def get_all(params: RequestAllObject,
     "/{id}",
     response_model=MaterialResponseSchema,
     status_code = 200,
-    summary="Get ",
+    summary="Получить материал по ID",
+    description="Возвращает материал по его `id`.",
     dependencies=[Depends(require_permission([PermissionCode.MATERIAL_READ]))]
 )
 async def get(id: int,
@@ -67,7 +71,8 @@ async def get(id: int,
     "/update-quantity",
     status_code = status.HTTP_200_OK,
     response_model = MaterialResponseSchema,
-    description = "Для добавления количества: operaion: 1\nДля отнятия количества: operataion: -1",
+    summary = "Обновить количество материала",
+    description = "Изменяет количество материала на складе. Для добавления количества: `operation: 1`; для списания: `operation: -1`.",
     name = "Обновить количество",
     dependencies=[Depends(require_permission([PermissionCode.MATERIAL_UPDATE_QUANTITY]))]
 )

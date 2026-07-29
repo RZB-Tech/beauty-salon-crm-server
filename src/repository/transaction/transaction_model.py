@@ -32,7 +32,7 @@ class TransactionCategory(StrEnum):
 class TransactionMethod(StrEnum):
     CARD = "card"
     CASH = "cash"
-    BANK_TRANSER = "bank transfer"
+    BANK_TRANSFER = "bank transfer"
     DEPOSIT = "deposit"
 
 class Transaction(BaseFields):

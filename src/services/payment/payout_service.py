@@ -46,10 +46,10 @@ class PayoutService():
                     )
         elif data.start_date and data.end_date:
             validPayrolls = await self.uow.payrolls.get_pendings(data.employee_id, data.start_date, data.end_date)
-            if not validPayrolls: raise HTTPException(404, "У сотрудника в выбранном периоде нету не выплаченных компинсация / бонусов / штрафов")
+            if not validPayrolls: raise HTTPException(404, "У сотрудника в выбранном периоде нету не выплаченных компенсаций / бонусов / штрафов")
         else:
             validPayrolls = await self.uow.payrolls.get_pendings(data.employee_id)
-            if not validPayrolls: raise HTTPException(400, "У сотрудника в выбранном периоде нету не выплаченных компинсация / бонусов / штрафов")
+            if not validPayrolls: raise HTTPException(400, "У сотрудника в выбранном периоде нету не выплаченных компенсаций / бонусов / штрафов")
 
         for payroll in validPayrolls:
             payroll.status = PayrollStatus.PAID

@@ -3,6 +3,7 @@ import string
 
 from src.core.auth.security import hash_password
 from sqlalchemy.ext.asyncio import AsyncSession
+from src.database.base import Actor, ActorType
 from src.repository import Tenant, TenantIntegration, Staff
 from src.schemas.tenant.base import TenantPreferencesSchema
 
@@ -19,6 +20,10 @@ async def provision_tenant(db: AsyncSession,
 
     integrations = TenantIntegration(tenant_id=tenant.id)
     db.add(integrations)
+
+    actor = Actor(tenant_id=tenant.id, actor_type=ActorType.STAFF, name=admin_firstname)
+    db.add(actor)
+    await db.flush()
 
     newPassword: str
     if admin_password is None:
@@ -37,7 +42,8 @@ async def provision_tenant(db: AsyncSession,
         login = admin_login,
         firstname=admin_firstname,
         staff_type="administrator",
-        hashed_password = hashed
+        hashed_password = hashed,
+        actor_id = actor.id
     )
     db.add(admin_user)
 

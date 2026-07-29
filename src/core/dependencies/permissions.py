@@ -22,7 +22,7 @@ async def _resolve_staff_type_and_permissions(staff_id: int, uow: UnitOfWork) ->
 
 def require_permission(codes: list[int], condition: Literal["all", "or"] = "all"):
     if condition not in ("all", "or"):
-        raise ValueError(f"Unsupported condition '{condition}', expected 'all' or 'or'")
+        raise ValueError(f"Неподдерживаемое условие '{condition}', ожидается 'all' или 'or'")
 
     async def dependency(
         current_staff: dict = Depends(get_current_staff),

@@ -1,6 +1,6 @@
 from enum import IntEnum
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from src.repository.material.material_model import MeasurementUnit
 from src.schemas.base import BaseUpdateSchema
 
@@ -25,3 +25,11 @@ class MaterialQuantityUpdateSchema(BaseModel):
     id: int = Field(ge = 1)
     operation: MaterialOperation
     quantity: int = Field(ge = 1)
+
+    model_config = ConfigDict(json_schema_extra = {
+        "example": {
+            "id": 1,
+            "operation": 1,
+            "quantity": 10
+        }
+    })

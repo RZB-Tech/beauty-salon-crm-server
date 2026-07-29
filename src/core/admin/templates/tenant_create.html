@@ -1,0 +1,57 @@
+{% extends "sqladmin/layout.html" %}
+{% block content %}
+<div class="col-12">
+  <div class="card">
+    <div class="card-header">
+      <h3 class="card-title">Создать тенанта</h3>
+    </div>
+    <div class="card-body border-bottom py-3">
+      {% if error %}
+      <div class="alert alert-danger" role="alert">{{ error }}</div>
+      {% endif %}
+
+      {% if result %}
+      <div class="alert alert-success" role="alert">
+        <h4 class="alert-title">Тенант «{{ result.tenant.name }}» создан (ID: {{ result.tenant.id }})</h4>
+        <div class="text-secondary">
+          Сохраните пароль администратора сейчас — повторно он показан не будет.
+        </div>
+      </div>
+      <dl class="row">
+        <dt class="col-3">Логин</dt>
+        <dd class="col-9"><code>{{ result.login }}</code></dd>
+        <dt class="col-3">Пароль</dt>
+        <dd class="col-9"><code>{{ result.password }}</code></dd>
+      </dl>
+      <a href="{{ url_for('admin:view-tenant-create') }}" class="btn btn-primary">Создать ещё одного тенанта</a>
+      {% else %}
+      <form method="POST" action="{{ url_for('admin:view-tenant-create') }}">
+        <fieldset class="form-fieldset">
+          <div class="mb-3">
+            <label class="form-label">Название компании *</label>
+            <input type="text" name="company_name" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">ИНН</label>
+            <input type="text" name="company_tin" class="form-control">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Имя администратора *</label>
+            <input type="text" name="admin_firstname" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Логин администратора *</label>
+            <input type="text" name="admin_login" class="form-control" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Пароль администратора</label>
+            <input type="text" name="admin_password" class="form-control" placeholder="Оставьте пустым для автогенерации">
+          </div>
+        </fieldset>
+        <button type="submit" class="btn btn-primary">Создать</button>
+      </form>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

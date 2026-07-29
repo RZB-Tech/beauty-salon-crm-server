@@ -2,7 +2,7 @@ from typing import Any, Optional
 from sqlalchemy import String, Text
 from sqlalchemy.dialects.postgresql import ARRAY, JSONB, INTEGER
 from sqlalchemy.orm import Mapped, mapped_column
-from src.database import BaseFields
+from src.database.base import BaseFields
 
 class Segmentation(BaseFields):
     __tablename__ = "segmentations"

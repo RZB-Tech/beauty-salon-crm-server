@@ -15,6 +15,8 @@ get_appointment_records_service = make_service_dependency(AppointmentRecordsServ
     "",
     response_model=AppointmentResponseSchema,
     status_code=status.HTTP_201_CREATED,
+    summary = "Добавить запись в посещение",
+    description = "Добавляет к существующему посещению запись о работе сотрудника (`employee_id`) с оказанными им услугами и/или использованными товарами. Требует, чтобы у посещения не было активного (неотмененного) чека.",
     dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_RECORDS_CREATE]))]
 )
 async def create(data: AppointmentRecordsCreateSchema,
@@ -60,6 +62,8 @@ async def create(data: AppointmentRecordsCreateSchema,
     "/{id}",
     status_code = 200,
     response_model = AppointmentResponseSchema,
+    summary = "Удалить запись из посещения",
+    description = "Безвозвратно удаляет запись о работе сотрудника из посещения по её `id`. Требует, чтобы у посещения не было активного (неотмененного) чека.",
     dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_RECORDS_DELETE]))]
 )
 async def delete(id: int,

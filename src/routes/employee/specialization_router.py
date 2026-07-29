@@ -16,7 +16,8 @@ get_specialization_service = make_service_dependency(SpecializationService)
     "",
     response_model=SpecializationResponseSchema,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new specialization",
+    summary="Создать новую специализацию",
+    description="Создает специализацию сотрудников (например, «Парикмахер-стилист»), которую затем можно присвоить сотруднику.",
     dependencies=[Depends(require_permission([PermissionCode.SPECIALIZATION_CREATE]))]
 )
 async def create(data: SpecializationCreateSchema,
@@ -27,7 +28,8 @@ async def create(data: SpecializationCreateSchema,
     "",
     response_model=SpecializationResponseSchema,
     status_code= 200,
-    summary="Update specialization",
+    summary="Обновить специализацию",
+    description="Обновляет название или статус архивации специализации по её `id`.",
     dependencies=[Depends(require_permission([PermissionCode.SPECIALIZATION_UPDATE]))]
 )
 async def update(data: SpecializationUpdateSchema,
@@ -38,7 +40,8 @@ async def update(data: SpecializationUpdateSchema,
     "/get-all",
     response_model=PaginatedResponseSchema[SpecializationResponseSchema],
     status_code=status.HTTP_200_OK,
-    summary="Get all specializations",
+    summary="Получить все специализации",
+    description="Возвращает постраничный список специализаций организации с поддержкой фильтрации.",
     dependencies=[Depends(require_permission([PermissionCode.SPECIALIZATION_READ]))]
 )
 async def get_all(params: RequestAllObject,
@@ -49,7 +52,8 @@ async def get_all(params: RequestAllObject,
     "/{id}",
     response_model=SpecializationResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Get ",
+    summary="Получить специализацию по ID",
+    description="Возвращает специализацию по её `id`.",
     dependencies=[Depends(require_permission([PermissionCode.SPECIALIZATION_READ]))]
 )
 async def get(id: int,

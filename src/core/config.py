@@ -9,7 +9,13 @@ class Settings(BaseSettings):
     REFRESH_TOKEN_EXPIRE_SECONDS: int
     REDIS_BROKER: str
     REDIS_BACKEND: str
-    
+
+    ADMIN_PRIVATE_KEY_PATH: str
+    ADMIN_PUBLIC_KEY_PATH: str
+    ADMIN_ALGORITHM: str
+    ADMIN_ACCESS_TOKEN_EXPIRE_SECONDS: int
+    SQLADMIN_SESSION_SECRET: str
+
     @property
     def PRIVATE_KEY(self) -> str:
         with open(self.PRIVATE_KEY_PATH, 'r') as f: return f.read()
@@ -17,6 +23,14 @@ class Settings(BaseSettings):
     @property
     def PUBLIC_KEY(self) -> str:
         with open(self.PUBLIC_KEY_PATH, 'r') as f: return f.read()
+
+    @property
+    def ADMIN_PRIVATE_KEY(self) -> str:
+        with open(self.ADMIN_PRIVATE_KEY_PATH, 'r') as f: return f.read()
+
+    @property
+    def ADMIN_PUBLIC_KEY(self) -> str:
+        with open(self.ADMIN_PUBLIC_KEY_PATH, 'r') as f: return f.read()
 
     model_config = SettingsConfigDict(
         env_file=".env", 

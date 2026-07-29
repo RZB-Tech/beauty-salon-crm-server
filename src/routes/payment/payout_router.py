@@ -15,6 +15,8 @@ get_payout_service = make_service_dependency(PayoutService)
     "",
     response_model=PayoutResponseSchema,
     status_code=status.HTTP_201_CREATED,
+    summary = "Провести выплату сотруднику",
+    description = "Проводит выплату сотруднику. Для категории `other` можно указать либо конкретный список начислений (`payrolls`), либо период (`start_date`/`end_date`) — не оба сразу; будут выплачены все ожидающие премии/штрафы/комиссии за период. Для `salary`/`advance salary` начисления не указываются.",
     dependencies=[Depends(require_permission([PermissionCode.PAYOUT_CREATE]))]
 )
 async def create(data: PayoutCreateSchema,
@@ -25,6 +27,8 @@ async def create(data: PayoutCreateSchema,
     "/get-all",
     response_model=PaginatedResponseSchema[PayoutResponseSchema],
     status_code=status.HTTP_200_OK,
+    summary = "Получить все выплаты",
+    description = "Возвращает постраничный список выплат сотрудникам с поддержкой фильтрации.",
     dependencies=[Depends(require_permission([PermissionCode.PAYOUT_READ]))]
 )
 async def get_all(params: RequestAllObject,
@@ -35,6 +39,7 @@ async def get_all(params: RequestAllObject,
     "/{id}",
     response_model=PayoutResponseSchema,
     status_code=status.HTTP_200_OK,
+    summary = "Получить выплату по ID",
     dependencies=[Depends(require_permission([PermissionCode.PAYOUT_READ]))]
 )
 async def get(id: int,

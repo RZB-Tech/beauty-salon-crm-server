@@ -17,7 +17,8 @@ get_category_service = make_service_dependency(ServiceCategoryService)
     "",
     response_model=ServiceCategoryResponseSchema,
     status_code= 201,
-    summary="Create a new service category",
+    summary="Создать новую категорию услуг",
+    description="Создает категорию, к которой затем можно привязывать услуги.",
     dependencies=[Depends(require_permission([PermissionCode.SERVICE_CATEGORY_CREATE]))]
 )
 async def create(data: ServiceCategoryCreateSchema,
@@ -28,7 +29,8 @@ async def create(data: ServiceCategoryCreateSchema,
     "",
     response_model=ServiceCategoryResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Update category",
+    summary="Обновить категорию услуг",
+    description="Обновляет название или статус архивации категории по её `id`.",
     dependencies=[Depends(require_permission([PermissionCode.SERVICE_CATEGORY_UPDATE]))]
 )
 async def update(data: ServiceCategoryUpdateSchema,
@@ -39,7 +41,8 @@ async def update(data: ServiceCategoryUpdateSchema,
     "/get-all",
     response_model=PaginatedResponseSchema[ServiceCategoryResponseSchema],
     status_code=status.HTTP_200_OK,
-    summary="Get all categories",
+    summary="Получить все категории услуг",
+    description="Возвращает постраничный список категорий услуг организации с поддержкой фильтрации.",
     dependencies=[Depends(require_permission([PermissionCode.SERVICE_CATEGORY_READ]))]
 )
 async def get_all(params: RequestAllObject,
@@ -50,7 +53,8 @@ async def get_all(params: RequestAllObject,
     "/{id}",
     response_model=ServiceCategoryResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Get category",
+    summary="Получить категорию услуг по ID",
+    description="Возвращает категорию услуг по её `id`.",
     dependencies=[Depends(require_permission([PermissionCode.SERVICE_CATEGORY_READ]))]
 )
 async def get(id: int, categoryService: ServiceCategoryService = Depends(get_category_service)):

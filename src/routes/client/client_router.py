@@ -18,6 +18,7 @@ get_client_service = make_service_dependency(ClientService)
     "",
     response_model=ClientResponseSchema,
     status_code=status.HTTP_201_CREATED,
+    summary="Создать нового клиента",
     dependencies=[Depends(require_permission([PermissionCode.CLIENT_CREATE]))]
 )
 async def create(data: ClientCreateSchema,
@@ -28,6 +29,8 @@ async def create(data: ClientCreateSchema,
     "",
     response_model=ClientResponseSchema,
     status_code=status.HTTP_200_OK,
+    summary="Обновить клиента",
+    description="Обновляет данные клиента по его `id`. Передаются только изменяемые поля.",
     dependencies=[Depends(require_permission([PermissionCode.CLIENT_UPDATE]))]
 )
 async def update(data: ClientUpdateSchema,
@@ -38,6 +41,8 @@ async def update(data: ClientUpdateSchema,
     "/get-all",
     response_model=PaginatedResponseSchema[ClientResponseSchema],
     status_code=status.HTTP_200_OK,
+    summary="Получить всех клиентов",
+    description="Возвращает постраничный список клиентов организации с поддержкой фильтрации.",
     dependencies=[Depends(require_permission([PermissionCode.CLIENT_READ]))]
 )
 async def get_all(params: RequestAllObject,
@@ -48,6 +53,7 @@ async def get_all(params: RequestAllObject,
     "/{id}",
     response_model=ClientResponseSchema,
     status_code=status.HTTP_200_OK,
+    summary="Получить клиента по ID",
     dependencies=[Depends(require_permission([PermissionCode.CLIENT_READ]))]
 )
 async def get(id: int,
@@ -66,7 +72,8 @@ async def get(id: int,
     "/update-deposit",
     status_code = status.HTTP_200_OK,
     response_model = ClientResponseSchema,
-    description = "Для добавления суммы: operaion: 1\nДля отнятия суммы: operataion: -1",
+    summary = "Обновить депозит клиента",
+    description = "Изменяет депозит клиента. Для пополнения: `operation: 1`; для списания: `operation: -1`. Итоговый депозит не может стать отрицательным.",
     name = "Обновить депозит",
     dependencies=[Depends(require_permission([PermissionCode.CLIENT_UPDATE_DEPOSIT]))]
 )
@@ -78,6 +85,8 @@ async def update_deposit(data: ClientDepositUpdateSchema,
     "/{id}/appointments",
     status_code = status.HTTP_200_OK,
     response_model=PaginatedResponseSchema[AppointmentResponseSchema],
+    summary = "Посещения клиента",
+    description = "Возвращает постраничный список посещений указанного клиента.",
     dependencies=[Depends(require_permission([PermissionCode.CLIENT_READ]))]
 )
 async def get_appointments(id: int,
@@ -89,8 +98,9 @@ async def get_appointments(id: int,
     "/finance-report",
     status_code = 200,
     response_model = ClientFinanceResponseSchema,
+    summary = "Финансовый отчет по клиенту",
     description = """
-Запрос на получение финансового отчета по клиенту. В теле запроса указывается `id`, `start_date` и `end_date` (оба поля опциональны).
+Запрос на получение финансового отчета по клиенту. В теле запроса указывается `clientID`, `start_date` и `end_date` (оба поля опциональны).
 
 Если по клиенту нету никаких отчетов - возращает "items": {}.
 

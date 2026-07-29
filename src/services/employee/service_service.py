@@ -85,7 +85,7 @@ class ServiceService():
         if not required_columns.issubset(df.columns):
             raise HTTPException(
                 status_code = 400,
-                detail = f"Excel must contain columns: {required_columns}"
+                detail = f"Excel-файл должен содержать колонки: {required_columns}"
             )
         
         tenant_id = get_current_tenant_id()

@@ -1,7 +1,7 @@
 from fastapi import HTTPException, status
 from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
-from src.repository.tenant.tenant_model import TenantIntegration, TenantPreferences
+from src.repository.tenant.tenant_model import TenantIntegration
 from src.schemas.tenant.base import TenantPreferencesSchema
 from src.schemas.tenant.response import TenantIntegrationsResponseSchema
 from src.schemas.tenant.update import TenantPreferencesUpdateSchema
@@ -40,6 +40,6 @@ class TenantIntegrationsService:
     #     if tenant_id is None:
     #         raise HTTPException(
     #             status_code=status.HTTP_401_UNAUTHORIZED,
-    #             detail="Could not resolve tenant context",
+    #             detail="Не удалось определить контекст организации",
     #         )
     #     return tenant_id

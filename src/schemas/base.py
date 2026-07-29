@@ -58,7 +58,7 @@ class BaseUpdateSchema(BaseModel):
         if all(getattr(self, field_name) is None for field_name in update_fields):
             readable_fields = ", ".join(f"'{f}'" for f in sorted(update_fields))
             raise ValueError(
-                f"At least one of the following fields must be provided: {readable_fields}"
+                f"Необходимо указать хотя бы одно из следующих полей: {readable_fields}"
             )
             
         return self

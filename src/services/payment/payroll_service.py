@@ -20,8 +20,8 @@ class PayrollService():
     async def update(self, data: PayrollUpdateSchema) -> Payroll:
         payroll = await self.uow.payrolls.get(data.id)
         if payroll is None: raise HTTPException(404, f"Выплата с ID {data.id} не найден")
-        if payroll.auto_genereted: raise HTTPException(400, "Нелья изменить автоматически сгенерированную выплату, для этого внести изменения в сам Чек / Посещение")
-        if payroll.payout_id: raise HTTPException(400, "Нельзя изменить выплаченную заработную плату / коммисию / бонусы, сначало отмените связанную выплату")
+        if payroll.auto_genereted: raise HTTPException(400, "Нельзя изменить автоматически сгенерированную выплату, для этого внести изменения в сам Чек / Посещение")
+        if payroll.payout_id: raise HTTPException(400, "Нельзя изменить выплаченную заработную плату / комиссию / бонусы, сначала отмените связанную выплату")
         if payroll.archived: raise HTTPException(400, f"Нельзя изменить архивированный объект")
 
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
@@ -63,8 +63,8 @@ class PayrollService():
         payroll = await self.uow.payrolls.get(id)
         if payroll is None: raise HTTPException(404)
         if payroll.auto_genereted: raise HTTPException(409, "Нельзя удалять автоматически сгенерированные выплаты, для этого отмените связанный Чек")
-        if payroll.payout_id: raise HTTPException(400, "Сначало отмените выплаченную сумму")
-        if not payroll.archived: raise HTTPException(400, "Сначало нужно архивировать объект")
+        if payroll.payout_id: raise HTTPException(400, "Сначала отмените выплаченную сумму")
+        if not payroll.archived: raise HTTPException(400, "Сначала нужно архивировать объект")
 
         await self.uow.payrolls.delete(id)
 
@@ -73,7 +73,7 @@ class PayrollService():
         if payroll is None: raise HTTPException(404)
         if payroll.status == PayrollStatus.CANCELLED: raise HTTPException(400, "Выплата уже отменена")
         if payroll.auto_genereted: raise HTTPException(409, "Нельзя отменить автоматически сгенерированную выплату. Требуется отменить связанные с ним Чек")
-        if payroll.payout_id: raise HTTPException(409, "Сначало отмените выплаченную сумму")
+        if payroll.payout_id: raise HTTPException(409, "Сначала отмените выплаченную сумму")
         if payroll.archived: raise HTTPException(409, "Нельзя отменять архивированный объект")
 
         result = await self.uow.payrolls.update(id, status = PayrollStatus.CANCELLED)

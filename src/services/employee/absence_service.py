@@ -24,7 +24,7 @@ class EmployeeAbsenceService():
         if result is None:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Отгул с ID {data.id} не найден"
+                detail = f"Отсутствие с ID {data.id} не найдено"
             )
         return result
     
@@ -33,7 +33,7 @@ class EmployeeAbsenceService():
         if not result:
             raise HTTPException(
                 status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Absence with id {id} not found"
+                detail = f"Отсутствие с ID {id} не найдено"
             )
         return result
     

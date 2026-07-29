@@ -1,6 +1,6 @@
 from typing import Self
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from src.repository.receipt.receipt_model import ReceiptType
 from src.repository.transaction.transaction_model import TransactionMethod
 
@@ -13,6 +13,15 @@ class ReceiptPaymentCreateSchema(BaseModel):
     amount: int = Field(ge = 1)
     method: TransactionMethod
     add_change_to_deposit: bool = True
+
+    model_config = ConfigDict(json_schema_extra = {
+        "example": {
+            "receipt_id": 1,
+            "amount": 150000,
+            "method": "cash",
+            "add_change_to_deposit": True
+        }
+    })
 
 class ReceiptCreateSchema(BaseModel):
     receipt_type: ReceiptType = ReceiptType.APPOINTMENT
@@ -28,20 +37,36 @@ class ReceiptCreateSchema(BaseModel):
 
         if has_appointment and has_items:
             raise ValueError(
-                "A receipt cannot be linked to an appointment and contain direct material items simultaneously."
+                "Чек не может одновременно быть привязан к посещению и содержать список товаров прямой продажи."
             )
-        
+
         if has_appointment and has_client:
             raise ValueError(
-                "A receipt cannot be linked to an appointment and contain client"
+                "Чек не может одновременно быть привязан к посещению и содержать клиента."
             )
-        
+
         if not has_appointment and not has_items:
             raise ValueError(
-                "A receipt must contain either an appointment_id or a list of receipt_items."
+                "Необходимо указать либо appointment_id, либо список receipt_items."
             )
 
         if has_appointment and self.receipt_type != ReceiptType.APPOINTMENT:
-            raise ValueError("receipt_type must be 'APPOINTMENT' when providing an appointment_id.")
-            
+            raise ValueError("receipt_type должен быть 'APPOINTMENT', если указан appointment_id.")
+
         return self
+
+    model_config = ConfigDict(json_schema_extra = {
+        "examples": [
+            {
+                "receipt_type": "appointment",
+                "appointment_id": 1
+            },
+            {
+                "receipt_type": "direct sale",
+                "client_id": 1,
+                "receipt_items": [
+                    {"material_id": 1, "quantity": 2}
+                ]
+            }
+        ]
+    })

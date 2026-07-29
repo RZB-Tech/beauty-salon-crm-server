@@ -38,7 +38,12 @@ protected_router.dependencies.extend([
     Depends(get_current_staff)
 ])
 
-@protected_router.get("/docs/filters/{table}", response_model = list[FilterFieldSchema])
+@protected_router.get(
+    "/docs/filters/{table}",
+    response_model = list[FilterFieldSchema],
+    summary = "Доступные фильтры таблицы",
+    description = "Возвращает описание полей, по которым можно фильтровать указанную таблицу (`table`), для построения динамических форм фильтрации на фронтенде."
+)
 async def get_table_filters(table: FilterTables):
     model = MODEL_REGISTRY.get(table.value)
     if model is None: raise HTTPException(404)

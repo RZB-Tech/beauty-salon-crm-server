@@ -16,7 +16,7 @@ get_service_service = make_service_dependency(ServiceService)
     "",
     response_model=ServiceResponseSchema,
     status_code=status.HTTP_201_CREATED,
-    summary="Create a new service",
+    summary="Создать новую услугу",
     description = "`estimated_time` указывается в минутах",
     dependencies=[Depends(require_permission([PermissionCode.SERVICE_CREATE]))]
 )
@@ -28,7 +28,8 @@ async def create(data: ServiceCreateSchema,
     "",
     response_model=ServiceResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Update category",
+    summary="Обновить услугу",
+    description="Обновляет название, цену, длительность, категорию или статус архивации услуги по её `id`. Нельзя привязать архивированную категорию.",
     dependencies=[Depends(require_permission([PermissionCode.SERVICE_UPDATE]))]
 )
 async def update(data: ServiceUpdateSchema,
@@ -39,7 +40,8 @@ async def update(data: ServiceUpdateSchema,
     "/get-all",
     response_model=PaginatedResponseSchema[ServiceResponseSchema],
     status_code=status.HTTP_200_OK,
-    summary="Get all categories",
+    summary="Получить все услуги",
+    description="Возвращает постраничный список услуг организации с поддержкой фильтрации.",
     dependencies=[Depends(require_permission([PermissionCode.SERVICE_READ]))]
 )
 async def get_all(params: RequestAllObject,
@@ -50,7 +52,8 @@ async def get_all(params: RequestAllObject,
     "/{id}",
     response_model=ServiceResponseSchema,
     status_code=status.HTTP_200_OK,
-    summary="Get ",
+    summary="Получить услугу по ID",
+    description="Возвращает услугу по её `id`.",
     dependencies=[Depends(require_permission([PermissionCode.SERVICE_READ]))]
 )
 async def get(id: int,
@@ -67,6 +70,8 @@ async def get(id: int,
 
 @router.post(
     "/import",
+    summary="Импортировать услуги из Excel",
+    description="Загружает Excel-файл со столбцами `service_category`, `service` и `price`. Для каждой строки создает категорию услуг (если её ещё нет) и саму услугу; строки с уже существующим названием услуги пропускаются.",
     dependencies=[Depends(require_permission([PermissionCode.SERVICE_IMPORT]))]
 )
 async def import_services(file: UploadFile = File(...),

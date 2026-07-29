@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from src.core.permissions import PERMISSIONS
 
 class RoleCreateSchema(BaseModel):
@@ -11,5 +11,13 @@ class RoleCreateSchema(BaseModel):
     def validate_permissions(cls, permissions: list[int]) -> list[int]:
         unknown = [code for code in permissions if code not in PERMISSIONS]
         if unknown:
-            raise ValueError(f"Unknown permission codes: {unknown}")
+            raise ValueError(f"Неизвестные коды разрешений: {unknown}")
         return permissions
+
+    model_config = ConfigDict(json_schema_extra = {
+        "example": {
+            "name": "Администратор филиала",
+            "description": "Полный доступ к записям и финансам филиала",
+            "permissions": [2003, 2005, 3003, 3006]
+        }
+    })

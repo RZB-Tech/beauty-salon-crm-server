@@ -21,7 +21,7 @@ def register_tenant_filter(session: AsyncSession) -> None:
             # Secure by default: If we cannot find a tenant context during an active
             # client request state, we should block modification statements entirely.
             if execute_state.is_delete or execute_state.is_update:
-                raise PermissionError("Database mutation attempted without a valid tenant context.")
+                raise PermissionError("Попытка изменения данных без действительного контекста организации.")
             return  
         
         for entity_cls in _collect_tenant_entities(execute_state):
@@ -45,7 +45,7 @@ def register_tenant_filter(session: AsyncSession) -> None:
                 if getattr(obj, "tenant_id") is None:
                     setattr(obj, "tenant_id", tenant_id)
                 elif getattr(obj, "tenant_id") != tenant_id:
-                    raise PermissionError("Cross-tenant data injection detected!")
+                    raise PermissionError("Обнаружена попытка внедрения данных другой организации!")
 
         # Handle Updates (session.dirty)
         for obj in sync_session.dirty:
@@ -55,15 +55,15 @@ def register_tenant_filter(session: AsyncSession) -> None:
                     history = state.get_history("tenant_id", passive=True)
                     original_tenant_id = history.unchanged[0] if history.unchanged else getattr(obj, "tenant_id")
                     if original_tenant_id != tenant_id:
-                        raise PermissionError("Attempted to modify a record outside your tenant.")
+                        raise PermissionError("Попытка изменить запись, принадлежащую другой организации.")
                     if history.has_changes():
-                        raise PermissionError("Altering the tenant_id of an existing record is prohibited.")
+                        raise PermissionError("Изменение tenant_id у существующей записи запрещено.")
 
         # Handle Deletes (session.deleted) - Ensure instance tenant validation
         for obj in sync_session.deleted:
             if hasattr(obj, "tenant_id"):
                 if getattr(obj, "tenant_id") != tenant_id:
-                    raise PermissionError("Unauthorized attempt to delete cross-tenant records.")
+                    raise PermissionError("Попытка удалить запись, принадлежащую другой организации.")
 
 def _collect_tenant_entities(execute_state) -> list:
     """Extract all mapped entities in the query that use TenantMixin."""

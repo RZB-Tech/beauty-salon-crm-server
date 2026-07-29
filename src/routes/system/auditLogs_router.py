@@ -16,6 +16,8 @@ get_auditLogs_service = make_service_dependency(AuditLogsService)
     "",
     response_model=PaginatedResponseSchema[AuditLogsResponseSchema],
     status_code=status.HTTP_200_OK,
+    summary = "Получить журнал аудита",
+    description = "Возвращает постраничную историю изменений конкретной записи: какое поле было изменено, старое и новое значение, кто и когда внес изменение. Обязательно указать `table_name` и `record_id`.",
     dependencies=[Depends(require_permission([PermissionCode.AUDIT_LOGS_READ]))]
 )
 async def get_all(data: AuditLogsRequestSchema = Depends(),

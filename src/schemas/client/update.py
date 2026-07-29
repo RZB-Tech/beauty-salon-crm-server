@@ -2,7 +2,7 @@ from enum import IntEnum
 
 from src.repository.client.client_model import Sex
 from src.schemas.base import BaseUpdateSchema
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from datetime import date
 
 class ClientUpdateSchema(BaseUpdateSchema):
@@ -24,3 +24,11 @@ class ClientDepositUpdateSchema(BaseModel):
     id: int = Field(ge = 1)
     operation: DepositOperation
     amount: int = Field(ge = 1)
+
+    model_config = ConfigDict(json_schema_extra = {
+        "example": {
+            "id": 1,
+            "operation": 1,
+            "amount": 50000
+        }
+    })

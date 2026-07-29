@@ -9,18 +9,18 @@ async def sqlalchemy_integrity_exception_handler(request: Request, exc: Integrit
     if "unique constraint" in error_msg or "duplicate key" in error_msg:
         return JSONResponse(
             status_code=status.HTTP_409_CONFLICT,
-            content={"detail": "A record with this unique value already exists."}
+            content={"detail": "Запись с таким уникальным значением уже существует."}
         )
-        
+
     if "foreign key constraint" in error_msg:
         return JSONResponse(
             status_code=status.HTTP_400_BAD_REQUEST,
-            content={"detail": "Referenced related record does not exist."}
+            content={"detail": "Связанная запись не найдена."}
         )
-    
+
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
-        content={"detail": "Database integrity validation failed."}
+        content={"detail": "Нарушение целостности базы данных."}
     )
 
 def register_exception_handlers(app: FastAPI) -> None:

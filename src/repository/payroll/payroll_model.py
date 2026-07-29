@@ -123,7 +123,7 @@ class Payroll(BaseFields):
 
     @validates("amount")
     def validate_amount(self, key, value):
-        if value <= 0: raise ValueError("Amount cannot be less than 1")
+        if value <= 0: raise ValueError("Сумма не может быть меньше 1")
         return value
     
     ALLOWED_FILTERS = {"amount", "employee_id", "amount", "type", "status", "auto_generated", "archived"}

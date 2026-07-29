@@ -16,6 +16,8 @@ get_appointment_services_service = make_service_dependency(AppointmentServicesSe
     "",
     response_model=AppointmentResponseSchema,
     status_code = 201,
+    summary = "Добавить услугу/товар в запись посещения",
+    description = "Добавляет к записи посещения (`appointment_record_id`) либо услугу (`service_id`), либо товар (`material_id`) — указывается ровно одно из двух. Если фактическая цена отличается от базовой, необходимо указать причину (`price_changed_reason`).",
     dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_SERVICES_CREATE]))]
 )
 async def create(data: AppointmentServicesCreateSchema,
@@ -26,6 +28,8 @@ async def create(data: AppointmentServicesCreateSchema,
     "",
     response_model=AppointmentResponseSchema,
     status_code = 200,
+    summary = "Обновить услугу/товар в записи посещения",
+    description = "Обновляет количество, цену или причину изменения цены оказанной услуги/использованного товара по `id`.",
     dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_SERVICES_UPDATE]))]
 )
 async def update(data: AppointmentServiceUpdateSchema,
@@ -63,6 +67,8 @@ async def update(data: AppointmentServiceUpdateSchema,
     "/{id}",
     status_code = 200,
     response_model = AppointmentResponseSchema,
+    summary = "Удалить услугу/товар из записи посещения",
+    description = "Безвозвратно удаляет оказанную услугу/использованный товар из записи посещения по её `id`.",
     dependencies=[Depends(require_permission([PermissionCode.APPOINTMENT_SERVICES_DELETE]))]
 )
 async def delete(id: int,

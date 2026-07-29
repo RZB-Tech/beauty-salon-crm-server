@@ -22,6 +22,8 @@ get_notification_service = make_service_dependency(NotificationService)
     "",
     response_model=NotificationResponseSchema,
     status_code=status.HTTP_201_CREATED,
+    summary = "Создать уведомление",
+    description = "Создает уведомление (например, напоминание клиенту о записи), запланированное к отправке на время `scheduled_at`.",
     dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_CREATE]))]
 )
 async def create(data: NotificationCreateSchema,
@@ -32,6 +34,8 @@ async def create(data: NotificationCreateSchema,
     "/get-all",
     response_model=PaginatedResponseSchema[NotificationResponseSchema],
     status_code = 200,
+    summary = "Получить все уведомления",
+    description = "Возвращает постраничный список уведомлений с поддержкой фильтрации.",
     dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_READ]))]
 )
 async def get_all(params: RequestAllObject,
@@ -40,6 +44,8 @@ async def get_all(params: RequestAllObject,
 
 @router.get(
     "/stream",
+    summary = "Поток уведомлений (SSE)",
+    description = "Открывает Server-Sent Events соединение и передает уведомления текущему сотруднику в реальном времени по мере их поступления.",
     dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_READ]))]
 )
 async def notification_stream(
@@ -76,6 +82,7 @@ async def notification_stream(
     "/{id}",
     response_model=NotificationResponseSchema,
     status_code = 200,
+    summary = "Получить уведомление по ID",
     dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_READ]))]
 )
 async def get(id: int,
@@ -86,6 +93,8 @@ async def get(id: int,
     "/{id}/read",
     response_model = NotificationResponseSchema,
     status_code = 200,
+    summary = "Отметить уведомление прочитанным",
+    description = "Переводит уведомление в статус `read`. Уже прочитанное уведомление отметить повторно нельзя.",
     dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_CREATE]))]
 )
 async def read(id: int,
@@ -96,6 +105,8 @@ async def read(id: int,
     "/{id}/cancel",
     response_model = NotificationResponseSchema,
     status_code = 200,
+    summary = "Отменить уведомление",
+    description = "Переводит запланированное уведомление в статус `cancelled`, чтобы оно не было отправлено. Уже отмененное уведомление отменить повторно нельзя.",
     dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_CANCEL]))]
 )
 async def cancel(id: int,

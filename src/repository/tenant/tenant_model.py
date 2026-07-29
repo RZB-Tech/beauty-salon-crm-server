@@ -11,7 +11,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from enum import StrEnum
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from src.database.base import Base, BaseFields
 
@@ -21,7 +21,7 @@ class Tenant(Base):
     id: Mapped[int] = mapped_column(primary_key = True, autoincrement = True)
     name: Mapped[str] = mapped_column(String(255), unique = True)
     TIN: Mapped[str] = mapped_column(String(255), nullable = True)
-    
+
     active: Mapped[bool] = mapped_column(Boolean, default = True, server_default="true")
     preferences: Mapped[dict] = mapped_column(JSONB, default = dict)
     created_at: Mapped[datetime] = mapped_column(
@@ -35,6 +35,12 @@ class Tenant(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+    integration: Mapped["TenantIntegration | None"] = relationship(
+        viewonly = True,
+        uselist = False,
+        primaryjoin = "Tenant.id == TenantIntegration.tenant_id",
     )
 
 class TenantIntegration(BaseFields):

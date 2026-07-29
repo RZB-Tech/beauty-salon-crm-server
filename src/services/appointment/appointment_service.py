@@ -18,14 +18,14 @@ class AppointmentService():
         existing = await self.uow.appointments.client_has_overlap(
             data.client_id, data.start_time_est, data.end_time_est)
         
-        if existing: raise HTTPException(status_code = 409, detail = "Appointment slot already taken by this client")
-        
+        if existing: raise HTTPException(status_code = 409, detail = "Данный клиент уже записан на это время")
+
         for record in (data.records or []):
             employee = await self.uow.employees.get(record.employee_id)
             if employee is None:
                 raise HTTPException(
                     status_code = 404,
-                    detail = f"Employee with id {record.employee_id} not found"
+                    detail = f"Сотрудник с ID {record.employee_id} не найден"
                 )
             if not employee.active or employee.archived:
                 raise HTTPException(
@@ -37,18 +37,18 @@ class AppointmentService():
             if not isWorking:
                 raise HTTPException(
                     status_code= 409,
-                    detail=f"Employee {employee.id} is not scheduled to work during these hours."
+                    detail=f"Сотрудник {employee.id} не работает в указанное время"
                 )
-            
+
             has_conflict = await self.uow.appointmentRecords.employee_has_overlap(
                 employee.id, data.start_time_est, data.end_time_est
             )
             if has_conflict:
                 raise HTTPException(
                     status_code=status.HTTP_409_CONFLICT,
-                    detail=f"Employee {employee.firstname} is already booked during this time frame."
+                    detail=f"Сотрудник {employee.firstname} уже занят в указанное время"
                 )
-            
+
             employeeAllowedServices = {i.id for i in employee.services}
             for service in record.services:
                 if service.service_id:
@@ -56,14 +56,14 @@ class AppointmentService():
                     if not serviceObj:
                         raise HTTPException(
                             status_code = 404,
-                            detail = f"Service with id {service.service_id} not found"
+                            detail = f"Услуга с ID {service.service_id} не найдена"
                         )
-                    
-                    if serviceObj.archived: 
-                        raise HTTPException(409, f"Нельзя использовать архивированную услуг {serviceObj.name}, ID {serviceObj.id}")
-                    
+
+                    if serviceObj.archived:
+                        raise HTTPException(409, f"Нельзя использовать архивированную услугу {serviceObj.name}, ID {serviceObj.id}")
+
                     if serviceObj.id not in employeeAllowedServices:
-                        raise HTTPException(409, f"Employee {employee.id} does not provide services: {serviceObj.id}")
+                        raise HTTPException(409, f"Сотрудник {employee.id} не оказывает услугу с ID {serviceObj.id}")
                     
                     if service.price is None: service.price = serviceObj.price
                     if service.price != serviceObj.price and (service.price_changed_reason is None or len(service.price_changed_reason.strip()) == 0):
@@ -76,10 +76,10 @@ class AppointmentService():
                     if not materialObj:
                         raise HTTPException(
                             status_code = 404,
-                            detail = f"Service with id {service.material_id} not found"
+                            detail = f"Товар с ID {service.material_id} не найден"
                         )
-                    if materialObj.archived: 
-                        raise HTTPException(409, f"Нельзя использовать архивированную услуг {materialObj.name}, ID {materialObj.id}")
+                    if materialObj.archived:
+                        raise HTTPException(409, f"Нельзя использовать архивированный Товар {materialObj.name}, ID {materialObj.id}")
                     
                     if service.quantity > materialObj.quantity:
                         raise HTTPException(
@@ -134,12 +134,12 @@ class AppointmentService():
             )
         
         receipts = await self.uow.receipts.get_by_appointment(data.id, True)
-        if len(receipts) >= 1: raise HTTPException(409, f"Нельзя отменить посещение с активным чеков, сначало отмените чек.")
+        if len(receipts) >= 1: raise HTTPException(409, f"Нельзя отменить посещение с активным чеков, сначала отмените чек.")
         
         if appointment.paid:
             raise HTTPException(
                 status_code = 409,
-                detail = f"Нельзя отменить оплаченое посещение. Сначало отмените чек и уже после само посещение"
+                detail = f"Нельзя отменить оплаченое посещение. Сначала отмените чек и уже после само посещение"
             )
         
         return await self.uow.appointments.update(data.id, status = AppointmentStatus.CANCELLED, cancelled_reason = data.reason)
@@ -147,7 +147,7 @@ class AppointmentService():
     async def delete(self, id: int) -> bool:
         check = await self.uow.appointments.get(id)
         if check is None: raise HTTPException(404)
-        if not check.archived: raise HTTPException(400, "Прежде чем удалить объект, необходимо его сначало заархировать.")
+        if not check.archived: raise HTTPException(400, "Прежде чем удалить объект, необходимо его сначала заархировать.")
         await self.uow.appointments.delete(id)
         return True
     
