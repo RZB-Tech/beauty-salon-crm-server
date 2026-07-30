@@ -623,14 +623,14 @@ class TestAppointment:
         assert newReceipt.status_code == 201
         TestAppointment.receiptID = int(newReceipt.json()["id"])
 
-        cancelAppointment = await auth_client.patch(f"/api/v1/appointments/{TestAppointment.appointmentID}/cancel", json = {
+        cancelAppointment = await auth_client.patch(f"/api/v1/appointmentsj/cancel", json = {
             "id": TestAppointment.appointmentID,
             "reason": "mistaken input"
         })
         assert cancelAppointment.status_code == 409
 
     async def test_appointment_cancel_with_invalid_reason(self, auth_client):
-        cancelAppointment = await auth_client.patch(f"/api/v1/appointments/{TestAppointment.appointmentID}/cancel", json = {
+        cancelAppointment = await auth_client.patch(f"/api/v1/appointments/cancel", json = {
             "id": TestAppointment.appointmentID,
             "reason": "some reason"
         })
@@ -641,7 +641,7 @@ class TestAppointment:
         assert cancelReceipt.status_code == 200
         assert cancelReceipt.json()["status"] == "cancelled"
 
-        cancelAppointment = await auth_client.patch(f"/api/v1/appointments/{TestAppointment.appointmentID}/cancel", json = {
+        cancelAppointment = await auth_client.patch(f"/api/v1/appointments/cancel", json = {
             "id": TestAppointment.appointmentID,
             "reason": "mistaken input"
         })
