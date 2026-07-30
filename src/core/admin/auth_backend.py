@@ -4,6 +4,7 @@ from starlette.requests import Request
 
 from src.core.admin.security import create_admin_access_token, decode_admin_access_token
 from src.core.auth.security import verify_password
+from src.core.cache.admin_login_cache import MAX_FAILED_ATTEMPTS, register_failed_login, reset_failed_login
 from src.database.session import SessionLocal
 from src.repository.platform.platformUser_model import PlatformUser
 
@@ -22,10 +23,20 @@ class AdminAuthBackend(AuthenticationBackend):
             )
             user = result.scalar_one_or_none()
 
-        if user is None or not verify_password(user.hashed_password, password):
-            return False
+            if user is None or not user.active:
+                return False
 
-        token = create_admin_access_token({"sub": user.login, "id": user.id})
+            if not verify_password(user.hashed_password, password):
+                attempts = await register_failed_login(login)
+                if attempts >= MAX_FAILED_ATTEMPTS:
+                    user.active = False
+                    await session.commit()
+                    await reset_failed_login(login)
+                return False
+
+            await reset_failed_login(login)
+            token = create_admin_access_token({"sub": user.login, "id": user.id})
+
         request.session.update({"token": token})
         return True
 
