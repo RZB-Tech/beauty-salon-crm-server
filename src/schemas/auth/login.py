@@ -24,3 +24,5 @@ class LoginResponseSchema(BaseResponseSchema):
     active: bool
     staff_type: StaffType
     tenant_name: str
+    roles: list[int]
+    permissions: list[int]

@@ -10,3 +10,5 @@ class MeResponseSchema(BaseResponseSchema):
     middlename: str | None = None
     active: bool
     staff_type: StaffType
+    roles: list[int]
+    permissions: list[int]
