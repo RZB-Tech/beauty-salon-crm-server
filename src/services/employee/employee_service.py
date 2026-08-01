@@ -3,11 +3,14 @@ import math
 from fastapi import HTTPException, status
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
+from src.exceptions.service_exceptions import ServiceIsArchived, ServiceOneOrMoreNotFound
+from src.exceptions.specialization_exceptions import SpecializationIsArchived, SpecializationNotFound
 from src.repository.employee.employee_model import Employee
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.employee.create import EmployeeCreateSchema
 from src.schemas.employee.update import EmployeeUpdateSchema
 from src.services.employee.workSchedule_service import WorkScheduleService
+from src.exceptions.employee_exceptions import EmployeeNotFound, EmployeeIsArchived
 
 class EmployeeService():
     def __init__(self, uow: UnitOfWork):
@@ -21,55 +24,42 @@ class EmployeeService():
         
         if services_ids:
             found_services = await self.uow.services.get_by_ids(services_ids)
-            
-            if len(found_services) != len(services_ids):
-                raise HTTPException(404, detail="Одна или несколько указанных услуг не найдены")
-                
+            if len(found_services) != len(services_ids): raise ServiceOneOrMoreNotFound()
             new_employee.services = found_services
 
         if data.specialization_id:
             specialization = await self.uow.specializations.get(data.specialization_id)
-            if specialization is None: raise HTTPException(404, f"Специализация с ID {data.specialization_id} не найдена")
-            if specialization.archived: raise HTTPException(409, f"Нельзя использовать архивированную специализацию")
+            if specialization is None: raise SpecializationNotFound(data.specialization_id)
+            if specialization.archived: raise SpecializationIsArchived(data.specialization_id)
 
         result = await self.uow.employees.create(new_employee)
         return await self.uow.employees.get(result.id)
     
     async def get(self, id: int) -> Employee:
         result = await self.uow.employees.get(id)
-        if result is None:
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Сотрудник с ID {id} не найден"
-            )
+        if result is None: raise EmployeeNotFound(id) 
         return result
     
     async def update(self, data: EmployeeUpdateSchema) -> Employee:
         checkArchived = await self.uow.employees.get(data.id)
-        if checkArchived.archived: raise HTTPException(409, detail = f"Сотрудник с ID {data.id} архивирован и не может быть изменен")
+        if checkArchived.archived: raise EmployeeIsArchived(data.id)
 
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
         if data.services is not None:
             services = []
             if len(data.services) >= 1:
                 services = await self.uow.services.get_by_ids(data.services)
-                if len(services) != len(data.services):
-                    raise HTTPException( 404, detail="Один или более из указанных услуг не найден")
+                if len(services) != len(data.services): raise ServiceOneOrMoreNotFound()
                 for service in services: 
-                    if service.archived: raise HTTPException(409, f"Нельзя привязать архивированную услугу {service.name} (ID {service.id}) к сотруднику")
+                    if service.archived: raise ServiceIsArchived(service.id, service.name)
             dataDict["services"] = services
 
         if data.specialization_id:
             specialization = await self.uow.specializations.get(data.specialization_id)
-            if specialization is None: raise HTTPException(404, f"Специализация с ID {data.specialization_id} не найдена")
-            if specialization.archived: raise HTTPException(409, f"Нельзя использовать архивированную специализацию")
+            if specialization is None: raise SpecializationNotFound()
+            if specialization.archived: raise SpecializationIsArchived(data.specialization_id)
         
         result = await self.uow.employees.update(data.id, **dataDict)
-        if result is None:
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Сотрудник с ID {data.id} не найден"
-            )
         return result
     
     async def get_many(self, ids: list[int]) -> list[Employee]:
