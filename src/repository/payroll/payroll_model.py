@@ -92,7 +92,7 @@ class Payroll(BaseFields):
 
     amount: Mapped[int] = mapped_column(Integer, default = 0)
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
-    auto_genereted: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
+    auto_generated: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
     type: Mapped[str] = mapped_column(String(50))
     status: Mapped[str] = mapped_column(String(50), default = PayrollStatus.PENDING)
