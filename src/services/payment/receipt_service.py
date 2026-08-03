@@ -12,6 +12,7 @@ from src.repository.transaction.transaction_model import Transaction, Transactio
 from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema, ReceiptPaymentCreateSchema
 from src.schemas.tenant.base import TenantPreferencesSchema
+from src.services.system.tenantPreferences_service import TenantPreferencesService
 from src.core.utils.common import as_utc
 
 class ReceiptService():
@@ -281,10 +282,9 @@ class ReceiptService():
         await self.ensure_receipt_payments_can_be_cancelled(receipt)
         
         deposit_to_refund = 0
-        for payment in receipt.transactions:
-            if payment.method == TransactionMethod.DEPOSIT:
-                deposit_to_refund += payment.amount
-            await self.uow.payments.cancel(payment.id)
+        for transaction in receipt.transactions: 
+            if transaction.method == TransactionMethod.DEPOSIT: 
+                deposit_to_refund += transaction.amount
 
         if receipt.change_to_deposit and receipt.change_amount > 0:
             deposit_to_refund -= receipt.change_amount
@@ -325,8 +325,6 @@ class ReceiptService():
         receipt.change_amount = 0
         receipt.change_to_deposit = False
 
-        # cancel all related transcations
-        # transactions = await self.uow.transactions.get_by_receipt(receipt.id)
         for transaction in receipt.transactions: transaction.cancelled = True
             
         return await self.uow.receipts.get(id)
@@ -335,13 +333,9 @@ class ReceiptService():
         if not receipt.transactions:
             return
 
-        preferences = await self.uow.tenantPreferences.get_by_tenant_id(receipt.tenant_id)
-        preference_data = (
-            preferences.preferences
-            if preferences is not None
-            else TenantPreferencesSchema().model_dump()
-        )
-        cancel_payment_due = TenantPreferencesSchema(**preference_data).cancel_payment_due
+        tenant = await TenantPreferencesService.get_tenant_or_raise(self)
+        preferences = TenantPreferencesSchema(**tenant.preferences).model_dump()
+        cancel_payment_due = preferences["cancel_payment_due"]
 
         expired_payment = next(
             (
