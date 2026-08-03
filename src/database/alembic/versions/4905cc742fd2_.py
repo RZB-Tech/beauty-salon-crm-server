@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: cf73643336f9
+Revision ID: 4905cc742fd2
 Revises: 
-Create Date: 2026-07-30 15:16:15.077332
+Create Date: 2026-08-03 11:22:07.486897
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'cf73643336f9'
+revision: str = '4905cc742fd2'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -25,6 +25,7 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('login', sa.String(length=100), nullable=False),
     sa.Column('hashed_password', sa.Text(), nullable=False),
+    sa.Column('active', sa.Boolean(), server_default='true', nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_platform_users_login'), 'platform_users', ['login'], unique=True)
@@ -444,7 +445,7 @@ def upgrade() -> None:
     sa.Column('appointment_id', sa.Integer(), nullable=True),
     sa.Column('amount', sa.Integer(), nullable=False),
     sa.Column('notes', sa.Text(), nullable=True),
-    sa.Column('auto_genereted', sa.Boolean(), server_default='false', nullable=False),
+    sa.Column('auto_generated', sa.Boolean(), server_default='false', nullable=False),
     sa.Column('type', sa.String(length=50), nullable=False),
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
