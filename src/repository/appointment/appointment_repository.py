@@ -129,7 +129,8 @@ class AppointmentRepository(BaseRepository[Appointment]):
                 Appointment.client_id == clientID,
                 Appointment.start_time_est < end,
                 Appointment.end_time_est > start,
-                Appointment.status != AppointmentStatus.CANCELLED
+                Appointment.status != AppointmentStatus.CANCELLED,
+                Appointment.archived.is_(False)
             )
         result = await self.db.execute(stmt)
         return result.first() is not None

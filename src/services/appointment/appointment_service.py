@@ -96,6 +96,14 @@ class AppointmentService():
     
     async def update(self, data: AppointmentUpdateSchema) -> Appointment:
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
+        appointment = await self.uow.appointments.get(data.id)
+        if not appointment: raise HTTPException(404,f"Посещение с ID {data.id} не найден")
+        
+        if dataDict.get("archived"):
+            receipts = await self.uow.receipts.get_by_appointment(data.id, True)
+            if len(receipts) >= 1: raise HTTPException(409, f"Нельзя архивировать посещение с активным чеков, сначала отмените чек.")
+            if appointment.paid: raise HTTPException(409,f"Нельзя архивировать оплаченое посещение. Сначала отмените чек и уже после само посещение")
+            
         result = await self.uow.appointments.update(data.id, **dataDict)
         if result is None: raise HTTPException(404, detail = f"Посещение с ID {data.id} не найден")
         return result
