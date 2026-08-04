@@ -6,8 +6,10 @@ from fastapi import HTTPException
 
 from src.core.cache.permission_cache import set_staff_permissions
 from src.core.config import settings
+from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.core.permissions import compute_effective_permissions
+from src.database.base import Actor, ActorType
 from src.repository.employee.employee_model import Employee
 from src.repository.staff.staff_model import Staff
 from src.schemas.base import RequestAllObject
@@ -41,8 +43,13 @@ class StaffService():
         plainPassword = data.password if data.password else self._generate_password()
 
         staffData = data.model_dump(exclude = exclude)
-        staffData["hashed_password"] = hash_password(plainPassword)
         staffData["login"] = data.login.lower()
+
+        actorData = Actor(tenant_id = get_current_tenant_id(), actor_type = ActorType.STAFF, name = staffData["login"])
+        actor = await self.uow.staffs.create_actor(actorData)
+
+        staffData["hashed_password"] = hash_password(plainPassword)
+        staffData["actor_id"] = actor.id
 
         staff = Staff(**staffData)
         staff.roles = roles

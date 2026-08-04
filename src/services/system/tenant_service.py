@@ -46,7 +46,7 @@ async def provision_tenant(db: AsyncSession,
         actor_id = actor.id
     )
     db.add(admin_user)
-
+    
     await db.refresh(tenant)
     return {
         "tenant": tenant, "login": admin_login, "password": newPassword

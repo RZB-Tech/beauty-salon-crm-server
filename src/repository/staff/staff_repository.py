@@ -11,7 +11,13 @@ class StaffRepository(BaseRepository[Staff]):
         self.db.add(staff)
         await self.db.flush()
         await self.db.refresh(staff)
-        return staff
+        return staff 
+
+    async def create_actor(self, actor: Actor) -> Actor:
+        self.db.add(actor)
+        await self.db.flush()
+        await self.db.refresh(actor)
+        return actor
 
     async def get(self, id: int | None = None, login: str | None = None) -> Staff | None:
         result: Result | None
