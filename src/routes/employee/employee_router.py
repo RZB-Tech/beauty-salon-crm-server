@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import make_service_dependency
 from src.core.permissions import PermissionCode
@@ -48,6 +48,13 @@ async def get_all(params: RequestAllObject,
 # async def get_many(data: list[int],
 #     employeeService: EmployeeService = Depends(get_employee_service)):
 #     return await employeeService.get_many(data)
+
+@router.get("/export")
+async def export_employees(
+    format: str = Query("json", pattern="^(json|xlsx)$"),
+    employeeService: EmployeeService = Depends(get_employee_service),
+):
+    return await employeeService.export(format)
 
 @router.get(
     "/{id}",

@@ -1,6 +1,10 @@
+from io import BytesIO
+import json
 import math
 
 from fastapi import HTTPException, status
+from fastapi.responses import JSONResponse, StreamingResponse
+from openpyxl import Workbook
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.employee.employee_model import Employee
@@ -129,3 +133,106 @@ class EmployeeService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
+
+    def _export_excel(self, employees: list[dict]):
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Employees"
+
+        headers = [
+            "ID",
+            "First name",
+            "Last name",
+            "Middle name",
+            "Phone",
+            "Birth date",
+            "Active",
+            "Specialization",
+            "Salary",
+            "% Services",
+            "% Sales",
+            "Services",
+            "Notes",
+        ]
+
+        ws.append(headers)
+
+        for emp in employees:
+            ws.append([
+                emp["id"],
+                emp["firstname"],
+                emp["lastname"],
+                emp["middlename"],
+                emp["phone"],
+                emp["birth_date"],
+                "Yes" if emp["active"] else "No",
+                emp["specialization"],
+                emp["salary_fixed"],
+                emp["percent_from_services"],
+                emp["percent_from_sales"],
+                ", ".join(emp["services"]),
+                emp["notes"],
+            ])
+
+        stream = BytesIO()
+        wb.save(stream)
+        stream.seek(0)
+
+        return StreamingResponse(
+            stream,
+            media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            headers={
+                "Content-Disposition": 'attachment; filename="employees.xlsx"'
+            }, 
+        )  
+
+    def _export_json(self, data: list[dict]):
+        stream = BytesIO()
+
+        stream.write(
+            json.dumps(
+                data,
+                ensure_ascii=False,  # preserve Unicode
+                indent=2,
+            ).encode("utf-8")
+        )
+        stream.seek(0)
+
+        return StreamingResponse(
+            stream,
+            media_type="application/json",
+            headers={
+                "Content-Disposition": 'attachment; filename="employees.json"',
+            },
+        )
+
+    async def export(self, format: str):
+        employees = await self.uow.employees.get_all_for_export()
+
+        data = [
+            {
+                "id": e.id,
+                "firstname": e.firstname,
+                "lastname": e.lastname,
+                "middlename": e.middlename,
+                "phone": e.phone,
+                "birth_date": e.birth_date.isoformat(),
+                "active": e.active,
+                "specialization": (
+                    e.specialization.name
+                    if e.specialization
+                    else None
+                ),
+                "salary_fixed": e.salary_fixed,
+                "percent_from_services": e.percent_from_services,
+                "percent_from_sales": e.percent_from_sales,
+                "services": [s.name for s in e.services],
+                "notes": e.notes,
+            }
+            for e in employees
+        ]
+
+        if format == "json":
+            return self._export_json(data)
+
+        return self._export_excel(data)

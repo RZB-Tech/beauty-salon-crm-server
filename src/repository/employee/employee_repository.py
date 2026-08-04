@@ -46,3 +46,16 @@ class EmployeeRepository(BaseRepository[Employee]):
             .options(selectinload(Employee.services))
         )
         return result.scalars().all()
+
+    async def get_all_for_export(self) -> list[Employee]:
+        stmt = (
+            select(Employee)
+            .options(
+                selectinload(Employee.specialization),
+                selectinload(Employee.services),
+            )
+            .order_by(Employee.id.asc())
+        )
+
+        result = await self.db.execute(stmt)
+        return result.scalars().unique().all()
