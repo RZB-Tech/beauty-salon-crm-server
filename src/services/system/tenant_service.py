@@ -1,6 +1,5 @@
 import secrets
 import string
-
 from src.core.auth.security import hash_password
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.base import Actor, ActorType

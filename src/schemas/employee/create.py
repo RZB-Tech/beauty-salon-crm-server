@@ -1,5 +1,4 @@
 from datetime import date
-from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 class EmployeeCreateSchema(BaseModel):
@@ -27,7 +26,7 @@ class EmployeeCreateSchema(BaseModel):
         )
 
         if age < 18:
-            raise HTTPException(400, "Возраст сотрудника должен быть не менее 18 лет.")
+            raise ValueError("Employee has to be not younger than 18 years old")
 
         return birth_date
 

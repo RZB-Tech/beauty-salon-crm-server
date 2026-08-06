@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Request, WebSocket, status
+from fastapi import Request
 from sqlalchemy import select
 
 from src.core.auth.security import decode_token
@@ -6,6 +6,7 @@ from src.core.cache.tenant_cache import get_tenant_active, set_tenant_active
 from src.core.config import settings
 from src.core.dependencies.context import set_current_staff_id
 from src.database.session import SessionLocal
+from src.exceptions.auth_exceptions import IncorrectCredentials, TenantIsInactive
 from src.repository.tenant.tenant_model import Tenant
 
 async def is_tenant_active(tenant_id: int) -> bool:
@@ -22,27 +23,22 @@ async def is_tenant_active(tenant_id: int) -> bool:
     return active
 
 async def get_current_staff(request: Request) -> dict:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Не удалось проверить учетные данные"
-    )
-
     token = request.cookies.get("access_token")
     if token is None:
-        raise credentials_exception
+        raise IncorrectCredentials()
 
     payload = decode_token(token)
-    if payload is None: raise credentials_exception
+    if payload is None: raise IncorrectCredentials()
 
     login: str = payload.get("sub")
     id: int = payload.get("id")
     tenant_id: int = payload.get("tenant_id")
     actor_id: int = payload.get("actor_id")
 
-    if login is None or id is None or tenant_id is None: raise credentials_exception
+    if login is None or id is None or tenant_id is None: raise IncorrectCredentials()
 
     if not await is_tenant_active(tenant_id):
-        raise HTTPException(status.HTTP_403_FORBIDDEN, detail = "Организация деактивирована")
+        raise TenantIsInactive()
 
     set_current_staff_id(id, tenant_id, actor_id)
 

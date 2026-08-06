@@ -1,5 +1,4 @@
 from typing import Self
-from fastapi import HTTPException
 from src.repository.appointment.appointment_model import AppointmentCancelledReason, AppointmentStatus
 from src.schemas.base import BaseUpdateSchema
 from pydantic import ConfigDict, Field, model_validator
@@ -13,7 +12,7 @@ class AppointmentUpdateSchema(BaseUpdateSchema):
     @model_validator(mode = "after")
     def check_status(self) -> Self:
         if self.status and self.status not in [AppointmentStatus.AWAITING, AppointmentStatus.STARTED, AppointmentStatus.FINISHED]:
-            raise ValueError("Статус должен быть Ожидается / Начат / Завершен")
+            raise ValueError("Status has to be among Awaiting / Started / Finished")
         return self
 
     model_config = ConfigDict(json_schema_extra = {
@@ -36,7 +35,7 @@ class AppointmentServiceUpdateSchema(BaseUpdateSchema):
     @model_validator(mode = "after")
     def check_require_one_field(self) -> Self:
         if self.service_id is not None and self.material_id is not None:
-            raise HTTPException(400, "В одном запросе можно указывать либо Услугу либо Товар")
+            raise ValueError("Either Service or Material can be provided, not both of them.")
 
         return self
 

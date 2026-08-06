@@ -1,8 +1,12 @@
 import math
-from fastapi import HTTPException, status
 from sqlalchemy.orm import raiseload
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
+from src.exceptions.appointment_exceptions import AppointmentHasActiveReceipts, AppointmentRecordNotFound
+from src.exceptions.employee_exceptions import EmployeeDoesNotProvideService, EmployeeInactive, EmployeeIsArchived, EmployeeNotFound
+from src.exceptions.general_exceptions import PriceChangedReasonEmpty
+from src.exceptions.service_exceptions import ServiceIsArchived, ServiceNotFound
+from src.exceptions.material_exceptions import MaterialNotFound, MaterialArchived, MaterialAmountInsufficient
 from src.repository.appointment.appointment_model import Appointment, AppointmentRecords
 from src.repository.receipt.receipt_model import Receipt, ReceiptStatus
 from src.schemas.appointment.create import AppointmentRecordsCreateSchema
@@ -21,75 +25,43 @@ class AppointmentRecordsService():
             .where(Receipt.appointment_id == data.appointment_id)
         )
         if any(receipt.status != ReceiptStatus.CANCELLED for receipt in receipts):
-            raise HTTPException(400, "Необходимо сначала отменить активный чек для этого посещения")
+            raise AppointmentHasActiveReceipts(data.appointment_id)
 
         employee = await self.uow.employees.get(data.employee_id)
-        if not employee:
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Сотрудник с ID {data.employee_id} не найден"
-            )
-        if not employee.active or employee.archived:
-            raise HTTPException(
-                status_code = status.HTTP_400_BAD_REQUEST,
-                detail = f"Этого сотрудник {employee.firstname}, ID {employee.id} неактивен / архивирован"
-            )
+        if employee is None: raise EmployeeNotFound(data.employee_id)
+        if not employee.active: raise EmployeeInactive(data.employee_id, employee.firstname)
+        if employee.archived: raise EmployeeIsArchived(data.employee_id, employee.firstname)
             
         employeeAllowedServices = {i.id for i in employee.services}
         for service in data.services:
             if service.service_id:
                 serviceObj = await self.uow.services.get(service.service_id)
-                if not serviceObj:
-                    raise HTTPException(
-                        status_code = 404,
-                        detail = f"Услуга с ID {service.service_id} не найдена"
-                    )
-                if serviceObj.archived:
-                        raise HTTPException(409, f"Нельзя использовать архивированную услугу {serviceObj.name}, ID {serviceObj.id}")
+                if serviceObj is None: raise ServiceNotFound(service.service_id)
+                if serviceObj.archived: raise ServiceIsArchived(service.service_id, serviceObj.name)
 
                 if serviceObj.id not in employeeAllowedServices:
-                    raise HTTPException(
-                        status_code = 409,
-                        detail = f"Сотрудник {employee.id} не оказывает услугу с ID {service.service_id}"
-                    )
+                    raise EmployeeDoesNotProvideService(employee.id, employee.firstname, serviceObj.id, serviceObj.name)
                 
                 if service.price is None: service.price = serviceObj.price
                 if service.price != serviceObj.price and (service.notes is None or len(service.notes.strip()) == 0):
-                    raise HTTPException(
-                        status_code = 400,
-                        detail = f"Необходимо в комментариях указать причину изменения стоимости услуги"
-                    )
+                    raise PriceChangedReasonEmpty()
+                
             if service.material_id:
                 materialObj = await self.uow.materials.get(service.material_id)
-                if not materialObj:
-                    raise HTTPException(
-                        status_code = 404,
-                        detail = f"Товар с ID {service.material_id} не найден"
-                    )
-                if materialObj.archived:
-                    raise HTTPException(409, f"Нельзя использовать архивированный Товар {materialObj.name}, ID {materialObj.id}")
+                if not materialObj: raise MaterialNotFound(service.material_id)
+                if materialObj.archived: raise MaterialArchived(materialObj.id, materialObj.name)
                 if service.quantity > materialObj.quantity:
-                    raise HTTPException(
-                        status_code = 400,
-                        detail = f"Недостаточное количество {materialObj.article} {materialObj.name} на складе, требуется {service.quantity}, на складе: {materialObj.quantity}"
-                    )
+                    raise MaterialAmountInsufficient(materialObj.id, materialObj.name, service.quantity, materialObj.quantity)
                 if service.price is None: service.price = materialObj.sell_price
                 if service.price != materialObj.sell_price and (service.notes is None or len(service.notes.strip()) == 0):
-                    raise HTTPException(
-                        status_code = 400,
-                        detail = f"Необходимо в комментариях указать причину изменения стоимости товара"
-                    )
+                    raise PriceChangedReasonEmpty()
                 
         await self.uow.appointmentRecords.create(data)
         return await self.uow.appointments.get(data.appointment_id)
     
     async def get(self, id: int) -> AppointmentRecords:
         result = await self.uow.appointmentRecords.get(id)
-        if result is None:
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Запись из посещения с ID {id} не найдена"
-            )
+        if result is None: raise AppointmentRecordNotFound(id)
         return result
     
     async def get_many(self, ids: list[int]) -> list[AppointmentRecords]:
@@ -110,7 +82,7 @@ class AppointmentRecordsService():
     
     async def delete(self, id: int) -> Appointment:
         check = await self.uow.appointmentRecords.get(id)
-        if check is None: raise HTTPException(404)
+        if check is None: raise AppointmentRecordNotFound(id)
 
         receipts = await self.uow.db.scalars(
             select(Receipt)
@@ -118,11 +90,11 @@ class AppointmentRecordsService():
             .where(Receipt.appointment_id == check.appointment_id)
         )
 
-        if any(receipt.status != ReceiptStatus.CANCELLED for receipt in receipts):
-            raise HTTPException(400, "Необходимо сначала отменить активный чек для этого посещения")
-        
         appointmentID = check.appointment_id
 
+        if any(receipt.status != ReceiptStatus.CANCELLED for receipt in receipts):
+            raise AppointmentHasActiveReceipts(appointmentID)
+        
         await self.uow.appointmentRecords.delete(id)
         return await self.uow.appointments.get(appointmentID)
     

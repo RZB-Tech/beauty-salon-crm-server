@@ -1,13 +1,14 @@
 import math
 import secrets
 import string
-
-from fastapi import HTTPException
-
 from src.core.cache.permission_cache import set_staff_permissions
 from src.core.config import settings
 from src.core.dependencies.uow import UnitOfWork
 from src.core.permissions import compute_effective_permissions
+from src.exceptions.base import BaseAppException
+from src.exceptions.employee_exceptions import EmployeeNotFound
+from src.exceptions.role_exceptions import RoleOneOrMoreNotFound
+from src.exceptions.staff_exceptions import StaffNotFound
 from src.repository.employee.employee_model import Employee
 from src.repository.staff.staff_model import Staff
 from src.schemas.base import RequestAllObject
@@ -21,18 +22,21 @@ class StaffService():
 
     async def create(self, data: StaffCreateAPISchema) -> Staff:
         checkLogin = await self.uow.staffs.get(login = data.login.lower())
-        if checkLogin: raise HTTPException(409, "Такой логин уже занят")
+        if checkLogin: raise BaseAppException(
+            detail = "Login already in use",
+            errorCode = "LOGIN_ALREADY_USED",
+            statusCode = 409
+        )
 
         employee: Employee | None = None
         if data.employee_id:
             employee = await self.uow.employees.get(data.employee_id)
-            if employee is None: raise HTTPException(404)
+            if employee is None: raise EmployeeNotFound(data.employee_id)
 
         roles = []
         if data.roles:
             roles = await self.uow.roles.get_by_ids(data.roles)
-            if len(roles) != len(data.roles):
-                raise HTTPException(404, "Одна или несколько указанных ролей не найдены")
+            if len(roles) != len(data.roles): raise RoleOneOrMoreNotFound()
 
         exclude = {"password", "roles"}
         if employee: exclude |= {"firstname", "lastname", "middlename"}
@@ -63,7 +67,7 @@ class StaffService():
             result = await self.uow.staffs.get(login = data.login.lower())
         else:
             result = await self.uow.staffs.get(id = data.id)
-        if not result: raise HTTPException(404)
+        if not result: raise StaffNotFound()
         return result
 
     async def get_all(self, data: RequestAllObject) -> dict:
@@ -81,13 +85,13 @@ class StaffService():
 
     async def assign_roles(self, data: StaffRolesAssignSchema) -> Staff:
         staff = await self.uow.staffs.get(id = data.id)
-        if staff is None: raise HTTPException(404, f"Сотрудник с ID {data.id} не найден")
+        if staff is None: raise StaffNotFound()
 
         roles = []
         if data.role_ids:
             roles = await self.uow.roles.get_by_ids(data.role_ids)
             if len(roles) != len(data.role_ids):
-                raise HTTPException(404, "Одна или несколько указанных ролей не найдены")
+                raise RoleOneOrMoreNotFound()
 
         staff.roles = roles
         await self.uow.db.flush()
@@ -98,7 +102,7 @@ class StaffService():
 
     async def update_permissions(self, data: StaffPermissionsUpdateSchema) -> Staff:
         result = await self.uow.staffs.update(data.id, permissions = data.permissions)
-        if result is None: raise HTTPException(404, f"Сотрудник с ID {data.id} не найден")
+        if result is None: raise StaffNotFound()
 
         refreshed = await self.uow.staffs.get(id = result.id)
         await self._sync_permissions_cache(refreshed)

@@ -1,7 +1,7 @@
 import math
 from src.core.dependencies.uow import UnitOfWork
 from src.schemas.auditLogs.request import AuditLogsRequestSchema
-from src.schemas.base import PaginationSchema, RequestAllObject
+from src.schemas.base import PaginationSchema
 
 class AuditLogsService():
     def __init__(self, uow: UnitOfWork):

@@ -1,7 +1,10 @@
 import math
-from fastapi import HTTPException, status
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
+from src.exceptions.employee_exceptions import EmployeeDoesNotHavePayrolls
+from src.exceptions.general_exceptions import ObjectIsArchived
+from src.exceptions.payout_exception import PayoutIsCancelled, PayoutNotFound
+from src.exceptions.payroll_exceptions import PayrollIsCancelled, PayrollIsPaid, PayrollNotAttachedToEmployee, PayrollOneOrMoreNotFound
 from src.repository.payroll.payroll_model import Payout, PayrollStatus
 from src.repository.transaction.transaction_model import Transaction, TransactionCategory, TransactionMethod, TransactionType
 from src.schemas.base import RequestAllObject
@@ -21,35 +24,19 @@ class PayoutService():
         if payrollsIDs:
             validPayrolls = await self.uow.payrolls.get_by_ids(payrollsIDs)
             if len(validPayrolls) != len(payrollsIDs):
-                raise HTTPException(
-                    status_code = 400,
-                    detail = "Одно или более указанных выплат не найдена"
-                )
+                raise PayrollOneOrMoreNotFound()
             
             for payroll in validPayrolls:
-                if payroll.employee_id != data.employee_id:
-                    raise HTTPException(
-                        status_code = 400,
-                        detail = f"Выплата {payroll.id} не принадлежит указанному сотруднику"
-                    )
-                
-                if payroll.status != PayrollStatus.PAID:
-                    raise HTTPException(
-                        status_code = 400,
-                        detail  = f"Выплата {payroll.id} уже оплачена"
-                    )
-                
-                if payroll.status != PayrollStatus.CANCELLED:
-                    raise HTTPException(
-                        status_code = 400,
-                        detail  = f"Нельзя выплатить по выплате ID {payroll.id}"
-                    )
+                if payroll.employee_id != data.employee_id: raise PayrollNotAttachedToEmployee(payroll.id, data.employee_id)
+                if payroll.status == PayrollStatus.PAID: raise PayrollIsPaid(payroll.id)
+                if payroll.status == PayrollStatus.CANCELLED: raise PayrollIsCancelled(payroll.id)
+
         elif data.start_date and data.end_date:
             validPayrolls = await self.uow.payrolls.get_pendings(data.employee_id, data.start_date, data.end_date)
-            if not validPayrolls: raise HTTPException(404, "У сотрудника в выбранном периоде нету не выплаченных компенсаций / бонусов / штрафов")
+            if not validPayrolls: raise EmployeeDoesNotHavePayrolls(data.employee_id)
         else:
             validPayrolls = await self.uow.payrolls.get_pendings(data.employee_id)
-            if not validPayrolls: raise HTTPException(400, "У сотрудника в выбранном периоде нету не выплаченных компенсаций / бонусов / штрафов")
+            if not validPayrolls: raise EmployeeDoesNotHavePayrolls(data.employee_id)
 
         for payroll in validPayrolls:
             payroll.status = PayrollStatus.PAID
@@ -72,10 +59,7 @@ class PayoutService():
     
     async def get(self, id: int) -> Payout:
         result = await self.uow.payouts.get(id)
-        if not result:
-            raise HTTPException(
-                status_code = 404
-            )
+        if not result: raise PayoutNotFound(id)
         return result
     
     async def get_many(self, ids: list[int]) -> list[Payout]:
@@ -96,14 +80,16 @@ class PayoutService():
     
     async def cancel(self, id: int) -> Payout:
         payout = await self.uow.payouts.get(id)
-        if payout is None: raise HTTPException(404)
+        if payout is None: raise PayoutNotFound(id)
 
-        if payout.cancelled: raise HTTPException(400, "Выплата зарплаты / бонуса уже отменена")
-        if payout.archived: raise HTTPException(400, "Нельзя вносить изменения в архивированный объект")
+        if payout.cancelled: raise PayoutIsCancelled(id)
+        if payout.archived: raise ObjectIsArchived(id, "payouts")
+
         # cancel transactions
         for transaction in payout.transactions:
             await self.uow.transactions.update(transaction.id, cancelled = True)
-        # set payout_id to payrolls null
+
+        # set payout_id in payrolls to null
         for payroll in payout.payrolls:
             await self.uow.payrolls.update(payroll.id, 
                                            status = PayrollStatus.PENDING, payout_id = None)

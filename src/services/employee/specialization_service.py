@@ -1,5 +1,4 @@
 import math
-from fastapi import HTTPException
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.specialization_exceptions import SpecializationNotFound
 from src.repository.employee.employee_model import Specialization

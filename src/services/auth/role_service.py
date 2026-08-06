@@ -1,8 +1,9 @@
 import math
-from fastapi import HTTPException, status
-
 from src.core.cache.permission_cache import delete_staff_permissions
 from src.core.dependencies.uow import UnitOfWork
+from src.exceptions.base import BaseAppException
+from src.exceptions.general_exceptions import CannotUpdate
+from src.exceptions.role_exceptions import RoleNotFound
 from src.repository.staff.roles_model import Role
 from src.schemas.base import RequestAllObject
 from src.schemas.role.create import RoleCreateSchema
@@ -17,10 +18,12 @@ class RoleService():
         return await self.uow.roles.create(role)
 
     async def update(self, data: RoleUpdateSchema) -> Role:
+        checkIfExists = await self.uow.roles.get(data.id)
+        if checkIfExists is None: raise RoleNotFound(data.id)
+
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
         result = await self.uow.roles.update(data.id, **dataDict)
-        if result is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Роль с ID {data.id} не найдена")
+        if result is None: raise CannotUpdate(data.id, "roles")
 
         if "permissions" in dataDict:
             await self._invalidate_staff_cache(data.id)
@@ -29,8 +32,7 @@ class RoleService():
 
     async def get(self, id: int) -> Role:
         result = await self.uow.roles.get(id)
-        if result is None:
-            raise HTTPException(status.HTTP_404_NOT_FOUND, f"Роль с ID {id} не найдена")
+        if result is None: raise RoleNotFound(id)
         return result
 
     async def get_all(self, data: RequestAllObject) -> dict:

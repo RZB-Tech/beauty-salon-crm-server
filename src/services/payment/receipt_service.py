@@ -1,10 +1,16 @@
 import math
 from datetime import datetime, timedelta, timezone
-from fastapi import HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from src.core.dependencies.uow import UnitOfWork
+from src.exceptions.appointment_exceptions import AppointmentHasActiveReceipts, AppointmentNotFound
+from src.exceptions.base import BaseAppException
+from src.exceptions.client_exceptions import ClientNotFound, DepositNotEnough
+from src.exceptions.employee_exceptions import EmployeeNotFound
+from src.exceptions.general_exceptions import PaymentCancelDueExpired
+from src.exceptions.material_exceptions import MaterialAmountInsufficient, MaterialArchived, MaterialNotFound
+from src.exceptions.receipt_exceptions import ReceiptIsCancelled, ReceiptIsPaid, ReceiptNotFound, ReceiptOverpayment, ReceiptWithEmptyAppointmentRecords
 from src.repository.appointment.appointment_model import AppointmentServices
 from src.repository.receipt.receipt_model import Receipt, ReceiptItem, ReceiptStatus, ReceiptType
 from src.repository.payroll.payroll_model import Payroll, PayrollStatus, PayrollType
@@ -30,15 +36,7 @@ class ReceiptService():
             active_result = await self.uow.db.execute(active_stmt)
             existing_active_receipt = active_result.scalar_one_or_none()
             
-            if existing_active_receipt:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=(
-                        f"У посещения {data.appointment_id} уже есть активный чек "
-                        f"(Чек №{existing_active_receipt.id} в статусе {existing_active_receipt.status}). "
-                        f"Отмените его перед созданием нового."
-                    )
-                )
+            if existing_active_receipt: raise AppointmentHasActiveReceipts(data.appointment_id)
 
         newReceipt = Receipt(
             receipt_type = data.receipt_type,
@@ -46,30 +44,10 @@ class ReceiptService():
         )
 
         if data.receipt_type == ReceiptType.APPOINTMENT:
-            if not data.appointment_id:
-                raise HTTPException(
-                    status_code= 400,
-                    detail="Для чека типа APPOINTMENT необходимо указать appointment_id"
-                )
-
-            if data.client_id:
-                raise HTTPException(
-                    status_code = 400,
-                    detail="Нельзя указывать клиента, если указано посещение"
-                )
-
             appointment = await self.uow.appointments.get(data.appointment_id)
-            if not appointment:
-                raise HTTPException(
-                    status_code= 404,
-                    detail=f"Посещение с ID {data.appointment_id} не найдено"
-                )
+            if appointment is None: raise AppointmentNotFound(data.appointment_id)
 
-            if len(appointment.records) == 0:
-                raise HTTPException(
-                    status_code= 400,
-                    detail=f"Нельзя создать чек для посещения, в котором нет записей"
-                )
+            if len(appointment.records) == 0: raise ReceiptWithEmptyAppointmentRecords(data.appointment_id)
 
             newReceipt.appointment_id = appointment.id
             runningTotal = 0
@@ -87,28 +65,14 @@ class ReceiptService():
             newReceipt.total_amount = runningTotal
 
         else:
-            if not data.receipt_items:
-                raise HTTPException(
-                    status_code= 400, 
-                    detail="Для прямой продажи необходимо указать список из одного и более товаров"
-                )
-            
             runningTotal = 0
             
             for item_data in data.receipt_items:
                 material = await self.uow.materials.get(item_data.material_id)
-                if not material:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND, 
-                        detail=f"Материал с ID {item_data.material_id} не найден."
-                    )
-                if material.archived:
-                    raise HTTPException(409, f"Нельзя использовать архивированный Товар {material.name}, ID {material.id}")
-                if material.quantity < item_data.quantity:
-                    raise HTTPException(
-                        status_code= 400, 
-                        detail=f"Недостаточное количество материала ID {material.id}, {material.article}. Доступно: {material.quantity}, запрашивается: {item_data.quantity}."
-                    )
+                if not material: raise MaterialNotFound(item_data.material_id)
+
+                if material.archived: raise MaterialArchived(material.id, material.name)
+                if material.quantity < item_data.quantity: raise MaterialAmountInsufficient(material.id, material.name, item_data.quantity, material.quantity)
                 
                 newQuantity = material.quantity - item_data.quantity
                 await self.uow.materials.update(material.id, quantity = newQuantity)
@@ -133,15 +97,18 @@ class ReceiptService():
             
             # Check if our specific unique index name is in the Postgres error string
             if "idx_unique_active_receipt_per_appointment" in error_msg:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Конфликт: для этого посещения уже был создан активный чек параллельно."
+                raise BaseAppException(
+                    detail = "Conflict, for this appointment active receipt was created in parallel",
+                    errroCode = "RECEIPT_CREATION_CONFLICT",
+                    statusCode = 500
                 )
 
             # If it's a different database error (like a bad check constraint), bubble up the real truth
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Нарушение целостности базы данных: {error_msg}"
+            raise BaseAppException(
+                detail = f"Database integrity violance: {error_msg}",
+                errorCode = "DATABASE_INTEGRITY_VIOLANCE",
+                statudCode = 500,
+                error = error_msg
             )
     
     async def make_payment(self, data: ReceiptPaymentCreateSchema) -> Receipt: 
@@ -157,12 +124,10 @@ class ReceiptService():
         
         # get receipt info
         receipt = stmt.scalar_one_or_none()
-        if not receipt: 
-            raise HTTPException(400, f"Чек с ID {data.receipt_id} не найден")
+        if not receipt: raise ReceiptNotFound(data.receipt_id)
             
         # check if receipt is already paid
-        if receipt.remaining_amount == 0:
-            raise HTTPException(409, "Чек полностью оплачен, дальнейшие оплаты не принимаются")
+        if receipt.remaining_amount == 0: raise ReceiptIsPaid(id)
         
         # create temp deposit adjustment to substract payment sum in case if payment method is deposit
         depositAdjustment = 0
@@ -190,7 +155,7 @@ class ReceiptService():
                 receipt.appointment.paid = True
 
             if overpayment > 0:
-                if not data.add_change_to_deposit: raise HTTPException(400, "Переплата, измените сумму или оплатите с учетом перевода сдачи в депозит клиента")
+                if not data.add_change_to_deposit: raise ReceiptOverpayment()
                 receipt.change_amount = overpayment
                 receipt.change_to_deposit = True
                 
@@ -207,11 +172,7 @@ class ReceiptService():
                     employee_id = appointment_record.employee_id
                     
                     employee = await self.uow.employees.get(employee_id)
-                    if not employee:
-                        raise HTTPException(
-                            status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f"Сотрудник с ID {employee_id} не найден"
-                        )
+                    if not employee: raise EmployeeNotFound(employee_id)
                     
                     if employee and employee.percent_from_services > 0:
                         commission_earned = int(item.subtotal * (employee.percent_from_services / 100))
@@ -245,17 +206,10 @@ class ReceiptService():
                          else receipt.client_id)
             client = await self.uow.clients.get(client_id)
 
-            if not client:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail=f"Клиент с ID {client_id} не найден при проведении оплаты"
-                )
+            if not client: raise ClientNotFound(client_id)
 
             if data.method == TransactionMethod.DEPOSIT and data.amount > client.deposit:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Недостаточно средств на депозите клиента для проведения оплаты"
-                )
+                raise DepositNotEnough(client.id, client.firstname, data.amount, client.deposit)
             
             final_deposit_balance = client.deposit + depositAdjustment
             await self.uow.clients.update(client.id, deposit = final_deposit_balance)
@@ -272,11 +226,10 @@ class ReceiptService():
 
     async def cancel(self, id: int) -> Receipt:
         receipt = await self.uow.receipts.get(id)
-        if not receipt:
-            raise HTTPException(404, detail = f"Чек с ID {id} не найден")
+        if not receipt: raise ReceiptNotFound(id)
         
         if receipt.status == ReceiptStatus.CANCELLED:
-            raise HTTPException(400, detail = f"Чек уже отменен")
+            raise ReceiptIsCancelled(id)
 
         await self.ensure_receipt_payments_can_be_cancelled(receipt)
         
@@ -354,11 +307,7 @@ class ReceiptService():
         if expired_payment is None:
             return
 
-        raise HTTPException(400, (
-                "Время для отмены чека истекло: в чеке есть оплата, "
-                f"которую можно отменить только в течение {cancel_payment_due} ч. после создания."
-            ),
-        )
+        raise PaymentCancelDueExpired(cancel_payment_due)
 
     def is_payment_cancel_expired(self, payment: Transaction, cancel_payment_due: int) -> bool:
         cancel_deadline = as_utc(payment.created_at) + timedelta(hours=cancel_payment_due)
@@ -366,7 +315,7 @@ class ReceiptService():
 
     async def get(self, id: int) -> Receipt:
         result = await self.uow.receipts.get(id)
-        if result is None: raise HTTPException(404)
+        if result is None: raise ReceiptNotFound(id)
         return result
 
     async def get_many(self, ids: list[int]) -> list[Receipt]:

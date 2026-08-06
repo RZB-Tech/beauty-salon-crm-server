@@ -1,6 +1,4 @@
 import math
-
-from fastapi import HTTPException, status
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.service_exceptions import ServiceIsArchived, ServiceOneOrMoreNotFound
@@ -30,7 +28,7 @@ class EmployeeService():
         if data.specialization_id:
             specialization = await self.uow.specializations.get(data.specialization_id)
             if specialization is None: raise SpecializationNotFound(data.specialization_id)
-            if specialization.archived: raise SpecializationIsArchived(data.specialization_id)
+            if specialization.archived: raise SpecializationIsArchived(data.specialization_id, specialization.name)
 
         result = await self.uow.employees.create(new_employee)
         return await self.uow.employees.get(result.id)
@@ -57,7 +55,7 @@ class EmployeeService():
         if data.specialization_id:
             specialization = await self.uow.specializations.get(data.specialization_id)
             if specialization is None: raise SpecializationNotFound()
-            if specialization.archived: raise SpecializationIsArchived(data.specialization_id)
+            if specialization.archived: raise SpecializationIsArchived(data.specialization_id, specialization.name)
         
         result = await self.uow.employees.update(data.id, **dataDict)
         return result

@@ -36,22 +36,16 @@ class ReceiptCreateSchema(BaseModel):
         has_items = bool(self.receipt_items)
 
         if has_appointment and has_items:
-            raise ValueError(
-                "Чек не может одновременно быть привязан к посещению и содержать список товаров прямой продажи."
-            )
+            raise ValueError("Receipt can be have appointment_id and receipt_items on one request")
 
         if has_appointment and has_client:
-            raise ValueError(
-                "Чек не может одновременно быть привязан к посещению и содержать клиента."
-            )
+            raise ValueError("Receipt cannot have appointment_id and client_id on one request")
 
         if not has_appointment and not has_items:
-            raise ValueError(
-                "Необходимо указать либо appointment_id, либо список receipt_items."
-            )
+            raise ValueError("Required to provide either appointment_id or receipt_items, only one of them")
 
         if has_appointment and self.receipt_type != ReceiptType.APPOINTMENT:
-            raise ValueError("receipt_type должен быть 'APPOINTMENT', если указан appointment_id.")
+            raise ValueError("If appointment_id provided - receipt_type has to be 'appointment'") 
 
         return self
 

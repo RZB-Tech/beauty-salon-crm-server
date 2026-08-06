@@ -1,5 +1,4 @@
 import math
-from fastapi import HTTPException
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.service.service_model import ServiceCategory
 from src.schemas.service_category.create import ServiceCategoryCreateSchema

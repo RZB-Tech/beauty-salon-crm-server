@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from src.core.dependencies.permissions import require_admin
 from src.core.permissions import PERMISSIONS
+from src.exceptions.auth_exceptions import PermissionNotFound
 from src.schemas.permission.response import PermissionResponseSchema
 
 router = APIRouter(dependencies = [Depends(require_admin)])
@@ -24,6 +25,6 @@ async def get_all() -> list[PermissionResponseSchema]:
     status_code = 200,
 )
 async def get(code: int):
-    if code not in PERMISSIONS: raise HTTPException(404)
+    if code not in PERMISSIONS: raise PermissionNotFound()
     item = PERMISSIONS.get(code)
     return PermissionResponseSchema(code = code, resource = item["resource"], name = item["name"])

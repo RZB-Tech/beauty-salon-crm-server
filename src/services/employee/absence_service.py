@@ -1,5 +1,4 @@
 import math
-from fastapi import HTTPException, status
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.absence_exceptions import AbsenceNotFound

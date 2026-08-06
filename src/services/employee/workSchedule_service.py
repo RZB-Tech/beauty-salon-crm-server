@@ -1,8 +1,8 @@
 from datetime import date
 import math
-from fastapi import HTTPException, status
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
+from src.exceptions.workSchedule_exceptions import WorkScheduleNotFound
 from src.repository.employee.employee_model import Employee
 from src.repository.employee.workSchedule_model import WorkSchedule
 from src.schemas.base import RequestAllObject
@@ -50,7 +50,7 @@ class WorkScheduleService():
         updatedSchedules = []
         for schedule in data.work_schedules:
             scheduleExists = await self.uow.work_schedules.get(schedule.id)
-            if scheduleExists is None: raise HTTPException(404, f"Рабочее время с ID {schedule.id} не найдено")
+            if scheduleExists is None: raise WorkScheduleNotFound(data.id)
             
             updated = await self.uow.work_schedules.update(
                 schedule.id,
@@ -66,11 +66,7 @@ class WorkScheduleService():
 
     async def get(self, id: int) -> WorkScheduleResponseSchema:
         result = await self.uow.work_schedules.get(id)
-        if result is None:
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Рабочее время в ID {id} не найден"
-            )
+        if result is None: raise WorkScheduleNotFound(id)
         return WorkScheduleResponseSchema(
             employee_id = result.employee_id,
             work_schedules = [self._to_response_schedule(result)]
@@ -104,8 +100,7 @@ class WorkScheduleService():
     
     async def delete(self, id: int) -> bool:
         result = await self.uow.work_schedules.delete(id)
-        if result is None:
-            raise HTTPException(404, f"Рабочее время с ID {id} не найден")
+        if result is None: raise WorkScheduleNotFound(id)
         return result
     
     async def getEmployeesByDate(self, day: date) -> list[Employee]:

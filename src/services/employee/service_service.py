@@ -1,13 +1,11 @@
 import math
-
-from fastapi import HTTPException, Request, UploadFile, status
+from fastapi import UploadFile
 from sqlalchemy import select
-
-from src.core.decorators.requireID import require_exists
-from src.core.dependencies.auth import get_current_staff
 from src.core.dependencies.context import get_current_actor_id, get_current_staff_id, get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
-from src.exceptions.category_exceptions import ServiceCategoryIsArchived, ServiceCateogryNotFound
+from src.exceptions.auth_exceptions import AuthTenantContextEmpty
+from src.exceptions.base import BaseAppException
+from src.exceptions.category_exceptions import ServiceCategoryIsArchived, ServiceCategoryNotFound
 from src.exceptions.service_exceptions import ServiceNotFound
 from src.repository.service.service_model import Service, ServiceCategory
 from src.schemas.base import RequestAllObject
@@ -32,7 +30,7 @@ class ServiceService():
 
         if data.category_id:
             checkCategory = await self.uow.serviceCategory.get(data.category_id)
-            if checkCategory is None: raise ServiceCateogryNotFound(data.category_id)
+            if checkCategory is None: raise ServiceCategoryNotFound(data.category_id)
             if checkCategory.archived: raise ServiceCategoryIsArchived(data.category_id, checkCategory.name)
 
         if data.archived: service.employees.clear()
@@ -81,14 +79,18 @@ class ServiceService():
         }
 
         if not required_columns.issubset(df.columns):
-            raise HTTPException(400, f"Excel-файл должен содержать колонки: {required_columns}")
+            raise BaseAppException(
+                detail = f"Excel has to contain columns: {required_columns}",
+                errorCode = "EXCEL_DOES_NOT_CONTAIN_REQUIRED_COLUMNS",
+                statusCode = 400,
+                required_columns = list(required_columns)
+            )
         
         tenant_id = get_current_tenant_id()
         staff_id = get_current_staff_id()
         actor_id = get_current_actor_id()
 
-        if tenant_id is None or staff_id is None:
-            raise HTTPException(401, "Контекст авторизации или организации отсутствует.")
+        if tenant_id is None or staff_id is None: raise AuthTenantContextEmpty()
 
         df = df.dropna(subset=["service"])
         category_names = (

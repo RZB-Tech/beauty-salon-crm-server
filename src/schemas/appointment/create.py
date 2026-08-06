@@ -1,6 +1,4 @@
 from typing import Self
-
-from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from datetime import datetime
 
@@ -16,10 +14,10 @@ class AppointmentServicesCreateSchema(BaseModel):
     @model_validator(mode = "after")
     def check_service_or_material(self) -> Self:
         if self.service_id is None and self.material_id is None:
-            raise HTTPException(400, "Необходимо указать либо Услугу либо Товар")
+            raise ValueError("Required to specify Service or Material")
 
         if self.service_id is not None and self.material_id is not None:
-            raise HTTPException(400, "В одном запросе можно указывать либо Услугу либо Товар")
+            raise ValueError("In request has to be either Service or Material, not both of them.")
 
         return self
 
@@ -72,7 +70,7 @@ class AppointmentCreateSchema(BaseModel):
     @model_validator(mode="after")
     def validate_time_range(self) -> AppointmentCreateSchema:
         if self.start_time_est >= self.end_time_est:
-            raise ValueError("Время окончания должно быть строго позже времени начала")
+            raise ValueError("End time has to be later than start time")
         return self
 
     model_config = ConfigDict(json_schema_extra = {

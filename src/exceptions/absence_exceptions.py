@@ -1,11 +1,19 @@
 from .base import BaseAppException
 
 class AbsenceNotFound(BaseAppException):
-    status_code = 404
+    statusCode = 404
+    errorCode = "ABSENCE_NOT_FOUND"
     def __init__(self, id: int):
-        super().__init__(detail=f"Отсутствие с ID {id} не найдено")
+        super().__init__(
+            detail=f"Absence ID {id} not found",
+            errorCode = self.errorCode,
+            id = id)
 
 class AbsenceIsArchived(BaseAppException):
-    status_code = 400
+    statusCode = 400
+    errorCode = "ABSENCE_IS_ARCHIVED"
     def __init__(self, id: int):
-        super().__init__(f"Отсутствие (ID {id}) архивировано")
+        super().__init__(
+            detail = f"Absence (ID {id}) is archived",
+            errorCode = self.errorCode,
+            id = id)

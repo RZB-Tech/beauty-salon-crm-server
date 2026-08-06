@@ -1,12 +1,14 @@
 import string
-
-from fastapi import HTTPException, Request, Response, status
+from fastapi import Request, Response
 from src.core.cache.permission_cache import delete_staff_permissions, set_staff_permissions
 from src.core.config import settings
 from src.core.dependencies.auth import is_tenant_active
 from src.core.dependencies.context import get_current_staff_id
 from src.core.dependencies.uow import UnitOfWork
 from src.core.permissions import compute_effective_permissions
+from src.exceptions.auth_exceptions import AdminPreviligesRequired, IncorrectCredentials, IncorrectOldPassword, RefreshTokenMissing, TenantIsInactive, TokenIsInvalid
+from src.exceptions.employee_exceptions import EmployeeNotFound
+from src.exceptions.staff_exceptions import StaffIsInactive, StaffNotFound
 from src.repository.employee.employee_model import Employee
 from src.repository.staff.staff_model import Staff, StaffType
 from src.schemas.auth.login import LoginResponseSchema, LoginSchema
@@ -24,27 +26,19 @@ class AuthService():
 
     async def login(self, data: LoginSchema, response: Response) -> LoginResponseSchema:
         staff = await self.uow.staffs.get(login = data.login)
-        if staff is None:
-            raise HTTPException(404, "Некорректный логин или пароль")
             
-        if not staff.active:
-            raise HTTPException(401, detail = "Пользователь неактивен")
+        if staff is None or not verify_password(staff.hashed_password, data.password):
+            raise IncorrectCredentials()
         
-        if not verify_password(staff.hashed_password, data.password):
-            raise HTTPException(
-                status_code = status.HTTP_401_UNAUTHORIZED,
-                detail = "Некорректный логин или пароль",
-                headers = {"WWW-Authenticate": "Bearer"}
-            )
-
-        if not await is_tenant_active(staff.tenant_id):
-            raise HTTPException(status.HTTP_403_FORBIDDEN, detail = "Организация деактивирована")
+        if not staff.active: raise StaffIsInactive()
+        
+        if not await is_tenant_active(staff.tenant_id): raise TenantIsInactive()
 
         employee: Employee | None = None
         if staff.employee_id:
             employee = await self.uow.employees.get(staff.employee_id)
+            if employee is None: raise EmployeeNotFound(staff.employee_id)
 
-        
         accessTokenPayload = {
             "sub": staff.login,
             "id": staff.id,
@@ -103,43 +97,21 @@ class AuthService():
 
     async def refresh(self, request: Request, response: Response):
         refreshToken = request.cookies.get("refresh_token")
-        if not refreshToken:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Отсутствует refresh token"
-            )
+        if not refreshToken: raise RefreshTokenMissing()
 
         payload = decode_token(refreshToken) 
-        if payload is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Токен невалиден или время использования исчерпан"
-            )
+        if payload is None: raise TokenIsInvalid()
         
-        if payload.get("type") != "refresh":
-            raise HTTPException(401, "Невалидный токен")
+        if payload.get("type") != "refresh": raise TokenIsInvalid()
 
         login = payload.get("sub")
-        if login is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Невалидное тело токена"
-            )
+        if login is None: raise TokenIsInvalid()
 
         user = await self.uow.staffs.get(login = login)
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Пользователь не найден"
-            )
-        if not user.active:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Пользователь неактивен"
-            )
+        if not user: raise StaffNotFound()
+        if not user.active: raise StaffIsInactive()
 
-        if not await is_tenant_active(user.tenant_id):
-            raise HTTPException(status.HTTP_403_FORBIDDEN, detail = "Организация деактивирована")
+        if not await is_tenant_active(user.tenant_id): raise TenantIsInactive()
 
         accessTokenPayload = {
             "sub": user.login,
@@ -197,22 +169,21 @@ class AuthService():
         targetID = data.id if data.id is not None else selfUser
 
         user = await self.uow.staffs.get(id = targetID)
-        if user is None: raise HTTPException(404)
+        if user is None: raise StaffNotFound()
 
         if targetID != selfUser:
             actor = await self.uow.staffs.get(id = selfUser)
-            if actor is None or actor.staff_type != StaffType.ADMIN:
-                raise HTTPException(400, "Только администратор может изменять пароли других пользователей!")
+            if actor is None or actor.staff_type != StaffType.ADMIN: raise AdminPreviligesRequired()
 
         verify = verify_password(user.hashed_password, data.oldPassword)
-        if not verify: raise HTTPException(401)
+        if not verify: raise IncorrectOldPassword()
 
         hashed = hash_password(data.newPassword)
         await self.uow.staffs.update(user.id, hashed_password = hashed)
     
     async def reset_password(self, id: int) -> str:
         user = await self.uow.staffs.get(id = id)
-        if user is None: raise HTTPException(404)
+        if user is None: raise StaffNotFound()
 
         alphabet = (
             string.ascii_letters +
@@ -229,7 +200,7 @@ class AuthService():
     async def get_me(self) -> MeResponseSchema:
         staff_id = get_current_staff_id()
         staff = await self.uow.staffs.get(id = staff_id)
-        if staff is None: raise HTTPException(404, "Пользователь не найден")
+        if staff is None: raise StaffNotFound()
 
         employee: Employee | None = None
         if staff.employee_id:

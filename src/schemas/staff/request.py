@@ -1,6 +1,4 @@
 from typing import Self
-
-from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from src.core.permissions import PERMISSIONS
 
@@ -11,10 +9,10 @@ class StaffRequestSchema(BaseModel):
     @model_validator(mode = "after")
     def require_at_leatst_one(self) -> Self:
         if self.id is None and self.login is None:
-            raise HTTPException(400, "Необходимо указать id или login для поиска пользователя")
+            raise ValueError("Required to specify either 'id' or 'login' to find user")
 
         if self.id and self.login:
-            raise HTTPException(400, "Укажите только ID или логин")
+            raise ValueError("Specify either 'id' or 'login'")
 
         return self
 class StaffUpdatePasswordSchema(BaseModel):
@@ -25,7 +23,7 @@ class StaffUpdatePasswordSchema(BaseModel):
     @model_validator(mode = "after")
     def check_duplication(self) -> Self:
         if self.oldPassword == self.newPassword:
-            raise HTTPException(400, "Текущий и новый пароль одинаковы")
+            raise ValueError("Current and new passwords are identical")
         return self
 
     model_config = ConfigDict(json_schema_extra = {
@@ -55,7 +53,7 @@ class StaffPermissionsUpdateSchema(BaseModel):
     def validate_permissions(cls, permissions: list[int]) -> list[int]:
         unknown = [code for code in permissions if code not in PERMISSIONS]
         if unknown:
-            raise ValueError(f"Неизвестные коды разрешений: {unknown}")
+            raise ValueError(f"Unknown permissions: {unknown}")
         return permissions
 
     model_config = ConfigDict(json_schema_extra = {

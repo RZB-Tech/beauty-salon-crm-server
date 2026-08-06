@@ -15,5 +15,5 @@ class TransactionUpdateSchema(BaseUpdateSchema):
     @classmethod
     def validate_category(cls, value: TransactionCategory) -> TransactionCategory:
         if value in NOT_ALLOWED_CATEGORIES:
-            raise ValueError("Нельзя вручную изменять транзакции связанные с посещениями или прямами продажами, для них транзакции автоматически генерируются системой после оплат.")
+            raise ValueError("Restricted to manually create transaction for receipts and employee's payouts")
         return value
