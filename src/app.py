@@ -1,9 +1,12 @@
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from src.core.admin.setup import init_admin
 from src.core.exceptions import register_exception_handlers
 from src.database.audit_listener import register_audit_listener
+from src.exceptions.base import BaseAppException
 from src.routes import protected_router, open_router
 
 @asynccontextmanager
@@ -38,3 +41,38 @@ init_admin(app)
          description = "Технический эндпоинт для проверки, что сервис запущен и отвечает на запросы.",
          dependencies = [])
 async def root_path(): return "healthy"
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    raw_errors = exc.errors()
+    
+    formatted_errors = [
+        {
+            "field": " -> ".join(map(str, err["loc"])), 
+            "message": err["msg"]
+        }
+        for err in raw_errors
+    ]
+
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error_code": "VALIDATION_ERROR",
+            "detail": "Request data validation failed",
+            "metadata": {
+                "field": formatted_errors[0]["field"],
+                "message": formatted_errors[0]["message"]
+            }
+        }
+    )
+
+@app.exception_handler(BaseAppException)
+async def global_app_exception_handler(request: Request, exc: BaseAppException):
+    return JSONResponse(
+        status_code = exc.statusCode,
+        content={
+            "error_code": exc.errorCode,
+            "detail": exc.detail,
+            "metadata": exc.metadata
+        }
+    )

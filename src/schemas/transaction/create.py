@@ -1,7 +1,4 @@
-from typing import Self
-
 from pydantic import BaseModel, ConfigDict, Field, field_validator
-
 from src.repository.transaction.transaction_model import TransactionCategory, TransactionMethod, TransactionType
 
 NOT_ALLOWED_CATEGORIES = {
@@ -21,7 +18,7 @@ class TransactionCreateSchema(BaseModel):
     @classmethod
     def validate_category(cls, value: TransactionCategory) -> TransactionCategory:
         if value in NOT_ALLOWED_CATEGORIES:
-            raise ValueError("Нельзя вручную добавлять транзакции к посещениям или продажах, для них транзакции автоматически генерируются системой после оплат")
+            raise ValueError("Restricted to manually create transcations for receipts and employee's payouts")
         return value
 
     model_config = ConfigDict(json_schema_extra = {

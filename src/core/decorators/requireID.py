@@ -1,13 +1,7 @@
 from functools import wraps
-from fastapi import HTTPException, status
 from pydantic import BaseModel
 
-_NOT_FOUND_MESSAGES_RU = {
-    "employees": "Сотрудник с ID {id} не найден",
-    "absences": "Отсутствие с ID {id} не найдено",
-    "clients": "Клиент с ID {id} не найден",
-    "appointments": "Посещение с ID {id} не найдено",
-}
+from src.exceptions.base import BaseAppException
 
 def require_exists(repo_attr: str, target_param: str = "id"):
     def decorator(func):
@@ -45,7 +39,7 @@ def require_exists(repo_attr: str, target_param: str = "id"):
                         found_param = True
 
             if not found_param:
-                raise ValueError(f"Не удалось найти параметр '{target_param}' в {func.__name__}")
+                raise ValueError(f"Could not find field '{target_param}' in {func.__name__}")
 
             # 👉 CRITICAL ADDITION FOR OPTIONAL FIELDS: 
             # If the field is allowed to be None and IS None, skip DB validation safely.
@@ -56,10 +50,11 @@ def require_exists(repo_attr: str, target_param: str = "id"):
             repo = getattr(self.uow, repo_attr)
             check = await repo.get(entity_id)
             if not check:
-                message = _NOT_FOUND_MESSAGES_RU.get(repo_attr, "Объект с ID {id} не найден")
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail=message.format(id=entity_id)
+                raise BaseAppException(
+                    detail= f"{repo_attr[:-1].capitalize()} ID {entity_id} not found",
+                    errorCode = f"{repo_attr[:-1].upper()}_NOT_FOUND",
+                    statusCode = 404,
+                    id = entity_id
                 )
 
             return await func(self, *args, **kwargs)

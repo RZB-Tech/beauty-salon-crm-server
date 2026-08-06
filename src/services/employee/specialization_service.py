@@ -1,6 +1,6 @@
 import math
-from fastapi import HTTPException
 from src.core.dependencies.uow import UnitOfWork
+from src.exceptions.specialization_exceptions import SpecializationNotFound
 from src.repository.employee.employee_model import Specialization
 from src.schemas.base import RequestAllObject
 from src.schemas.specialization.create import SpecializationCreateSchema
@@ -18,16 +18,12 @@ class SpecializationService():
     async def update(self, data: SpecializationUpdateSchema) -> Specialization:
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
         result = await self.uow.specializations.update(data.id, **dataDict)
-        if result is None: raise HTTPException(404, f"Специализация с ID {data.id} не найден")
+        if result is None: raise SpecializationNotFound(id)
         return result
     
     async def get(self, id: int) -> Specialization:
         result = await self.uow.specializations.get(id)
-        if result is None:
-            raise HTTPException(
-                status_code = 404,
-                detail = f"Специализация с ID {id} не найден"
-            )
+        if result is None: raise SpecializationNotFound(id)
         return result
     
     async def get_many(self, ids: list[int]) -> Specialization:
@@ -47,5 +43,6 @@ class SpecializationService():
         }
     
     async def delete(self, id: int) -> bool:
+        check = await self.uow.specializations.get(id)
+        if check is None: raise SpecializationNotFound(id)
         return await self.uow.specializations.delete(id)
-    

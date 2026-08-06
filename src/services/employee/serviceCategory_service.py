@@ -1,10 +1,10 @@
 import math
-from fastapi import HTTPException
 from src.core.dependencies.uow import UnitOfWork
 from src.repository.service.service_model import ServiceCategory
 from src.schemas.service_category.create import ServiceCategoryCreateSchema
 from src.schemas.service_category.update import ServiceCategoryUpdateSchema
 from src.schemas.base import RequestAllObject
+from src.exceptions.category_exceptions import ServiceCategoryNotFound
 
 class ServiceCategoryService():
     def __init__(self, uow: UnitOfWork):
@@ -18,20 +18,12 @@ class ServiceCategoryService():
     async def update(self, data: ServiceCategoryUpdateSchema) -> ServiceCategory:
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
         result = await self.uow.serviceCategory.update(data.id, **dataDict)
-        if result is None:
-            raise HTTPException(
-                status_code = 404,
-                detail = f"Категория услуги с ID {data.id} не найден"
-            )
+        if result is None: ServiceCategoryNotFound(data.id)
         return result
     
     async def get(self, id: int) -> ServiceCategory:
         result = await self.uow.serviceCategory.get(id)
-        if result is None:
-            raise HTTPException(
-                status_code = 404,
-                detail = f"Категория услуги с ID {id} не найден"
-            )
+        if result is None: raise ServiceCategoryNotFound(id)
         return result
     
     async def get_many(self, ids: list[int]) -> ServiceCategory:
@@ -51,4 +43,6 @@ class ServiceCategoryService():
         }
     
     async def delete(self, id: int) -> bool:
+        check = await self.uow.serviceCategory.get(id)
+        if check is None: raise ServiceCategoryNotFound(id)
         return await self.uow.serviceCategory.delete(id)

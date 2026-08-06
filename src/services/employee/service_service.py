@@ -1,12 +1,12 @@
 import math
-
-from fastapi import HTTPException, Request, UploadFile, status
+from fastapi import UploadFile
 from sqlalchemy import select
-
-from src.core.decorators.requireID import require_exists
-from src.core.dependencies.auth import get_current_staff
 from src.core.dependencies.context import get_current_actor_id, get_current_staff_id, get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
+from src.exceptions.auth_exceptions import AuthTenantContextEmpty
+from src.exceptions.base import BaseAppException
+from src.exceptions.category_exceptions import ServiceCategoryIsArchived, ServiceCategoryNotFound
+from src.exceptions.service_exceptions import ServiceNotFound
 from src.repository.service.service_model import Service, ServiceCategory
 from src.schemas.base import RequestAllObject
 from src.schemas.service.create import ServiceCreateSchema
@@ -26,28 +26,24 @@ class ServiceService():
 
     async def update(self, data: ServiceUpdateSchema) -> Service:
         service = await self.uow.services.get_with_employees(data.id)
-        if service is None: raise HTTPException(404, f"Услуга с ID {data.id} не найдена")
+        if service is None: raise ServiceNotFound(data.id)
 
         if data.category_id:
             checkCategory = await self.uow.serviceCategory.get(data.category_id)
-            if checkCategory is None: raise HTTPException(404, f"Категория с ID {data.category_id} не найден")
-            if checkCategory.archived: raise HTTPException(409, f"Нельзя привязать архивированный объект")
+            if checkCategory is None: raise ServiceCategoryNotFound(data.category_id)
+            if checkCategory.archived: raise ServiceCategoryIsArchived(data.category_id, checkCategory.name)
 
         if data.archived: service.employees.clear()
 
         dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
         result = await self.uow.services.update(data.id, **dataDict)
 
-        if result is None: raise HTTPException(404, detail = f"Услуга с ID {data.id} не найдена")
+        if result is None: raise ServiceNotFound(data.id)
         return result
     
     async def get(self, id: int) -> Service:
         result = await self.uow.services.get(id)
-        if not result:
-            raise HTTPException(
-                status_code = 404,
-                detail = f"Услуга с ID {id} не найдена"
-            )
+        if not result: raise ServiceNotFound(id)
         return result
     
     async def get_many(self, ids: list[int]) -> list[Service]:
@@ -83,20 +79,18 @@ class ServiceService():
         }
 
         if not required_columns.issubset(df.columns):
-            raise HTTPException(
-                status_code = 400,
-                detail = f"Excel-файл должен содержать колонки: {required_columns}"
+            raise BaseAppException(
+                detail = f"Excel has to contain columns: {required_columns}",
+                errorCode = "EXCEL_DOES_NOT_CONTAIN_REQUIRED_COLUMNS",
+                statusCode = 400,
+                required_columns = list(required_columns)
             )
         
         tenant_id = get_current_tenant_id()
         staff_id = get_current_staff_id()
         actor_id = get_current_actor_id()
 
-        if tenant_id is None or staff_id is None:
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Контекст авторизации или организации отсутствует."
-            )
+        if tenant_id is None or staff_id is None: raise AuthTenantContextEmpty()
 
         df = df.dropna(subset=["service"])
         category_names = (

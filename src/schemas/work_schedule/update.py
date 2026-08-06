@@ -1,5 +1,4 @@
 from typing import Annotated, Self
-from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from src.repository.employee.workSchedule_model import AbsenceEnum
 from src.schemas.base import BaseUpdateSchema
@@ -12,7 +11,8 @@ class WorkScheduleItemUpdateSchema(BaseModel):
 
     @model_validator(mode = "after")
     def validate_request(self) -> Self:
-        if self.start_time >= self.end_time: raise HTTPException(400, "Время конца должна быть строго позже начала рабочего дня")
+        if self.start_time >= self.end_time: 
+            raise ValueError("End time has to be strictly later than start time")
         return self
 
 class WorkScheduleUpdateSchema(BaseModel):

@@ -1,6 +1,7 @@
-from fastapi import HTTPException
 from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
+from src.exceptions.general_exceptions import CannotUpdate
+from src.exceptions.tenant_exceptions import TenantNotFound
 from src.schemas.tenant.base import TenantPreferencesSchema
 from src.schemas.tenant.update import TenantPreferencesUpdateSchema
 
@@ -27,7 +28,7 @@ class TenantPreferencesService:
             preferences=merged_preferences,
         )
         
-        if updated_tenant is None: raise HTTPException(404, "Организация не найдена")
+        if updated_tenant is None: raise CannotUpdate(tenant.id, "tenants")
             
         return TenantPreferencesSchema(**updated_tenant.preferences)
 
@@ -36,5 +37,5 @@ class TenantPreferencesService:
         """Helper to get the current tenant or raise a 404 if they do not exist."""
         tenant_id = get_current_tenant_id()
         tenant = await self.uow.tenants.get(id=tenant_id)
-        if tenant is None: raise HTTPException(404, "Организация не найдена")
+        if tenant is None: raise TenantNotFound(tenant_id)
         return tenant

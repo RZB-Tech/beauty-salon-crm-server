@@ -1,7 +1,5 @@
 from datetime import date, time
 from typing import Annotated, Self
-
-from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from src.repository.employee.workSchedule_model import AbsenceEnum
@@ -13,7 +11,8 @@ class WorkScheduleBaseCreateSchema(BaseModel):
 
     @model_validator(mode = "after")
     def validate_request(self) -> Self:
-        if self.start_time >= self.end_time: raise HTTPException(400, "Время конца должна быть строго позже начала рабочего дня")
+        if self.start_time >= self.end_time: 
+            raise ValueError("End time has to be strictly later than start time")
         return self
 
 class WorkScheduleCreateSchema(BaseModel):
@@ -24,7 +23,7 @@ class WorkScheduleCreateSchema(BaseModel):
     @classmethod
     def validate_unique_days(cls, value: list[WorkScheduleBaseCreateSchema]) -> list[WorkScheduleBaseCreateSchema]:
         days = [schedule.day for schedule in value]
-        if len(days) != len(set(days)): raise HTTPException(400, "День не должен повторяться")
+        if len(days) != len(set(days)): raise ValueError("Days has to be unique")
         return value
 
     model_config = ConfigDict(json_schema_extra = {

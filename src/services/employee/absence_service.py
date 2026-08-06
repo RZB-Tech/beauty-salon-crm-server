@@ -1,7 +1,7 @@
 import math
-from fastapi import HTTPException, status
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
+from src.exceptions.absence_exceptions import AbsenceNotFound
 from src.repository.employee.workSchedule_model import EmployeeAbsence
 from src.schemas.base import RequestAllObject
 from src.schemas.work_schedule.create import AbsenceCreateSchema
@@ -21,20 +21,12 @@ class EmployeeAbsenceService():
     async def update(self, data: AbsenceUpdateSchema) -> EmployeeAbsence:
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
         result = await self.uow.absences.update(data.id, **dataDict)
-        if result is None:
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Отсутствие с ID {data.id} не найдено"
-            )
+        if result is None: raise AbsenceNotFound(data.id)
         return result
     
     async def get(self, id: int) -> EmployeeAbsence:
         result = await self.uow.absences.get(id)
-        if not result:
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Отсутствие с ID {id} не найдено"
-            )
+        if not result: raise AbsenceNotFound(id)
         return result
     
     async def get_many(self, ids: list[int]) -> list[EmployeeAbsence]:

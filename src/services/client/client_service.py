@@ -1,9 +1,9 @@
 from collections import defaultdict
-from datetime import date
 import math
-from fastapi import HTTPException, status
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
+from src.exceptions.base import BaseAppException
+from src.exceptions.client_exceptions import ClientIsArchived, ClientNotFound, DepositCannotBeNegative, DepositOperationHasToBeIn
 from src.repository.client.client_model import Client
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.client.create import ClientCreateSchema
@@ -20,22 +20,18 @@ class ClientService():
         return await self.uow.clients.create(newObject)
 
     async def update(self, data: ClientUpdateSchema) -> Client | None:
+        checkIfExists = await self.uow.clients.get(data.id)
+        if checkIfExists is None: raise ClientNotFound(data.id)
+        if checkIfExists.archived: raise ClientIsArchived(data.id, checkIfExists.firstname)
+
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
         result = await self.uow.clients.update(data.id, **dataDict)
-        if result is None:
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Клиент с ID {data.id} не найден"
-            )
+        if result is None: raise BaseAppException()
         return result
     
     async def get(self, id: int) -> Client:
         result = await self.uow.clients.get(id)
-        if not result:
-            raise HTTPException(
-                status_code = status.HTTP_404_NOT_FOUND,
-                detail = f"Клиент с ID {id} не найден"
-            )
+        if not result: raise ClientNotFound(id)
         return result
     
     async def get_many(self, ids: list[int]) -> list[Client]:
@@ -60,21 +56,12 @@ class ClientService():
     
     async def updateDeposit(self, data: ClientDepositUpdateSchema) -> Client:
         client = await self.uow.clients.get(data.id)
-        if not client:
-            raise HTTPException(
-                status_code = 404,
-                detail = f"Клиент с ID {data.id} не найден"
-            )
+        if not client: raise ClientNotFound(data.id)
 
-        if data.operation not in DepositOperation:
-            raise HTTPException(
-                status_code = status.HTTP_400_BAD_REQUEST,
-                detail = "Операция должна быть 1 (прибавить) или -1 (убавить)"
-            )
+        if data.operation not in DepositOperation: raise DepositOperationHasToBeIn()
 
         newDeposit = client.deposit + (data.operation * data.amount)
-        if newDeposit < 0:
-            raise HTTPException(409, "Депозит не может быть отрицательным")
+        if newDeposit < 0: raise DepositCannotBeNegative()
         
         return await self.uow.clients.update(client.id, deposit = newDeposit)
     

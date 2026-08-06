@@ -1,6 +1,4 @@
 from typing import Annotated, Self
-
-from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from src.repository.payroll.payroll_model import PayoutMethod, PayoutType
@@ -20,23 +18,23 @@ class PayoutCreateSchema(BaseModel):
     def check(self) -> Self:
         if self.type == PayoutType.OTHER:
             if self.payrolls and ((self.start_date or self.end_date)):
-                raise HTTPException(400, "Нельзя указывать период времени и список выплат, только одно из двух")
+                raise ValueError("Date period and list of payrolls can be specified in one request, only of them per request")
             
             if bool(self.start_date) != bool(self.end_date):
-                raise HTTPException(400, "Необходимо указать как начало, так и конец периода, либо не указывать их вообще")
+                raise ValueError("Required to specify start_date and end_date, or do not specify date period at all")
             
             if (self.start_date and self.end_date) and (self.start_date > self.end_date):
-                raise HTTPException(400, "Начало не может быть позже конца периода")
+                raise ValueError("End time of date period cannot be earlier than stat time")
         
         elif self.type in {PayoutType.SALARY, PayoutType.ADVANCE_SALARY}:
             if self.amount and self.type == PayoutType.SALARY:
-                raise HTTPException(400, "Указывать выплачиваемую сумму можно только если категория выплаты - Аванс")
+                raise ValueError("In payout type 'salary' cannot manually provide amount, only in 'advance_salary")
             
             if self.payrolls:
-                raise HTTPException(400, "При выбранной категории Заработная плата / Аванс, нельзя указывать выплаты.")
+                raise ValueError("When 'salary' or 'advance_salary' provided in type, restricted to provide payrolls")
 
             if self.start_date or self.end_date:
-                raise HTTPException(400, "Нельзя указывать период времени для выплаты заработной платы / аванса")
+                raise ValueError("Restricted to provide period for type 'salary' and 'advance_salary'")
 
         return self
 

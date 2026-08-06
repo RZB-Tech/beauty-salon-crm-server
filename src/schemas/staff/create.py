@@ -1,6 +1,4 @@
 from typing import Self
-
-from fastapi import HTTPException
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from src.core.permissions import PERMISSIONS
 from src.repository.staff.staff_model import StaffType
@@ -23,13 +21,13 @@ class StaffCreateBaseSchema(BaseModel):
             return permissions
         unknown = [code for code in permissions if code not in PERMISSIONS]
         if unknown:
-            raise ValueError(f"Неизвестные коды разрешений: {unknown}")
+            raise ValueError(f"Unknown permissions: {unknown}")
         return permissions
 
     @model_validator(mode = "after")
     def require_at_least_one(self) -> Self:
         if self.employee_id is None and self.firstname is None:
-            raise HTTPException(400, "Необходимо указать имя или сотрудника для создания пользователя")
+            raise ValueError("Required to provide 'firstname' or 'employee_id' to create user")
         return self
 
 class StaffCreateAPISchema(StaffCreateBaseSchema):
