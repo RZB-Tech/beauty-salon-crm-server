@@ -1,6 +1,4 @@
 import asyncio
-from pathlib import Path
-import shutil
 import subprocess
 import os
 from faker import Faker
@@ -12,7 +10,8 @@ from src.repository.client.client_model import Client, Sex
 from src.repository.employee.employee_model import Employee
 from src.repository.employee.workSchedule_model import WorkSchedule
 from src.repository.material.material_model import Material, MeasurementUnit
-from sqlalchemy import select, text
+from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 
 from src.repository.payroll.payroll_model import Payroll, PayrollType
 
@@ -24,76 +23,38 @@ DB_PASSWORD = "postgres"
 DB_HOST = "localhost"
 DB_PORT = "5450"
 
-VERSIONS_DIR = Path("src/database/alembic/versions")
 
-def run(cmd: list[str]) -> None:
+def run(cmd: list[str]) -> bool:
     env = os.environ.copy()
     env["PGPASSWORD"] = DB_PASSWORD
 
     print(f"Running: {' '.join(cmd)}")
-    subprocess.run(cmd, check=True, env=env)
+    result = subprocess.run(cmd, env=env)
+
+    if result.returncode != 0:
+        print(f"Warning: command exited with code {result.returncode} (continuing)")
+        return False
+
+    return True
 
 
-async def delete_migrations() -> None:
-    print("Deleting Alembic migration files...")
+async def add_one(session, obj) -> bool:
+    session.add(obj)
 
-    for item in VERSIONS_DIR.iterdir():
-        if item.is_dir():
-            shutil.rmtree(item)
-        else:
-            item.unlink()
-
-    print("Clearing alembic_version table...")
     try:
-        async with SessionLocal.begin() as conn:
-            await conn.execute(text("DROP TABLE IF EXISTS alembic_version;"))
-            print("Deleted alembic_version rows")
-    except Exception as e:
-        print(f"Failed to clear alembic_version: {e}")
-        raise
+        await session.commit()
+        return True
+    except SQLAlchemyError as e:
+        await session.rollback()
+        print(f"Skipping duplicate/invalid record ({obj.__class__.__name__}): {e}")
+        return False
 
-
-def drop_database() -> None:
-    print(f"Dropping database '{DB_NAME}'...")
-
-    run([
-        "dropdb",
-        "--force",
-        "-h", DB_HOST,
-        "-p", DB_PORT,
-        "-U", DB_USER,
-        "--if-exists",
-        DB_NAME,
-    ])
-
-
-def create_database() -> None:
-    print(f"Creating database '{DB_NAME}'...")
-
-    run([
-        "createdb",
-        "-h", DB_HOST,
-        "-p", DB_PORT,
-        "-U", DB_USER,
-        DB_NAME,
-    ])
-
-def create_migration() -> None:
-    run([
-        "alembic",
-        "revision",
-        "--autogenerate"
-    ])
-
-
-def apply_migrations() -> None:
-    print("Applying migrations...")
-
-    run(["alembic", "upgrade", "head"])
 
 def seed_admin_user() -> None:
     print("Creating admin user...")
 
+    # psql runs statements without ON_ERROR_STOP, so a duplicate-key error on
+    # one statement is reported but doesn't stop the rest from running.
     run([
         "psql",
         "-h", DB_HOST,
@@ -109,8 +70,6 @@ def seed_admin_user() -> None:
         insert into tenants (name, active, preferences)
         values ('synapse', true, '{
             "theme": "light",
-            "timezone": "UTC",
-            "currency": "UZS",
             "enable_telegram_booking": false,
             "cancel_payment_due": 0
         }'::jsonb);
@@ -118,8 +77,6 @@ def seed_admin_user() -> None:
         insert into tenants (name, active, preferences)
         values ('rzbtech', true, '{
             "theme": "light",
-            "timezone": "UTC",
-            "currency": "UZS",
             "enable_telegram_booking": false,
             "cancel_payment_due": 0
         }'::jsonb);
@@ -184,9 +141,9 @@ def seed_admin_user() -> None:
 async def seed_employees(count: int = 10) -> None:
     print(f"Creating {count} employees...")
 
-    async with SessionLocal() as session:
-        employees = []
+    created = 0
 
+    async with SessionLocal() as session:
         for _ in range(count):
             employee = Employee(
                 firstname=fake.first_name(),
@@ -209,17 +166,17 @@ async def seed_employees(count: int = 10) -> None:
                 tenant_id = 1
             )
 
-            employees.append(employee)
+            if await add_one(session, employee):
+                created += 1
 
-        session.add_all(employees)
-        await session.commit()
+    print(f"Created {created} employees")
 
 async def seed_clients(count: int = 100) -> None:
     print(f"Creating {count} clients...")
 
-    async with SessionLocal() as session:
-        clients = []
+    created = 0
 
+    async with SessionLocal() as session:
         for _ in range(count):
             client = Client(
                 firstname=fake.first_name(),
@@ -240,35 +197,35 @@ async def seed_clients(count: int = 100) -> None:
                 tenant_id = 1
             )
 
-            clients.append(client)
+            if await add_one(session, client):
+                created += 1
 
-        session.add_all(clients)
-        await session.commit()
+    print(f"Created {created} clients")
 
 async def seed_materials(count: int = 100) -> None:
     print(f"Creating {count} materials...")
 
+    created = 0
+
+    material_names = [
+        "Shampoo",
+        "Hair Color",
+        "Hair Mask",
+        "Conditioner",
+        "Hair Spray",
+        "Nail Polish",
+        "Gel",
+        "Cream",
+        "Oil",
+        "Serum",
+        "Wax",
+        "Disposable Gloves",
+        "Foil",
+        "Cotton Pads",
+        "Towel",
+    ]
+
     async with SessionLocal() as session:
-        materials = []
-
-        material_names = [
-            "Shampoo",
-            "Hair Color",
-            "Hair Mask",
-            "Conditioner",
-            "Hair Spray",
-            "Nail Polish",
-            "Gel",
-            "Cream",
-            "Oil",
-            "Serum",
-            "Wax",
-            "Disposable Gloves",
-            "Foil",
-            "Cotton Pads",
-            "Towel",
-        ]
-
         for i in range(count):
             purchase_price = random.randint(10_000, 200_000)
 
@@ -298,15 +255,17 @@ async def seed_materials(count: int = 100) -> None:
                 tenant_id = 1
             )
 
-            materials.append(material)
+            if await add_one(session, material):
+                created += 1
 
-        session.add_all(materials)
-        await session.commit()
-        
+    print(f"Created {created} materials")
+
 UZT = timezone(timedelta(hours = 5))
 
 async def seed_work_schedules() -> None:
     print("Creating employee work schedules...")
+
+    created = 0
 
     async with SessionLocal() as session:
         employees = await session.scalars(
@@ -315,17 +274,12 @@ async def seed_work_schedules() -> None:
 
         employees = employees.all()
 
-        schedules = []
-
-        # Create schedule for next 30 days
-        today = date.today()
-
+        # WorkSchedule is unique per (employee_id, day_of_week), so only one
+        # schedule per weekday is kept per employee; repeats are skipped.
         for employee in employees:
-            for day_offset in range(30):
-                current_day = today + timedelta(days=day_offset)
-
+            for day_of_week in range(1, 8):
                 # Skip some weekends randomly
-                if current_day.weekday() >= 5:
+                if day_of_week >= 6:
                     if fake.boolean(chance_of_getting_true=70):
                         continue
 
@@ -347,24 +301,24 @@ async def seed_work_schedules() -> None:
                     tzinfo = UZT
                 )
 
-                schedules.append(
-                    WorkSchedule(
-                        employee_id=employee.id,
-                        day=current_day,
-                        start_time=start_time,
-                        end_time=end_time,
-                        created_by_actor_id = 1,
-                        tenant_id = 1
-                    )
+                schedule = WorkSchedule(
+                    employee_id=employee.id,
+                    day_of_week=day_of_week,
+                    start_time=start_time,
+                    end_time=end_time,
+                    created_by_actor_id = 1,
+                    tenant_id = 1
                 )
 
-        session.add_all(schedules)
-        await session.commit()
+                if await add_one(session, schedule):
+                    created += 1
 
-    print(f"Created {len(schedules)} work schedules")
+    print(f"Created {created} work schedules")
 
 async def seed_payrolls(count_per_employee: int = 3) -> None:
     print("Creating payroll records...")
+
+    created = 0
 
     async with SessionLocal() as session:
         employees = await session.scalars(
@@ -372,8 +326,6 @@ async def seed_payrolls(count_per_employee: int = 3) -> None:
         )
 
         employees = employees.all()
-
-        payrolls = []
 
         for employee in employees:
             for _ in range(count_per_employee):
@@ -405,32 +357,26 @@ async def seed_payrolls(count_per_employee: int = 3) -> None:
                     )
                     note = "Penalty"
 
-                payrolls.append(
-                    Payroll(
-                        employee_id=employee.id,
-                        amount=amount,
-                        type=payroll_type,
-                        notes=note,
-                        created_by_actor_id = 1,
-                        tenant_id = 1
-                    )
+                payroll = Payroll(
+                    employee_id=employee.id,
+                    amount=amount,
+                    type=payroll_type,
+                    notes=note,
+                    created_by_actor_id = 1,
+                    tenant_id = 1
                 )
 
-        session.add_all(payrolls)
-        await session.commit()
+                if await add_one(session, payroll):
+                    created += 1
 
-    print(f"Created {len(payrolls)} payroll records")
+    print(f"Created {created} payroll records")
 
 async def main():
-    drop_database()
-    create_database()
-    await delete_migrations()
-    create_migration()
-    apply_migrations()
     seed_admin_user()
     await seed_employees()
     await seed_clients()
     await seed_materials()
+    await seed_work_schedules()
     await seed_payrolls()
 
     print("Done.")

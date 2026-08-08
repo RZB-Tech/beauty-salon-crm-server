@@ -1,14 +1,8 @@
 """empty message
 
-<<<<<<<< HEAD:src/database/alembic/versions/4905cc742fd2_.py
-Revision ID: 4905cc742fd2
+Revision ID: 72895aaf3d9e
 Revises: 
-Create Date: 2026-08-03 11:22:07.486897
-========
-Revision ID: d4f1224eb979
-Revises: 
-Create Date: 2026-07-31 12:31:16.522222
->>>>>>>> refactor/exceptions:src/database/alembic/versions/d4f1224eb979_.py
+Create Date: 2026-08-07 17:36:54.646900
 
 """
 from typing import Sequence, Union
@@ -18,11 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-<<<<<<<< HEAD:src/database/alembic/versions/4905cc742fd2_.py
-revision: str = '4905cc742fd2'
-========
-revision: str = 'd4f1224eb979'
->>>>>>>> refactor/exceptions:src/database/alembic/versions/d4f1224eb979_.py
+revision: str = '72895aaf3d9e'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None

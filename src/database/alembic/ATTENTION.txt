@@ -1,0 +1,10 @@
+Alembic new migrations do not catch these changes:
+
+Column renames (it usually sees this as "drop old column, add new column")
+Table renames
+Data migrations
+Complex constraint changes
+Some server default changes
+Custom SQL
+
+Has to be changed manually in migration files

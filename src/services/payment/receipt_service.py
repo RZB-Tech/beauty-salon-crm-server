@@ -8,7 +8,7 @@ from src.exceptions.appointment_exceptions import AppointmentHasActiveReceipts, 
 from src.exceptions.base import BaseAppException
 from src.exceptions.client_exceptions import ClientNotFound, DepositNotEnough
 from src.exceptions.employee_exceptions import EmployeeNotFound
-from src.exceptions.general_exceptions import PaymentCancelDueExpired
+from src.exceptions.general_exceptions import ObjectIsArchived, PaymentCancelDueExpired
 from src.exceptions.material_exceptions import MaterialAmountInsufficient, MaterialArchived, MaterialNotFound
 from src.exceptions.receipt_exceptions import ReceiptIsCancelled, ReceiptIsPaid, ReceiptNotFound, ReceiptOverpayment, ReceiptWithEmptyAppointmentRecords
 from src.repository.appointment.appointment_model import AppointmentServices
@@ -70,9 +70,9 @@ class ReceiptService():
             
             for item_data in data.receipt_items:
                 material = await self.uow.materials.get(item_data.material_id)
-                if not material: raise MaterialNotFound(item_data.material_id)
+                if material is None: raise MaterialNotFound(item_data.material_id)
 
-                if material.archived: raise MaterialArchived(material.id, material.name)
+                if material.archived: raise ObjectIsArchived(material.id, "materials")
                 if material.quantity < item_data.quantity: raise MaterialAmountInsufficient(material.id, material.name, item_data.quantity, material.quantity)
                 
                 newQuantity = material.quantity - item_data.quantity
@@ -173,7 +173,7 @@ class ReceiptService():
                     employee_id = appointment_record.employee_id
                     
                     employee = await self.uow.employees.get(employee_id)
-                    if not employee: raise EmployeeNotFound(employee_id)
+                    if employee is None: raise EmployeeNotFound(employee_id)
                     
                     if employee and employee.percent_from_services > 0:
                         commission_earned = int(item.subtotal * (employee.percent_from_services / 100))
@@ -207,7 +207,7 @@ class ReceiptService():
                          else receipt.client_id)
             client = await self.uow.clients.get(client_id)
 
-            if not client: raise ClientNotFound(client_id)
+            if client is None: raise ClientNotFound(client_id)
 
             if data.method == TransactionMethod.DEPOSIT and data.amount > client.deposit:
                 raise DepositNotEnough(client.id, client.firstname, data.amount, client.deposit)
@@ -227,7 +227,7 @@ class ReceiptService():
 
     async def cancel(self, id: int) -> Receipt:
         receipt = await self.uow.receipts.get(id)
-        if not receipt: raise ReceiptNotFound(id)
+        if receipt is None: raise ReceiptNotFound(id)
         
         if receipt.status == ReceiptStatus.CANCELLED:
             raise ReceiptIsCancelled(id)

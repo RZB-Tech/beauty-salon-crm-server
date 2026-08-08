@@ -2,8 +2,8 @@ import math
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.appointment_exceptions import AppointmentCancelled, AppointmentHasActiveReceipts, AppointmentIsPaid, AppointmentNotFound, ClientAppointmentConflict, EmployeeAppointmentConflict
-from src.exceptions.employee_exceptions import EmployeeDoesNotProvideService, EmployeeDoesNotWork, EmployeeIsArchived, EmployeeNotFound
-from src.exceptions.general_exceptions import CannotUpdate, PriceChangedReasonEmpty
+from src.exceptions.employee_exceptions import EmployeeDoesNotProvideService, EmployeeDoesNotWork, EmployeeInactive, EmployeeIsArchived, EmployeeNotFound
+from src.exceptions.general_exceptions import CannotUpdate, ObjectIsArchived, PriceChangedReasonEmpty
 from src.exceptions.material_exceptions import MaterialAmountInsufficient, MaterialArchived, MaterialNotFound
 from src.exceptions.service_exceptions import ServiceIsArchived, ServiceNotFound
 from src.repository.appointment.appointment_model import Appointment, AppointmentStatus
@@ -26,7 +26,8 @@ class AppointmentService():
         for record in (data.records or []):
             employee = await self.uow.employees.get(record.employee_id)
             if employee is None: raise EmployeeNotFound(record.employee_id)
-            if not employee.active or employee.archived: raise EmployeeIsArchived(employee.id, employee.firstname)
+            if not employee.active: raise EmployeeInactive(employee.id, employee.firstname)
+            if employee.archived: raise ObjectIsArchived(employee.id, "employees")
             
             isWorking = await self.uow.work_schedules.is_employee_working(employee.id, data.start_time_est, data.end_time_est)
             if not isWorking: raise EmployeeDoesNotWork(employee.id, employee.firstname)
@@ -98,7 +99,7 @@ class AppointmentService():
     
     async def cancel(self, data: AppointmentCancelSchema) -> Appointment:
         appointment = await self.uow.appointments.get(data.id)
-        if not appointment: raise AppointmentNotFound(data.id)
+        if appointment is None: raise AppointmentNotFound(data.id)
 
         if appointment.status == AppointmentStatus.CANCELLED: raise AppointmentCancelled(data.id)
         
