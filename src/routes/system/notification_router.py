@@ -1,7 +1,9 @@
 from datetime import datetime, timezone
 import json
+import logging
 
 from fastapi import APIRouter, Depends, Request, status
+from redis.exceptions import RedisError
 from sse_starlette import EventSourceResponse
 from src.core.dependencies.auth import get_current_staff
 from src.core.dependencies.permissions import require_permission
@@ -13,6 +15,8 @@ from src.schemas.notification.response import NotificationResponseSchema
 from src.services.client.notification_service import NotificationService
 from src.core.config import settings
 import redis.asyncio as aioredis
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
@@ -55,7 +59,18 @@ async def notification_stream(
         staffID = current_staff["id"]
         r = aioredis.from_url(settings.REDIS_BROKER)
         pubsub = r.pubsub()
-        await pubsub.subscribe(f"notifications:{staffID}")
+
+        try:
+            await pubsub.subscribe(f"notifications:{staffID}")
+        except RedisError:
+            logger.warning("Redis unavailable, closing notification stream for staff %s", staffID)
+            await r.aclose()
+            yield {
+                "event": "error",
+                "data": json.dumps({"message": "notifications unavailable"}),
+                "retry": 15000
+            }
+            return
 
         try:
             yield {
@@ -71,10 +86,20 @@ async def notification_stream(
                         "event": "notification",
                         "data": message["data"].decode(),
                     }
+        except RedisError:
+            logger.warning("Redis connection lost, closing notification stream for staff %s", staffID)
+            yield {
+                "event": "error",
+                "data": json.dumps({"message": "notifications unavailable"}),
+                "retry": 15000,
+            }
         finally:
-            await pubsub.unsubscribe(f"notifications:{staffID}")
-            await pubsub.aclose()
-            await r.aclose()
+            try:
+                await pubsub.unsubscribe(f"notifications:{staffID}")
+                await pubsub.aclose()
+                await r.aclose()
+            except RedisError:
+                pass
 
     return EventSourceResponse(event_generator())
 

@@ -71,6 +71,8 @@ class AppointmentCreateSchema(BaseModel):
     def validate_time_range(self) -> AppointmentCreateSchema:
         if self.start_time_est >= self.end_time_est:
             raise ValueError("End time has to be later than start time")
+        if self.start_time_est.date() != self.end_time_est.date():
+            raise ValueError("Appointment start and end time have to be on the same day")
         return self
 
     model_config = ConfigDict(json_schema_extra = {

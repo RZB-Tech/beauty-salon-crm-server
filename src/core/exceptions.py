@@ -1,26 +1,29 @@
-# src/core/exceptions.py
-from fastapi import FastAPI, Request, status
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request
 from sqlalchemy.exc import IntegrityError
 
-async def sqlalchemy_integrity_exception_handler(request: Request, exc: IntegrityError) -> JSONResponse:
+from src.exceptions.base import BaseAppException
+
+async def sqlalchemy_integrity_exception_handler(request: Request, exc: IntegrityError):
     error_msg = str(exc.orig).lower() if exc.orig else ""
     
     if "unique constraint" in error_msg or "duplicate key" in error_msg:
-        return JSONResponse(
-            status_code=status.HTTP_409_CONFLICT,
-            content={"detail": "Запись с таким уникальным значением уже существует."}
+        raise BaseAppException(
+            detail = "Record with unique value already exists",
+            errorCode = "RECORD_UNIQUE_VALUE_VIOLANCE",
+            statusCode = 409
         )
 
     if "foreign key constraint" in error_msg:
-        return JSONResponse(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            content={"detail": "Связанная запись не найдена."}
+        raise BaseAppException(
+            detail = "Foreign key not found",
+            errorCode = "FOREIGN_KEY_NOT_FOUND",
+            statusCode = 404
         )
 
-    return JSONResponse(
-        status_code=status.HTTP_400_BAD_REQUEST,
-        content={"detail": "Нарушение целостности базы данных."}
+    raise BaseAppException(
+        detail = "Database integrity violance",
+        errorCode = "DATABASE_INTEGRITY_VIOLANCE",
+        statusCode = 409
     )
 
 def register_exception_handlers(app: FastAPI) -> None:

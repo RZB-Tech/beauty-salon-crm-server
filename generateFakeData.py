@@ -3,7 +3,7 @@ import subprocess
 import os
 from faker import Faker
 import random
-from datetime import date, time, timedelta, timezone
+from datetime import time, timedelta, timezone
 
 from src.database.session import SessionLocal
 from src.repository.client.client_model import Client, Sex
@@ -49,6 +49,76 @@ async def add_one(session, obj) -> bool:
         print(f"Skipping duplicate/invalid record ({obj.__class__.__name__}): {e}")
         return False
 
+def seed_platform_user():
+    print("Creating platform user...")
+
+    run([
+            "psql",
+            "-h", DB_HOST,
+            "-p", DB_PORT,
+            "-U", DB_USER,
+            "-d", DB_NAME,
+            "-c",
+            """
+    
+            insert into platform_users(login, hashed_password)
+            values ('ksandr', '$argon2id$v=19$m=4096,t=3,p=1$a1VVcjBAbTBu$Qd1NI3zumCmMA3DbZt/F92e8roA2RQuu7v++sV/H1hA');
+            """])
+
+def seed_tenants():
+    print("Creating tenants...")
+    run([
+            "psql",
+            "-h", DB_HOST,
+            "-p", DB_PORT,
+            "-U", DB_USER,
+            "-d", DB_NAME,
+            "-c",
+            """
+    
+            insert into tenants (name, active, preferences)
+            values ('synapse', true, '{
+                "theme": "light",
+                "enable_telegram_booking": false,
+                "cancel_payment_due": 0
+            }'::jsonb);
+    
+            insert into tenants (name, active, preferences)
+            values ('rzbtech', true, '{
+                "theme": "light",
+                "enable_telegram_booking": false,
+                "cancel_payment_due": 0
+            }'::jsonb);
+
+            insert into tenant_integrations
+                        (tenant_id, telegram_bot_token)
+                    values
+                        (1, null);
+            
+                    insert into tenant_integrations
+                        (tenant_id, telegram_bot_token)
+                    values
+                        (2, null);
+            """
+    ])
+
+def seed_actors():
+    print("Create actors...")
+
+    run([
+            "psql",
+            "-h", DB_HOST,
+            "-p", DB_PORT,
+            "-U", DB_USER,
+            "-d", DB_NAME,
+            "-c",
+            """
+            insert into actors (actor_type, tenant_id)
+            values ('staff', 1);
+    
+            insert into actors (actor_type, tenant_id)
+            values ('staff', 2);
+            """])
 
 def seed_admin_user() -> None:
     print("Creating admin user...")
@@ -63,30 +133,6 @@ def seed_admin_user() -> None:
         "-d", DB_NAME,
         "-c",
         """
-
-        insert into platform_users(login, hashed_password)
-        values ('ksandr', '$argon2id$v=19$m=4096,t=3,p=1$a1VVcjBAbTBu$Qd1NI3zumCmMA3DbZt/F92e8roA2RQuu7v++sV/H1hA');
-
-        insert into tenants (name, active, preferences)
-        values ('synapse', true, '{
-            "theme": "light",
-            "enable_telegram_booking": false,
-            "cancel_payment_due": 0
-        }'::jsonb);
-
-        insert into tenants (name, active, preferences)
-        values ('rzbtech', true, '{
-            "theme": "light",
-            "enable_telegram_booking": false,
-            "cancel_payment_due": 0
-        }'::jsonb);
-
-        insert into actors (actor_type, tenant_id)
-        values ('staff', 1);
-
-        insert into actors (actor_type, tenant_id)
-        values ('staff', 2);
-
         INSERT INTO staffs
             (firstname, login, tenant_id, staff_type, active, hashed_password, actor_id)
         VALUES
@@ -125,16 +171,6 @@ def seed_admin_user() -> None:
                 '$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Eyo2xYv1fdJwRTeT/xFWS3c6SYqZhlYVI9gRUvcUdSc',
                 2
             );
-
-        insert into tenant_integrations
-            (tenant_id, telegram_bot_token)
-        values
-            (1, null);
-
-        insert into tenant_integrations
-            (tenant_id, telegram_bot_token)
-        values
-            (2, null);
         """,
     ])
 
@@ -272,11 +308,11 @@ async def seed_work_schedules() -> None:
             select(Employee)
         )
 
-        employees = employees.all()
+        employee_ids = [employee.id for employee in employees.all()]
 
         # WorkSchedule is unique per (employee_id, day_of_week), so only one
         # schedule per weekday is kept per employee; repeats are skipped.
-        for employee in employees:
+        for employee_id in employee_ids:
             for day_of_week in range(1, 8):
                 # Skip some weekends randomly
                 if day_of_week >= 6:
@@ -302,7 +338,7 @@ async def seed_work_schedules() -> None:
                 )
 
                 schedule = WorkSchedule(
-                    employee_id=employee.id,
+                    employee_id=employee_id,
                     day_of_week=day_of_week,
                     start_time=start_time,
                     end_time=end_time,
@@ -325,9 +361,9 @@ async def seed_payrolls(count_per_employee: int = 3) -> None:
             select(Employee)
         )
 
-        employees = employees.all()
+        employee_ids = [employee.id for employee in employees.all()]
 
-        for employee in employees:
+        for employee_id in employee_ids:
             for _ in range(count_per_employee):
 
                 payroll_type = random.choice([
@@ -358,7 +394,7 @@ async def seed_payrolls(count_per_employee: int = 3) -> None:
                     note = "Penalty"
 
                 payroll = Payroll(
-                    employee_id=employee.id,
+                    employee_id=employee_id,
                     amount=amount,
                     type=payroll_type,
                     notes=note,
@@ -372,12 +408,15 @@ async def seed_payrolls(count_per_employee: int = 3) -> None:
     print(f"Created {created} payroll records")
 
 async def main():
+    seed_platform_user()
+    seed_tenants()
+    seed_actors()
     seed_admin_user()
-    await seed_employees()
-    await seed_clients()
-    await seed_materials()
-    await seed_work_schedules()
-    await seed_payrolls()
+    # await seed_employees()
+    # await seed_clients()
+    # await seed_materials()
+    # await seed_work_schedules()
+    # await seed_payrolls()
 
     print("Done.")
 

@@ -269,7 +269,7 @@ class ReceiptService():
                 material = await self.uow.materials.get(receiptItem.material_id)
                 if not material: continue
                 newQuantity = material.quantity + receiptItem.quantity
-                await self.uow.materials.update(material.id, newQuantity)
+                await self.uow.materials.update(material.id, quantity = newQuantity)
 
         receipt.status = ReceiptStatus.CANCELLED
         if receipt.appointment:
