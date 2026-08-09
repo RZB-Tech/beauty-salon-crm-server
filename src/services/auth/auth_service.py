@@ -175,11 +175,14 @@ class AuthService():
             actor = await self.uow.staffs.get(id = selfUser)
             if actor is None or actor.staff_type != StaffType.ADMIN: raise AdminPreviligesRequired()
 
-        verify = verify_password(user.hashed_password, data.oldPassword)
-        if not verify: raise IncorrectOldPassword()
+            hashed = hash_password(data.newPassword)
+            await self.uow.staffs.update(user.id, hashed_password = hashed)   
+        else:
+            verify = verify_password(user.hashed_password, data.oldPassword)
+            if not verify: raise IncorrectOldPassword()
 
-        hashed = hash_password(data.newPassword)
-        await self.uow.staffs.update(user.id, hashed_password = hashed)
+            hashed = hash_password(data.newPassword)
+            await self.uow.staffs.update(user.id, hashed_password = hashed)
     
     async def reset_password(self, id: int) -> str:
         user = await self.uow.staffs.get(id = id)
