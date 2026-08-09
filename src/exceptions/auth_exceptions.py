@@ -10,7 +10,7 @@ class AuthTenantContextEmpty(BaseAppException):
         )
 
 class IncorrectCredentials(BaseAppException):
-    statusCode = 404
+    statusCode = 401
     errorCode = "INCORRECT_CREDENTIALS"
     def __init__(self):
         super().__init__(
