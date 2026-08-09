@@ -98,7 +98,6 @@ class Employee(BaseFields):
 
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_emplyoee_id_tenant"),
-        UniqueConstraint("phone", "tenant_id", name = "uq_employee_per_tenant"),
         ForeignKeyConstraint(
             ["specialization_id", "tenant_id"],
             ["specializations.id", "specializations.tenant_id"],

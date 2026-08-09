@@ -23,7 +23,7 @@ class MeasurementUnit(StrEnum):
 
 class Material(BaseFields):
     __tablename__ = "materials"
-    article: Mapped[str] = mapped_column(String(255), unique = True)
+    article: Mapped[str] = mapped_column(String(255))
     name: Mapped[str] = mapped_column(String(255))
     description: Mapped[str | None] = mapped_column(Text, nullable = True)
 
@@ -34,6 +34,7 @@ class Material(BaseFields):
     sell_price: Mapped[int] = mapped_column(Integer, default = 0)
 
     __table_args__ = (
+        UniqueConstraint("article", "tenant_id", name = "uq_material_article"),
         UniqueConstraint("id", "tenant_id", name = "uq_material_tenant"),
         Index(
             "uq_material_article_name_lower", 

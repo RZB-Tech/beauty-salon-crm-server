@@ -45,6 +45,7 @@ class EmployeeService():
     
     async def update(self, data: EmployeeUpdateSchema) -> Employee:
         checkArchived = await self.uow.employees.get(data.id)
+        if checkArchived is None: raise EmployeeNotFound(data.id)
         if checkArchived.archived: raise EmployeeIsArchived(data.id)
 
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
