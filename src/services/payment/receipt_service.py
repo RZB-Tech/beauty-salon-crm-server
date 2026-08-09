@@ -130,7 +130,7 @@ class ReceiptService():
         if receipt.status == ReceiptStatus.CANCELLED: raise ReceiptIsCancelled(data.receipt_id)
             
         # check if receipt is already paid
-        if receipt.remaining_amount == 0: raise ReceiptIsPaid(data.id)
+        if receipt.remaining_amount == 0: raise ReceiptIsPaid(data.receipt_id)
         
         # create temp deposit adjustment to substract payment sum in case if payment method is deposit
         depositAdjustment = 0
