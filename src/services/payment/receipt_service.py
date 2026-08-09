@@ -112,7 +112,7 @@ class ReceiptService():
                 error = error_msg
             )
     
-    async def make_payment(self, data: ReceiptPaymentCreateSchema) -> Receipt: 
+    async def make_payment(self, data: ReceiptPaymentCreateSchema) -> Receipt:
         stmt = await self.uow.db.execute(select(Receipt)
             .where(Receipt.id == data.receipt_id)
             .options(
@@ -126,9 +126,11 @@ class ReceiptService():
         # get receipt info
         receipt = stmt.scalar_one_or_none()
         if not receipt: raise ReceiptNotFound(data.receipt_id)
+
+        if receipt.status == ReceiptStatus.CANCELLED: raise ReceiptIsCancelled(data.receipt_id)
             
         # check if receipt is already paid
-        if receipt.remaining_amount == 0: raise ReceiptIsPaid(id)
+        if receipt.remaining_amount == 0: raise ReceiptIsPaid(data.id)
         
         # create temp deposit adjustment to substract payment sum in case if payment method is deposit
         depositAdjustment = 0
