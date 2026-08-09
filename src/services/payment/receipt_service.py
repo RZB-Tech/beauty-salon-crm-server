@@ -249,7 +249,7 @@ class ReceiptService():
             client = await self.uow.clients.get(client_id)
             if client:
                 new_deposit_balance = client.deposit + deposit_to_refund
-                await self.uow.clients.updateDeposit(client, new_deposit_balance)
+                await self.uow.clients.update(client.id, deposit = new_deposit_balance)
 
         # cancel payments and payrolls
         if receipt:
