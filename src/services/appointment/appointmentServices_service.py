@@ -56,8 +56,8 @@ class AppointmentServicesService():
                 raise PriceChangedReasonEmpty()
         
         if material is not None:
-            if data.price is None: data.price = material.price
-            if data.price != material.price and (data.price_changed_reason is None or len(data.price_changed_reason.strip()) == 0):
+            if data.price is None: data.price = material.sell_price
+            if data.price != material.sell_price and (data.price_changed_reason is None or len(data.price_changed_reason.strip()) == 0):
                 raise PriceChangedReasonEmpty()
 
         newData = data.model_dump()
@@ -112,8 +112,8 @@ class AppointmentServicesService():
                 raise PriceChangedReasonEmpty()
         
         if material is not None:
-            if data.price is None: data.price = material.price
-            if data.price != material.price and (data.price_changed_reason is None or len(data.price_changed_reason.strip()) == 0):
+            if data.price is None: data.price = material.sell_price
+            if data.price != material.sell_price and (data.price_changed_reason is None or len(data.price_changed_reason.strip()) == 0):
                 raise PriceChangedReasonEmpty()
             
         dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)

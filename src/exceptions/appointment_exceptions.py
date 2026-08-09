@@ -22,10 +22,10 @@ class AppointmentCancelled(BaseAppException):
 
 class AppointmentHasActiveReceipts(BaseAppException):
     statusCode = 409
-    errorCode = "APPOINTMENT_HAS_ACTIVE_RECEIPTS"
+    errorCode = "APPOINTMENT_HAS_ACTIVE_RECEIPT"
     def __init__(self, id: int):
         super().__init__(
-            detail=f"Appointment ID {id} has active receipts",
+            detail=f"Appointment ID {id} has active receipt",
             errorCode = self.errorCode,
             id = id
         )
