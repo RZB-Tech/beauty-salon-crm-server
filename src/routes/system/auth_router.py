@@ -29,8 +29,7 @@ async def login(data: LoginSchema, response: Response,
 async def refresh_tokens(
     request: Request,
     response: Response,
-    authService: AuthService = Depends(get_auth_service),
-    current_staff: dict = Depends(get_current_staff)
+    authService: AuthService = Depends(get_auth_service)
 ):
     return await authService.refresh(request, response)
 
