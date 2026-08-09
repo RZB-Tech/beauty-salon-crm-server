@@ -216,7 +216,7 @@ class ReceiptService():
             await self.uow.clients.update(client.id, deposit = final_deposit_balance)
             await self.uow.transactions.create(Transaction(
                     receipt_id = receipt.id,
-                    amount = overpayment,
+                    amount = data.amount,
                     type = TransactionType.INCOME,
                     method = TransactionMethod.DEPOSIT,
                     category = TransactionCategory.RECEIPT,
