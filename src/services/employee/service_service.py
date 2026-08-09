@@ -149,9 +149,12 @@ class ServiceService():
 
             category = existing_categories[category_name]
 
+            price = row["price"]
+            estm = row["estimated_time"]
             service = Service(
                 name=service_name,
-                price=int(row["price"] or 0),
+                price=0 if pd.isna(price) else int(price),
+                estimated_time = 0 if pd.isna(estm) else int(estm),
                 category_id=category.id,
                 created_by_actor_id = actor_id,
                 tenant_id = tenant_id
