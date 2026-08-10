@@ -1,8 +1,8 @@
 from enum import StrEnum
 from datetime import datetime
-from sqlalchemy import String, Integer, DateTime, ForeignKey, Numeric, Boolean, Enum as SQLEnum, UniqueConstraint
+from sqlalchemy import String, DateTime, Numeric, Boolean, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from src.database.base import BaseFields
 
@@ -15,10 +15,10 @@ class Promotion(BaseFields):
     __tablename__ = "promotions"
 
     name: Mapped[str] = mapped_column(String(255))
-    promo_type: Mapped[str] = mapped_column(String)
+    promo_type: Mapped[str] = mapped_column(String(50))
+    description: Mapped[str | None] = mapped_column(Text, nullable = True)
     
-    # Using Numeric to support percentages (e.g. 15.5) or fixed amounts
-    discount_value: Mapped[float] = mapped_column(Numeric) 
+    discount_value: Mapped[int] = mapped_column(Numeric, nullable = True) 
     
     start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -30,3 +30,5 @@ class Promotion(BaseFields):
     __table_args__ = (
         UniqueConstraint("name", "tenant_id", name = "uq_promotion_name_tenant"),
     )
+
+    ALLOWED_FILTERS = {"name", "promo_type", "discount_value", "start_time", "end_time", "is_active", "archived"}

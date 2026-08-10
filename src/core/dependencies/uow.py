@@ -21,6 +21,7 @@ from src.repository.tenant.tenantIntergrations_repository import TenantIntegrati
 from src.repository.tenant.tenant_repository import TenantRepository
 from src.repository.transaction.transaction_repository import TransactionRepository
 from src.repository.notification.notification_repository import NotificationRepository
+from src.repository.promotion.promotion_repository import PromotionRepository
 from typing import AsyncGenerator, TypeVar, Type, Callable
 
 T = TypeVar("T")
@@ -48,6 +49,7 @@ class UnitOfWork:
         self.payouts = PayoutRepository()
         self.receipts = ReceiptRepository()
         self.transactions = TransactionRepository()
+        self.promotions = PromotionRepository()
         
         self.notifications = NotificationRepository()
 

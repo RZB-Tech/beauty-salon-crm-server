@@ -15,3 +15,4 @@ from src.repository.tenant.subscriptionPlan_model import SubscriptionPlan
 from src.repository.platform.platformUser_model import PlatformUser
 from src.repository.transaction.transaction_model import Transaction
 from src.repository.notification.notification_model import Notification
+from src.repository.promotion.promotion_model import Promotion

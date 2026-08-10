@@ -98,6 +98,11 @@ class PermissionCode(IntEnum):
     TENANT_PREFERENCES_UPDATE = 12003
     TENANT_MANAGE = 12004
 
+    PROMOTION_CREATE = 13001
+    PROMOTION_GET = 13002
+    PROMOTION_UPDATE = 13003
+    PROMOTION_MANAGE = 13999
+
 PERMISSIONS: dict[int, dict[str, str]] = {
     PermissionCode.MATERIAL_CREATE: {"resource": "материал", "name": "Создать материал"},
     PermissionCode.MATERIAL_UPDATE: {"resource": "материал", "name": "Обновить материал"},
@@ -140,6 +145,11 @@ PERMISSIONS: dict[int, dict[str, str]] = {
     PermissionCode.SERVICE_CATEGORY_UPDATE: {"resource": "категория услуг", "name": "Обновить категорию услуг"},
     PermissionCode.SERVICE_CATEGORY_READ: {"resource": "категория услуг", "name": "Просмотр категории услуг"},
     PermissionCode.SERVICE_CATEGORY_MANAGE: {"resource": "категория услуг", "name": "Полный доступ к категориям услуг"},
+
+    PermissionCode.PROMOTION_CREATE: {"resource": "promotion", "name": "Create promotion"},
+    PermissionCode.PROMOTION_GET: {"resource": "promotion", "name": "Update promotion"},
+    PermissionCode.PROMOTION_UPDATE: {"resource": "promotion", "name": "Get promotion(s)"},
+    PermissionCode.PROMOTION_MANAGE: {"resource": "promotion", "name": "Manage promotions"},
 
     PermissionCode.SPECIALIZATION_CREATE: {"resource": "специализация", "name": "Создать специализацию"},
     PermissionCode.SPECIALIZATION_UPDATE: {"resource": "специализация", "name": "Обновить специализацию"},

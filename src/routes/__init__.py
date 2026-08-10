@@ -23,6 +23,7 @@ from src.routes.employee.specialization_router import router as specializationR
 from src.routes.system.role_router import router as roleR
 from src.routes.system.permission_router import router as permissionR
 from src.routes.system.staff_router import router as staffR
+from src.routes.payment.promotion_router import router as promotionR
 from src.schemas.base import FilterFieldSchema, FilterTables
 
 open_router = APIRouter(prefix = "/api/v1")
@@ -121,6 +122,11 @@ protected_router.include_router(
     tags=["Clients"]
 )
 
+protected_router.include_router(
+    promotionR, 
+    prefix="/promotions", 
+    tags=["Promotions"]
+)
 
 protected_router.include_router(
     materialR, 
