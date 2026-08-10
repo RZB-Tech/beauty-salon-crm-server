@@ -147,8 +147,8 @@ PERMISSIONS: dict[int, dict[str, str]] = {
     PermissionCode.SERVICE_CATEGORY_MANAGE: {"resource": "категория услуг", "name": "Полный доступ к категориям услуг"},
 
     PermissionCode.PROMOTION_CREATE: {"resource": "promotion", "name": "Create promotion"},
-    PermissionCode.PROMOTION_GET: {"resource": "promotion", "name": "Update promotion"},
-    PermissionCode.PROMOTION_UPDATE: {"resource": "promotion", "name": "Get promotion(s)"},
+    PermissionCode.PROMOTION_GET: {"resource": "promotion", "name": "Get promotion(s)"},
+    PermissionCode.PROMOTION_UPDATE: {"resource": "promotion", "name": "Update promotion"},
     PermissionCode.PROMOTION_MANAGE: {"resource": "promotion", "name": "Manage promotions"},
 
     PermissionCode.SPECIALIZATION_CREATE: {"resource": "специализация", "name": "Создать специализацию"},
@@ -207,3 +207,31 @@ def compute_effective_permissions(staff: "Staff") -> list[int]:
     for role in staff.roles:
         effective.update(role.permissions or [])
     return sorted(effective)
+
+def _build_domain_manage_map() -> dict[PermissionCode, PermissionCode]:
+    """Maps each non-MANAGE code to the *_MANAGE code of its domain, matched by longest
+    common name prefix (e.g. APPOINTMENT_RECORDS_CREATE -> APPOINTMENT_RECORDS_MANAGE,
+    not the broader APPOINTMENT_MANAGE). Codes with no matching *_MANAGE sibling are omitted."""
+    manage_codes = [code for code in PermissionCode if code.name.endswith("_MANAGE")]
+    domain_map: dict[PermissionCode, PermissionCode] = {}
+
+    for code in PermissionCode:
+        if code in manage_codes:
+            continue
+
+        code_parts = code.name.split("_")
+        best_match: PermissionCode | None = None
+        best_match_len = 0
+
+        for manage_code in manage_codes:
+            manage_parts = manage_code.name.removesuffix("_MANAGE").split("_")
+            if len(manage_parts) > best_match_len and code_parts[:len(manage_parts)] == manage_parts:
+                best_match = manage_code
+                best_match_len = len(manage_parts)
+
+        if best_match is not None:
+            domain_map[code] = best_match
+
+    return domain_map
+
+PERMISSION_DOMAIN_MANAGE: dict[PermissionCode, PermissionCode] = _build_domain_manage_map()

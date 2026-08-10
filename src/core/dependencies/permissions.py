@@ -4,7 +4,7 @@ from src.core.cache.permission_cache import get_staff_permissions, set_staff_per
 from src.core.config import settings
 from src.core.dependencies.auth import get_current_staff
 from src.core.dependencies.uow import UnitOfWork, get_request_uow
-from src.core.permissions import PERMISSIONS, PermissionCode, compute_effective_permissions
+from src.core.permissions import PERMISSION_DOMAIN_MANAGE, PERMISSIONS, PermissionCode, compute_effective_permissions
 from src.exceptions.auth_exceptions import AdminPreviligesRequired, NotEnoughPermissions
 from src.exceptions.staff_exceptions import StaffNotFound
 from src.repository.staff.staff_model import StaffType
@@ -35,14 +35,20 @@ def require_permission(codes: list[int], condition: Literal["all", "or"] = "all"
         if staff_type == StaffType.ADMIN:
             return
 
+        def has_permission(code: int) -> bool:
+            if code in permissions:
+                return True
+            manage_code = PERMISSION_DOMAIN_MANAGE.get(PermissionCode(code))
+            return manage_code is not None and manage_code in permissions
+
         if condition == "all":
-            missing = [code for code in codes if code not in permissions]
+            missing = [code for code in codes if not has_permission(code)]
             if missing:
                 missing_names = [PERMISSIONS[PermissionCode(code)]["name"] for code in missing]
                 formatted = ', '.join(missing_names)
                 raise NotEnoughPermissions(formatted)
         else:
-            if not any(code in permissions for code in codes):
+            if not any(has_permission(code) for code in codes):
                 code_names = [PERMISSIONS[PermissionCode(code)]["name"] for code in codes]
                 formatted = ', '.join(code_names)
                 raise NotEnoughPermissions(formatted)
