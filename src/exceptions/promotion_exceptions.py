@@ -33,3 +33,25 @@ class PromotionPromoTypeConditionConflict(BaseAppException):
             promo_type = type,
             conditions = conditions
         )
+
+class PromotionTargetConflict(BaseAppException):
+    statusCode = 409
+    errorCode = "PROMOTION_HAS_CONFILICT_WITH_TARGET"
+    def __init__(self, target: str, target_id: int, promotion_id: int, promotion_name: str):
+        super().__init__(
+            detail = f"{target.capitalize()} (ID {target_id}) already has active promotion {promotion_name} (ID {promotion_id})",
+            errorCode = self.errorCode,
+            target = target,
+            target_id = target_id,
+            promotion_id = promotion_id
+        )
+
+class PromotionDiscountPercentageExceed(BaseAppException):
+    statusCode = 400
+    errorCode = "PROMOTION_DISCOUNT_PERCENTAGE_EXCEED"
+    def __init__(self, value: int):
+        super().__init__(
+            detail = "Promotion's discount with type 'percentage' has to be between 0 and 100",
+            errorCode = self.errorCode,
+            value = value
+        )

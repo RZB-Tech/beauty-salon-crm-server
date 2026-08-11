@@ -184,7 +184,7 @@ class ReceiptService():
                     if employee is None: raise EmployeeNotFound(employee_id)
                     
                     if employee and employee.percent_from_services > 0:
-                        commission_earned = int(item.subtotal * (employee.percent_from_services / 100))
+                        commission_earned = int(item.total_price * (employee.percent_from_services / 100))
                         if commission_earned > 0:
                             payroll_record = Payroll(
                                 employee_id = employee.id,

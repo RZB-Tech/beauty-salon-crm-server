@@ -57,7 +57,7 @@ class AppointmentService():
                     info["final_price"] = info["base_price"]
 
                     hasPromotion = await self.uow.promotions.get_by_object(serviceObj.id, "service")
-                    if hasPromotion is not None and service.service_id in hasPromotion.conditions.get("services", []):
+                    if hasPromotion is not None:
                         info["promotion_id"] = hasPromotion.id
                         if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT and hasPromotion.discount_value:
                             discount = info["base_price"] - hasPromotion.discount_value
@@ -79,7 +79,7 @@ class AppointmentService():
                     info["final_price"] = info["base_price"]
 
                     hasPromotion = await self.uow.promotions.get_by_object(materialObj.id, "material")
-                    if hasPromotion is not None and service.material_id in hasPromotion.conditions.get("materials", []):
+                    if hasPromotion is not None:
                         info["promotion_id"] = hasPromotion.id
                         if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT and hasPromotion.discount_value:
                             discount = info["base_price"] - hasPromotion.discount_value

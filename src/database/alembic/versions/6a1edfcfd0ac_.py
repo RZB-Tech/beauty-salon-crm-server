@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 3791824ca58c
+Revision ID: 6a1edfcfd0ac
 Revises: 
-Create Date: 2026-08-11 12:20:35.325797
+Create Date: 2026-08-11 16:43:50.972546
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '3791824ca58c'
+revision: str = '6a1edfcfd0ac'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -107,27 +107,6 @@ def upgrade() -> None:
     )
     op.create_index(op.f('ix_materials_tenant_id'), 'materials', ['tenant_id'], unique=False)
     op.create_index('uq_material_article_name_lower', 'materials', [sa.literal_column('lower(article)'), sa.literal_column('lower(name)'), 'tenant_id'], unique=False)
-    op.create_table('promotions',
-    sa.Column('name', sa.String(length=255), nullable=False),
-    sa.Column('promo_type', sa.String(length=50), nullable=False),
-    sa.Column('description', sa.Text(), nullable=True),
-    sa.Column('discount_value', sa.Numeric(), nullable=True),
-    sa.Column('start_time', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('end_time', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('is_active', sa.Boolean(), nullable=False),
-    sa.Column('conditions', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
-    sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('id', 'tenant_id', name='uq_promotion_tenant'),
-    sa.UniqueConstraint('name', 'tenant_id', name='uq_promotion_name_tenant')
-    )
-    op.create_index(op.f('ix_promotions_tenant_id'), 'promotions', ['tenant_id'], unique=False)
     op.create_table('roles',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('description', sa.Text(), nullable=True),
@@ -374,6 +353,32 @@ def upgrade() -> None:
     )
     op.create_index('ix_payouts_tenant_employee', 'payouts', ['tenant_id', 'employee_id'], unique=False)
     op.create_index(op.f('ix_payouts_tenant_id'), 'payouts', ['tenant_id'], unique=False)
+    op.create_table('promotions',
+    sa.Column('name', sa.String(length=255), nullable=False),
+    sa.Column('promo_type', sa.String(length=50), nullable=False),
+    sa.Column('description', sa.Text(), nullable=True),
+    sa.Column('service_id', sa.Integer(), nullable=True),
+    sa.Column('material_id', sa.Integer(), nullable=True),
+    sa.Column('discount_value', sa.Numeric(), nullable=True),
+    sa.Column('start_time', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('end_time', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('is_active', sa.Boolean(), nullable=False),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
+    sa.Column('tenant_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['material_id', 'tenant_id'], ['materials.id', 'materials.tenant_id'], name='fk_uc_material', ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['service_id', 'tenant_id'], ['services.id', 'services.tenant_id'], name='fk_uc_service', ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('id', 'tenant_id', name='uq_promotion_tenant')
+    )
+    op.create_index(op.f('ix_promotions_tenant_id'), 'promotions', ['tenant_id'], unique=False)
+    op.create_index('uq_promotion_material_tenant_active', 'promotions', ['material_id', 'tenant_id'], unique=True, postgresql_where=sa.text('is_active = true AND archived = false AND material_id IS NOT NULL'))
+    op.create_index('uq_promotion_name_tenant_active', 'promotions', ['name', 'tenant_id'], unique=True, postgresql_where=sa.text('is_active = true AND archived = false'))
+    op.create_index('uq_promotion_service_tenant_active', 'promotions', ['service_id', 'tenant_id'], unique=True, postgresql_where=sa.text('is_active = true AND archived = false AND service_id IS NOT NULL'))
     op.create_table('receipts',
     sa.Column('appointment_id', sa.Integer(), nullable=True),
     sa.Column('client_id', sa.Integer(), nullable=True),
@@ -381,7 +386,6 @@ def upgrade() -> None:
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('subtotal_amount', sa.Integer(), nullable=False),
     sa.Column('total_amount', sa.Integer(), nullable=False),
-    sa.Column('promotion_id', sa.Integer(), nullable=True),
     sa.Column('change_amount', sa.Integer(), nullable=False),
     sa.Column('change_to_deposit', sa.Boolean(), nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
@@ -393,7 +397,6 @@ def upgrade() -> None:
     sa.CheckConstraint("\n            (appointment_id IS NOT NULL AND receipt_type = 'appointment')\n            OR\n            (appointment_id IS NULL AND receipt_type <> 'appointment')\n            ", name='ck_receipt_appointment_consistency'),
     sa.ForeignKeyConstraint(['appointment_id', 'tenant_id'], ['appointments.id', 'appointments.tenant_id'], name='fk_receipt_appoinment', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['client_id', 'tenant_id'], ['clients.id', 'clients.tenant_id'], name='fk_receipt_client', ondelete='RESTRICT'),
-    sa.ForeignKeyConstraint(['promotion_id', 'tenant_id'], ['promotions.id', 'promotions.tenant_id'], name='fk_receipt_promotion', ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id', 'tenant_id', name='uq_receipt_tenant')
@@ -539,7 +542,6 @@ def upgrade() -> None:
     sa.Column('base_price', sa.Integer(), nullable=False),
     sa.Column('final_price', sa.Integer(), nullable=False),
     sa.Column('quantity', sa.Integer(), nullable=False),
-    sa.Column('promotion_id', sa.Integer(), nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
@@ -550,7 +552,6 @@ def upgrade() -> None:
     sa.CheckConstraint('(material_id IS NOT NULL AND appointment_service_id IS NULL) OR (material_id IS NULL AND appointment_service_id IS NOT NULL)', name='chk_receipt_item_exclusive_source'),
     sa.ForeignKeyConstraint(['appointment_service_id', 'tenant_id'], ['appointment_services.id', 'appointment_services.tenant_id'], name='fk_appointment_service_item_receipt', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['material_id', 'tenant_id'], ['materials.id', 'materials.tenant_id'], name='fk_material_items_receipt', ondelete='RESTRICT'),
-    sa.ForeignKeyConstraint(['promotion_id', 'tenant_id'], ['promotions.id', 'promotions.tenant_id'], name='fk_receipt_item_promotion', ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['receipt_id', 'tenant_id'], ['receipts.id', 'receipts.tenant_id'], name='fk_receipt_items_receipt', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
@@ -582,6 +583,11 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_receipts_tenant_id'), table_name='receipts')
     op.drop_index('idx_unique_active_receipt_per_appointment', table_name='receipts', postgresql_where=sa.text("status IN ('pending', 'paid') AND appointment_id IS NOT NULL"))
     op.drop_table('receipts')
+    op.drop_index('uq_promotion_service_tenant_active', table_name='promotions', postgresql_where=sa.text('is_active = true AND archived = false AND service_id IS NOT NULL'))
+    op.drop_index('uq_promotion_name_tenant_active', table_name='promotions', postgresql_where=sa.text('is_active = true AND archived = false'))
+    op.drop_index('uq_promotion_material_tenant_active', table_name='promotions', postgresql_where=sa.text('is_active = true AND archived = false AND material_id IS NOT NULL'))
+    op.drop_index(op.f('ix_promotions_tenant_id'), table_name='promotions')
+    op.drop_table('promotions')
     op.drop_index(op.f('ix_payouts_tenant_id'), table_name='payouts')
     op.drop_index('ix_payouts_tenant_employee', table_name='payouts')
     op.drop_table('payouts')
@@ -613,8 +619,6 @@ def downgrade() -> None:
     op.drop_table('service_categories')
     op.drop_index(op.f('ix_roles_tenant_id'), table_name='roles')
     op.drop_table('roles')
-    op.drop_index(op.f('ix_promotions_tenant_id'), table_name='promotions')
-    op.drop_table('promotions')
     op.drop_index('uq_material_article_name_lower', table_name='materials')
     op.drop_index(op.f('ix_materials_tenant_id'), table_name='materials')
     op.drop_table('materials')

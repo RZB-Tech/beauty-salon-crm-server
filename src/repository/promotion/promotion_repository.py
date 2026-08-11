@@ -36,19 +36,14 @@ class PromotionRepository(BaseRepository[Promotion]):
 
     async def get_by_object(self, id: int, object: Literal["service", "material"]) -> Promotion | None:
         now = datetime.now(timezone.utc)
+
         stmt = (
             select(Promotion)
             .where(
+                Promotion.is_active.is_(True),
+                Promotion.archived.is_(False),
+                Promotion.service_id == id if object == "service" else Promotion.material_id == id,
                 or_(
-                    Promotion.conditions[object+'s'].contains([id]),
-                    (
-                        (Promotion.conditions["buy"]["object"].astext == object)
-                        & (Promotion.conditions["buy"]["id"].as_integer() == id)
-                    ),
-                ), (
-                    Promotion.is_active.is_(True),
-                    Promotion.archived.is_(False),
-                ), or_(
                     Promotion.start_time.is_(None),
                     Promotion.start_time <= now,
                 ), or_(

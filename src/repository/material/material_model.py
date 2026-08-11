@@ -7,7 +7,6 @@ from sqlalchemy import (
     func
 )
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Enum as SQLEnum
 from enum import StrEnum
 from src.database.base import BaseFields
 
