@@ -1,5 +1,5 @@
 from __future__ import annotations
-from enum import Enum, StrEnum
+from enum import StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
@@ -11,13 +11,12 @@ from sqlalchemy import (
     Text,
     UniqueConstraint
 )
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from src.database.base import BaseFields
 
 if TYPE_CHECKING:
-    from src.repository import Receipt, Client, Employee, Service, Material
+    from src.repository import Receipt, Client, Employee, Service, Material, Promotion
 
 class AppointmentStatus(StrEnum):
     AWAITING = "awaiting"
@@ -52,10 +51,21 @@ class AppointmentServices(BaseFields):
     )
 
     quantity: Mapped[int] = mapped_column(Integer, default = 1)
-    price: Mapped[int] = mapped_column(Integer, default = 0)
+    base_price: Mapped[int] = mapped_column(Integer, default = 0)
+    final_price: Mapped[int] = mapped_column(Integer, default = 0)
     price_changed_reason: Mapped[str | None] = mapped_column(Text, nullable = True)
 
+    promotion_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
+    promotion: Mapped["Promotion"] = relationship(
+        primaryjoin = "and_(AppointmentServices.promotion_id == Promotion.id, AppointmentServices.tenant_id == Promotion.tenant_id)",
+        foreign_keys = [promotion_id]
+    )
+
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
+
+    @property
+    def discount_amount(self) -> int:
+        return (self.final_price - self.base_price) * self.quantity
 
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "fk_appointment_services_tenant"),
@@ -77,6 +87,12 @@ class AppointmentServices(BaseFields):
             ondelete = "CASCADE",
             name = "fk_appointment_services_record"
         ),
+        ForeignKeyConstraint(
+            ["promotion_id", "tenant_id"],
+            ["promotions.id", "promotions.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_appointment_service_promotion"
+        )
     )
 
 class AppointmentRecords(BaseFields):
@@ -144,7 +160,7 @@ class Appointment(BaseFields):
 
     @property
     def total_price(self) -> int:
-        return sum(service.price * service.quantity 
+        return sum(service.final_price * service.quantity 
                    for record in self.records 
                    for service in record.services)
 

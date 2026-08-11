@@ -6,10 +6,12 @@ from src.schemas.base import BaseResponseSchema
 class ReceiptItemResponseSchema(BaseResponseSchema):
     material_id: int | None = None
     appointment_service_id: int | None = None
-    price: int
+    base_price: int
+    final_price: int
     quantity: int
+    discount_amount: int
     notes: str | None = None
-    subtotal: int
+    total_price: int
 
     model_config = ConfigDict(from_attributes = True)
 
@@ -18,7 +20,9 @@ class ReceiptResponseSchema(BaseResponseSchema):
     appointment_id: int | None
     client_id: int | None
     items: list[ReceiptItemResponseSchema]
+    subtotal_amount: int
     total_amount: int
+    discount_amount: int
 
     paid_amount: int
     remaining_amount: int

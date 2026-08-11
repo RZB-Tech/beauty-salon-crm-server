@@ -415,11 +415,11 @@ async def main():
     seed_tenants()
     seed_actors()
     seed_admin_user()
-    # await seed_employees()
-    # await seed_clients()
-    # await seed_materials()
-    # await seed_work_schedules()
-    # await seed_payrolls()
+    await seed_employees()
+    await seed_clients()
+    await seed_materials()
+    await seed_work_schedules()
+    await seed_payrolls()
 
     print("Done.")
 

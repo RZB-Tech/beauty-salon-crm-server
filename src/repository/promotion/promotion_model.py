@@ -18,7 +18,7 @@ class Promotion(BaseFields):
     promo_type: Mapped[str] = mapped_column(String(50))
     description: Mapped[str | None] = mapped_column(Text, nullable = True)
     
-    discount_value: Mapped[int] = mapped_column(Numeric, nullable = True) 
+    discount_value: Mapped[int | None] = mapped_column(Numeric, nullable = True) 
     
     start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -28,6 +28,7 @@ class Promotion(BaseFields):
     conditions: Mapped[dict] = mapped_column(JSONB)
 
     __table_args__ = (
+        UniqueConstraint("id", "tenant_id", name = "uq_promotion_tenant"),
         UniqueConstraint("name", "tenant_id", name = "uq_promotion_name_tenant"),
     )
 

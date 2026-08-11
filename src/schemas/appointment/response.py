@@ -27,7 +27,10 @@ class AppointmentServicesResponseSchema(BaseResponseSchema):
     service: ServiceNestedResponseSchema | None = None
     material_id: int | None = None
     quantity: int
-    price: int
+    base_price: int
+    final_price: int
+    discount_amount: int
+    promotion_id: int | None = None
     price_changed_reason: str | None = None
     notes: str | None = None
 

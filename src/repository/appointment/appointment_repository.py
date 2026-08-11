@@ -9,7 +9,7 @@ from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.appointment.create import AppointmentCreateSchema
 
 class AppointmentRepository(BaseRepository[Appointment]):
-    async def create(self, appointment: AppointmentCreateSchema) -> Appointment:
+    async def create(self, appointment: AppointmentCreateSchema, price_info: list[list[dict]]) -> Appointment:
         db_appointment = Appointment(
             client_id=appointment.client_id,
             start_time_est=appointment.start_time_est,
@@ -23,14 +23,16 @@ class AppointmentRepository(BaseRepository[Appointment]):
                             service_id=srv.service_id,
                             material_id = srv.material_id,
                             quantity = srv.quantity,
-                            price = srv.price,
+                            base_price = info["base_price"],
+                            final_price = info["final_price"],
+                            promotion_id = info["promotion_id"],
                             price_changed_reason = srv.price_changed_reason,
-                            notes = srv.notes                    
+                            notes = srv.notes
                         )
-                        for srv in record_data.services
+                        for srv, info in zip(record_data.services, record_info)
                     ]
                 )
-                for record_data in (appointment.records or [])
+                for record_data, record_info in zip((appointment.records or []), price_info)
             ]
         )
 

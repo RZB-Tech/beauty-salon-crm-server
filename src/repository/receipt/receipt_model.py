@@ -19,6 +19,7 @@ if TYPE_CHECKING:
     from src.repository.appointment.appointment_model import Appointment, AppointmentServices
     from src.repository.material.material_model import Material
     from src.repository.transaction.transaction_model import Transaction
+    from src.repository.promotion.promotion_model import Promotion
 
 class ReceiptStatus(StrEnum):
     PENDING = "pending"
@@ -48,8 +49,10 @@ class ReceiptItem(BaseFields):
         foreign_keys = [appointment_service_id]
     )
 
-    price: Mapped[int] = mapped_column(Integer)
+    base_price: Mapped[int] = mapped_column(Integer)
+    final_price: Mapped[int] = mapped_column(Integer)
     quantity: Mapped[int] = mapped_column(Integer, default = 1)
+
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
 
     __table_args__ = (
@@ -80,8 +83,12 @@ class ReceiptItem(BaseFields):
     )
 
     @property
-    def subtotal(self) -> int:
-        return self.quantity * self.price
+    def discount_amount(self) -> int:
+        return self.final_price - self.base_price
+    
+    @property
+    def total_price(self) -> int:
+        return self.final_price * self.quantity
 
 class Receipt(BaseFields):
     __tablename__ = "receipts"
@@ -107,8 +114,10 @@ class Receipt(BaseFields):
         lazy = "raise")
     
     receipt_type: Mapped[str] = mapped_column(String(50))
-    total_amount: Mapped[int] = mapped_column(Integer)
     status: Mapped[str] = mapped_column(String(50), default = ReceiptStatus.PENDING)
+
+    subtotal_amount: Mapped[int] = mapped_column(Integer, default = 0)
+    total_amount: Mapped[int] = mapped_column(Integer, default = 0)
     
     change_amount: Mapped[int] = mapped_column(Integer, default = 0)
     change_to_deposit: Mapped[bool] = mapped_column(Boolean, default = False)
@@ -142,7 +151,7 @@ class Receipt(BaseFields):
             ["clients.id", "clients.tenant_id"],
             ondelete = "RESTRICT",
             name = "fk_receipt_client"
-        ),
+        )
     )
 
     @property
@@ -152,5 +161,9 @@ class Receipt(BaseFields):
     @property
     def remaining_amount(self) -> int:
         return max(0, self.total_amount - self.paid_amount)
+
+    @property
+    def discount_amount(self) -> int:
+        return self.total_amount - self.subtotal_amount
     
     ALLOWED_FILTERS = {"total_amount", "receipt_type", "status", "archived"}

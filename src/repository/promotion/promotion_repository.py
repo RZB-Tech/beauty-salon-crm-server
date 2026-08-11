@@ -1,4 +1,7 @@
-from sqlalchemy import func, select
+from datetime import datetime, timezone
+from typing import Literal
+
+from sqlalchemy import and_, func, or_, select
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
 from src.repository.promotion.promotion_model import Promotion
@@ -30,3 +33,30 @@ class PromotionRepository(BaseRepository[Promotion]):
         result = await self.db.execute(stmt)
         items = result.scalars().all()
         return items, total_items
+
+    async def get_by_object(self, id: int, object: Literal["service", "material"]) -> Promotion | None:
+        now = datetime.now(timezone.utc)
+        stmt = (
+            select(Promotion)
+            .where(
+                or_(
+                    Promotion.conditions[object+'s'].contains([id]),
+                    (
+                        (Promotion.conditions["buy"]["object"].astext == object)
+                        & (Promotion.conditions["buy"]["id"].as_integer() == id)
+                    ),
+                ), (
+                    Promotion.is_active.is_(True),
+                    Promotion.archived.is_(False),
+                ), or_(
+                    Promotion.start_time.is_(None),
+                    Promotion.start_time <= now,
+                ), or_(
+                    Promotion.end_time.is_(None),
+                    Promotion.end_time >= now
+                )
+            )
+        )
+
+        result = await self.db.execute(stmt)
+        return result.scalar_one_or_none()

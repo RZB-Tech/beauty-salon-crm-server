@@ -26,7 +26,6 @@ class PromotionService():
             if material is None: raise MaterialNotFound(id)
             if material.archived: raise ObjectIsArchived(id, "materials")
 
-
     async def create(self, data: PromotionCreateSchema) -> Promotion:
         if data.conditions.services:
             for i in data.conditions.services: await self._unusable_object(i, "services")

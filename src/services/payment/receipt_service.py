@@ -51,22 +51,27 @@ class ReceiptService():
             if len(appointment.records) == 0: raise ReceiptWithEmptyAppointmentRecords(data.appointment_id)
 
             newReceipt.appointment_id = appointment.id
-            runningTotal = 0
+            runningSubTotal = 0
+            runningTotal = 0 
 
             for record in appointment.records:
                 for service in record.services:
                     item = ReceiptItem(
                         appointment_service_id = service.id,
-                        price = service.price,
+                        base_price = service.base_price,
+                        final_price = service.final_price,
                         quantity = service.quantity
                     )
-                    runningTotal += (service.price * service.quantity)
+                    runningSubTotal += (service.base_price * service.quantity)
+                    runningTotal += (service.final_price * service.quantity)
                     newReceipt.items.append(item)
             
+            newReceipt.subtotal_amount = runningSubTotal
             newReceipt.total_amount = runningTotal
 
         else:
-            runningTotal = 0
+            runningSubTotal = 0
+            runningTotal = 0 
             
             for item_data in data.receipt_items:
                 material = await self.uow.materials.get(item_data.material_id)
@@ -79,17 +84,18 @@ class ReceiptService():
                 await self.uow.materials.update(material.id, quantity = newQuantity)
                 
                 item_price = material.sell_price
-                runningTotal += item_price * item_data.quantity
+                runningSubTotal += item_price * item_data.quantity
                 
                 receipt_item = ReceiptItem(
                     material_id=item_data.material_id,
-                    price=item_price,
+                    base_price = service.base_price,
+                    final_price = service.final_price,
                     quantity=item_data.quantity
                 )
                 
                 newReceipt.items.append(receipt_item)
             
-            newReceipt.total_amount = runningTotal
+            newReceipt.total_amount = runningSubTotal
 
         try:
             return await self.uow.receipts.create(newReceipt)

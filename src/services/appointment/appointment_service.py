@@ -7,6 +7,7 @@ from src.exceptions.general_exceptions import CannotUpdate, ObjectIsArchived, Pr
 from src.exceptions.material_exceptions import MaterialAmountInsufficient, MaterialArchived, MaterialNotFound
 from src.exceptions.service_exceptions import ServiceIsArchived, ServiceNotFound
 from src.repository.appointment.appointment_model import Appointment, AppointmentStatus
+from src.repository.promotion.promotion_model import PromotionType
 from src.repository.receipt.receipt_model import Receipt
 from src.schemas.appointment.create import AppointmentCreateSchema
 from src.schemas.appointment.update import AppointmentCancelSchema, AppointmentUpdateSchema
@@ -23,12 +24,14 @@ class AppointmentService():
         
         if existing: raise ClientAppointmentConflict()
 
+        price_info: list[list[dict]] = []
+
         for record in (data.records or []):
             employee = await self.uow.employees.get(record.employee_id)
             if employee is None: raise EmployeeNotFound(record.employee_id)
             if not employee.active: raise EmployeeInactive(employee.id, employee.firstname)
             if employee.archived: raise ObjectIsArchived(employee.id, "employees")
-            
+
             isWorking = await self.uow.work_schedules.is_employee_working(employee.id, data.start_time_est, data.end_time_est)
             if not isWorking: raise EmployeeDoesNotWork(employee.id, employee.firstname)
 
@@ -38,28 +41,57 @@ class AppointmentService():
             if has_conflict: raise EmployeeAppointmentConflict(employee.id, employee.firstname)
 
             employeeAllowedServices = {i.id for i in employee.services}
+            record_price_info: list[dict] = []
             for service in record.services:
+                info = {"base_price": 0, "final_price": 0, "promotion_id": None}
+
                 if service.service_id:
                     serviceObj = await self.uow.services.get(service.service_id)
                     if not serviceObj: raise ServiceNotFound(service.service_id)
                     if serviceObj.archived: raise ServiceIsArchived(serviceObj.id, serviceObj.name)
                     if serviceObj.id not in employeeAllowedServices: raise EmployeeDoesNotProvideService(employee.id, employee.firstname, serviceObj.id, serviceObj.name)
-                    
-                    if service.price is None: service.price = serviceObj.price
-                    if service.price != serviceObj.price and (service.price_changed_reason is None or len(service.price_changed_reason.strip()) == 0):
+                    if (service.price != serviceObj.price and service.price is not None) and (service.price_changed_reason is None or len(service.price_changed_reason.strip()) == 0):
                         raise PriceChangedReasonEmpty()
+
+                    info["base_price"] = serviceObj.price if service.price is None else service.price
+                    info["final_price"] = info["base_price"]
+
+                    hasPromotion = await self.uow.promotions.get_by_object(serviceObj.id, "service")
+                    if hasPromotion is not None and service.service_id in hasPromotion.conditions.get("services", []):
+                        info["promotion_id"] = hasPromotion.id
+                        if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT and hasPromotion.discount_value:
+                            discount = info["base_price"] - hasPromotion.discount_value
+                            info["final_price"] = discount if discount >= 0 else 0
+                        elif hasPromotion.promo_type == PromotionType.PERCENTAGE and hasPromotion.discount_value:
+                            discount = info["base_price"] * (hasPromotion.discount_value / 100)
+                            info["final_price"] = info["base_price"] - discount
+
                 if service.material_id:
                     materialObj = await self.uow.materials.get(service.material_id)
                     if not materialObj: raise MaterialNotFound(service.material_id)
                     if materialObj.archived: raise MaterialArchived(materialObj.id, materialObj.name)
-                    
                     if service.quantity > materialObj.quantity:
                         raise MaterialAmountInsufficient(materialObj.id, materialObj.name, service.quantity, materialObj.quantity)
-                    if service.price is None: service.price = materialObj.sell_price
                     if service.price != materialObj.sell_price and (service.notes is None or len(service.notes.strip()) == 0):
                         raise PriceChangedReasonEmpty()
-                    
-        return await self.uow.appointments.create(data)
+
+                    info["base_price"] = materialObj.sell_price if service.price is None else service.price
+                    info["final_price"] = info["base_price"]
+
+                    hasPromotion = await self.uow.promotions.get_by_object(materialObj.id, "material")
+                    if hasPromotion is not None and service.material_id in hasPromotion.conditions.get("materials", []):
+                        info["promotion_id"] = hasPromotion.id
+                        if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT and hasPromotion.discount_value:
+                            discount = info["base_price"] - hasPromotion.discount_value
+                            info["final_price"] = discount if discount >= 0 else 0
+                        elif hasPromotion.promo_type == PromotionType.PERCENTAGE and hasPromotion.discount_value:
+                            discount = info["base_price"] * (hasPromotion.discount_value / 100)
+                            info["final_price"] = info["base_price"] - discount
+
+                record_price_info.append(info)
+            price_info.append(record_price_info)
+
+        return await self.uow.appointments.create(data, price_info)
     
     async def update(self, data: AppointmentUpdateSchema) -> Appointment:
         checkIfExists = await self.uow.appointments.get(data.id)
