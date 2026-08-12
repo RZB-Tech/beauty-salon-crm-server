@@ -9,17 +9,19 @@ from src.schemas.appointment.create import AppointmentRecordsCreateSchema
 from src.schemas.base import RequestAllObject
 
 class AppointmentRecordsRepository(BaseRepository[AppointmentRecords]):
-    async def create(self, appointmentRecord: AppointmentRecordsCreateSchema) -> AppointmentRecords:
+    async def create(self, appointmentRecord: AppointmentRecordsCreateSchema, price_info: list[dict]) -> AppointmentRecords:
         db_services = [
             AppointmentServices(
                 service_id = service.service_id,
                 material_id = service.material_id,
                 quantity = service.quantity,
-                price = service.price,
+                base_price = info["base_price"],
+                final_price = info["final_price"],
+                promotion_id = info["promotion_id"],
                 price_changed_reason = service.price_changed_reason,
                 notes = service.notes
             )
-            for service in appointmentRecord.services
+            for service, info in zip(appointmentRecord.services, price_info)
         ]
 
         db_appointmentRecord = AppointmentRecords(

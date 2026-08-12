@@ -9,6 +9,7 @@ from src.exceptions.material_exceptions import MaterialNotFound, MaterialArchive
 from src.exceptions.service_exceptions import ServiceIsArchived, ServiceNotFound
 from src.repository.appointment.appointment_model import Appointment, AppointmentServices, AppointmentStatus
 from src.repository.material.material_model import Material
+from src.repository.promotion.promotion_model import PromotionType
 from src.repository.receipt.receipt_model import Receipt, ReceiptStatus
 from src.repository.service.service_model import Service
 from src.schemas.appointment.create import AppointmentServicesCreateSchema
@@ -45,7 +46,9 @@ class AppointmentServicesService():
             raise AppointmentHasActiveReceipts(appointmentRecord.appointment_id)
 
         employee = await self.uow.employees.get(appointmentRecord.employee_id)
-        if not employee: raise EmployeeNotFound(appointmentRecord.employee_id)
+        if employee is None: raise EmployeeNotFound(appointmentRecord.employee_id)
+
+        info = {"base_price": 0, "final_price": 0, "promotion_id": None}
 
         if service is not None:
             employeeAllowedServices = {i.id for i in employee.services}
@@ -54,14 +57,49 @@ class AppointmentServicesService():
             if data.price is None: data.price = service.price
             if data.price != service.price and (data.price_changed_reason is None or len(data.price_changed_reason.strip()) == 0):
                 raise PriceChangedReasonEmpty()
-        
+
+            info["base_price"] = data.price
+            info["final_price"] = data.price
+
+            hasPromotion = await self.uow.promotions.get_by_object(service.id, "service")
+            if hasPromotion is not None:
+                info["promotion_id"] = hasPromotion.id
+                if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT and hasPromotion.discount_value:
+                    discount = info["base_price"] - hasPromotion.discount_value
+                    info["final_price"] = discount if discount >= 0 else 0
+                elif hasPromotion.promo_type == PromotionType.PERCENTAGE and hasPromotion.discount_value:
+                    discount = info["base_price"] * (hasPromotion.discount_value / 100)
+                    info["final_price"] = info["base_price"] - discount
+
         if material is not None:
             if data.price is None: data.price = material.sell_price
             if data.price != material.sell_price and (data.price_changed_reason is None or len(data.price_changed_reason.strip()) == 0):
                 raise PriceChangedReasonEmpty()
 
-        newData = data.model_dump()
-        newObject = AppointmentServices(**newData)
+            info["base_price"] = data.price
+            info["final_price"] = data.price
+
+            hasPromotion = await self.uow.promotions.get_by_object(material.id, "material")
+            if hasPromotion is not None:
+                info["promotion_id"] = hasPromotion.id
+                if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT and hasPromotion.discount_value:
+                    discount = info["base_price"] - hasPromotion.discount_value
+                    info["final_price"] = discount if discount >= 0 else 0
+                elif hasPromotion.promo_type == PromotionType.PERCENTAGE and hasPromotion.discount_value:
+                    discount = info["base_price"] * (hasPromotion.discount_value / 100)
+                    info["final_price"] = info["base_price"] - discount
+
+        newObject = AppointmentServices(
+            appointment_record_id = data.appointment_record_id,
+            service_id = data.service_id,
+            material_id = data.material_id,
+            quantity = data.quantity,
+            base_price = info["base_price"],
+            final_price = info["final_price"],
+            promotion_id = info["promotion_id"],
+            price_changed_reason = data.price_changed_reason,
+            notes = data.notes
+        )
         await self.uow.appointmentServices.create(newObject)
         return await self.uow.appointments.get(appointmentID)
     
@@ -89,34 +127,72 @@ class AppointmentServicesService():
             raise AppointmentHasActiveReceipts()
         
         material: Material | None = None
-        if data.material_id: 
+        if data.material_id:
             material = await self.uow.materials.get(data.material_id)
             if material is None: raise MaterialNotFound(data.material_id)
             if material.archived: raise MaterialArchived(material.id, material.name)
+        elif appointmentService.material_id and data.price is not None:
+            material = await self.uow.materials.get(appointmentService.material_id)
 
         service: Service | None = None
         if data.service_id:
             service = await self.uow.services.get(data.service_id)
             if service is None: raise ServiceNotFound(data.service_id)
             if service.archived: raise ServiceIsArchived(service.id, service.name)
+        elif appointmentService.service_id and data.price is not None:
+            service = await self.uow.services.get(appointmentService.service_id)
 
         employee = await self.uow.employees.get(appointmentRecord.employee_id)
         if not employee: raise EmployeeNotFound(appointmentRecord.employee_id)
 
+        info = {"base_price": 0, "final_price": 0, "promotion_id": None}
+
         if service is not None:
-            employeeAllowedServices = {i.id for i in employee.services}
-            if data.service_id not in employeeAllowedServices:
-                raise EmployeeDoesNotProvideService(employee.id, employee.firstname, service.id, service.name)
+            if data.service_id:
+                employeeAllowedServices = {i.id for i in employee.services}
+                if data.service_id not in employeeAllowedServices:
+                    raise EmployeeDoesNotProvideService(employee.id, employee.firstname, service.id, service.name)
             if data.price is None: data.price = service.price
             if data.price != service.price and (data.price_changed_reason is None or len(data.price_changed_reason.strip()) == 0):
                 raise PriceChangedReasonEmpty()
-        
+
+            info["base_price"] = data.price
+            info["final_price"] = data.price
+
+            hasPromotion = await self.uow.promotions.get_by_object(service.id, "service")
+            if hasPromotion is not None:
+                info["promotion_id"] = hasPromotion.id
+                if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT and hasPromotion.discount_value:
+                    discount = info["base_price"] - hasPromotion.discount_value
+                    info["final_price"] = discount if discount >= 0 else 0
+                elif hasPromotion.promo_type == PromotionType.PERCENTAGE and hasPromotion.discount_value:
+                    discount = info["base_price"] * (hasPromotion.discount_value / 100)
+                    info["final_price"] = info["base_price"] - discount
+
         if material is not None:
             if data.price is None: data.price = material.sell_price
             if data.price != material.sell_price and (data.price_changed_reason is None or len(data.price_changed_reason.strip()) == 0):
                 raise PriceChangedReasonEmpty()
-            
-        dataDict = data.model_dump(exclude={"id"}, exclude_unset=True)
+
+            info["base_price"] = data.price
+            info["final_price"] = data.price
+
+            hasPromotion = await self.uow.promotions.get_by_object(material.id, "material")
+            if hasPromotion is not None:
+                info["promotion_id"] = hasPromotion.id
+                if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT and hasPromotion.discount_value:
+                    discount = info["base_price"] - hasPromotion.discount_value
+                    info["final_price"] = discount if discount >= 0 else 0
+                elif hasPromotion.promo_type == PromotionType.PERCENTAGE and hasPromotion.discount_value:
+                    discount = info["base_price"] * (hasPromotion.discount_value / 100)
+                    info["final_price"] = info["base_price"] - discount
+
+        dataDict = data.model_dump(exclude={"id", "price"}, exclude_unset=True)
+        if service is not None or material is not None:
+            dataDict["base_price"] = info["base_price"]
+            dataDict["final_price"] = info["final_price"]
+            dataDict["promotion_id"] = info["promotion_id"]
+
         await self.uow.appointmentServices.update(data.id, **dataDict)
         return await self.uow.appointments.get(appointmentRecord.appointment_id)
     

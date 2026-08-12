@@ -47,7 +47,7 @@ class AppointmentService():
 
                 if service.service_id:
                     serviceObj = await self.uow.services.get(service.service_id)
-                    if not serviceObj: raise ServiceNotFound(service.service_id)
+                    if serviceObj is None: raise ServiceNotFound(service.service_id)
                     if serviceObj.archived: raise ServiceIsArchived(serviceObj.id, serviceObj.name)
                     if serviceObj.id not in employeeAllowedServices: raise EmployeeDoesNotProvideService(employee.id, employee.firstname, serviceObj.id, serviceObj.name)
                     if (service.price != serviceObj.price and service.price is not None) and (service.price_changed_reason is None or len(service.price_changed_reason.strip()) == 0):
@@ -68,7 +68,7 @@ class AppointmentService():
 
                 if service.material_id:
                     materialObj = await self.uow.materials.get(service.material_id)
-                    if not materialObj: raise MaterialNotFound(service.material_id)
+                    if materialObj is None: raise MaterialNotFound(service.material_id)
                     if materialObj.archived: raise MaterialArchived(materialObj.id, materialObj.name)
                     if service.quantity > materialObj.quantity:
                         raise MaterialAmountInsufficient(materialObj.id, materialObj.name, service.quantity, materialObj.quantity)
