@@ -79,6 +79,7 @@ class FilterTables(Enum):
     specializations = "specializations"
     notifications = "notifications"
     roles = "roles"
+    promotions = "promotions"
     
 class FilterFieldSchema(BaseModel):
     field: str

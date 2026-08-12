@@ -17,7 +17,7 @@ get_promotion_service = make_service_dependency(PromotionService)
     response_model=PromotionResponseSchema,
     status_code= 201,
     summary = "Создать акцию",
-    description = "Создает акцию (`percentage`, `fixed_amount` или `bogo`). В `conditions` для `percentage`/`fixed_amount` указываются `services` и/или `materials`, на которые распространяется скидка, а для `bogo` — пара `buy`/`get`.",
+    description = "Создает акцию (`percentage` или `fixed_amount`), можно указать сразу service_id и material_id",
     dependencies=[Depends(require_permission([PermissionCode.PROMOTION_CREATE]))]
 )
 async def create(data: PromotionCreateSchema,
@@ -29,7 +29,7 @@ async def create(data: PromotionCreateSchema,
     response_model=PromotionResponseSchema,
     status_code= 200,
     summary = "Обновить акцию",
-    description = "Обновляет акцию по её `id`. Нельзя обновить архивированную акцию; тип акции (`promo_type`) должен оставаться согласован с условиями (`conditions`).",
+    description = "Обновляет акцию по её `id`. Нельзя обновить архивированную акцию",
     dependencies=[Depends(require_permission([PermissionCode.PROMOTION_UPDATE]))]
 )
 async def update(data: PromotionUpdateSchema,

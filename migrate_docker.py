@@ -66,22 +66,6 @@ def seed_platform_user():
             values ('ksandr', '$argon2id$v=19$m=4096,t=3,p=1$a1VVcjBAbTBu$Qd1NI3zumCmMA3DbZt/F92e8roA2RQuu7v++sV/H1hA');
             """])
 
-def seed_platform_user():
-    print("Creating platform user...")
-
-    run([
-            "psql",
-            "-h", DB_HOST,
-            "-p", DB_PORT,
-            "-U", DB_USER,
-            "-d", DB_NAME,
-            "-c",
-            """
-    
-            insert into platform_users(login, hashed_password)
-            values ('ksandr', '$argon2id$v=19$m=4096,t=3,p=1$a1VVcjBAbTBu$Qd1NI3zumCmMA3DbZt/F92e8roA2RQuu7v++sV/H1hA');
-            """])
-
 def seed_tenants():
     print("Creating tenants...")
     run([
