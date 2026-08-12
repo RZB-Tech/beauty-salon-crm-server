@@ -33,13 +33,12 @@ class Material(BaseFields):
     sell_price: Mapped[int] = mapped_column(Integer, default = 0)
 
     __table_args__ = (
-        UniqueConstraint("article", "tenant_id", name = "uq_material_article"),
         UniqueConstraint("id", "tenant_id", name = "uq_material_tenant"),
         Index(
-            "uq_material_article_name_lower", 
+            "uq_material_article_lower",
             func.lower(article),
-            func.lower(name),
-            "tenant_id"
+            "tenant_id",
+            unique = True
         ),
     )
 

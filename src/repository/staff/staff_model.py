@@ -64,7 +64,6 @@ class Staff(BaseFields):
  
     @validates("login")
     def validate_login_lowercase(self, key: str, value: str) -> str:
-        if value is not None: return value.strip().lower()
-        return value
+        return value.strip().lower()
 
     ALLOWED_FILTERS = {"login", "firstname", "lastname", "staff_type", "active", "employee_id", "archived"}

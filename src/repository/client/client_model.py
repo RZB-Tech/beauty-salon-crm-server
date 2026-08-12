@@ -29,7 +29,7 @@ class Client(BaseFields):
 
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_client_tenant"),
-        UniqueConstraint("phone", "tenant_id", name = "uq_client_phone_tenant"),
+        UniqueConstraint("firstname", "lastname", "middlename", "birth_date" ,"phone", "tenant_id", name = "uq_client_per_tenant"),
     )
 
     ALLOWED_FILTERS = {"firstname", "lastname", "middlename", "phone", "birth_date", "sex", "archived"}
