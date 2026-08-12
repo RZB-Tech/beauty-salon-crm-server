@@ -26,7 +26,7 @@ class PayrollIsPaid(BaseAppException):
     def __init__(self, id: int):
         super().__init__(
             detail = f"Payroll ID {id} is paid",
-            errroCode = self.errorCode,
+            errorCode = self.errorCode,
             id = id
         )
 

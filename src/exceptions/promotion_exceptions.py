@@ -36,7 +36,7 @@ class PromotionPromoTypeConditionConflict(BaseAppException):
 
 class PromotionTargetConflict(BaseAppException):
     statusCode = 409
-    errorCode = "PROMOTION_HAS_CONFILICT_WITH_TARGET"
+    errorCode = "PROMOTION_HAS_CONFLICT_WITH_TARGET"
     def __init__(self, target: str, target_id: int, promotion_id: int, promotion_name: str):
         super().__init__(
             detail = f"{target.capitalize()} (ID {target_id}) already has active promotion {promotion_name} (ID {promotion_id})",

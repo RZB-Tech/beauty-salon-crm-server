@@ -51,7 +51,7 @@ class ClientAppointmentConflict(BaseAppException):
 
 class EmployeeAppointmentConflict(BaseAppException):
     statusCode = 409
-    errorCode = "EMPLYOYEE_APPOINTMENT_TIME_CONFLICT"
+    errorCode = "EMPLOYEE_APPOINTMENT_TIME_CONFLICT"
     def __init__(self, id: int, firstname: str):
         super().__init__(
             detail = f"Employee {firstname} (ID {id}) is busy during these hours",

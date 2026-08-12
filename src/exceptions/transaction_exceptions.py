@@ -15,7 +15,7 @@ class TransactionCancelled(BaseAppException):
     errorCode = "TRANSACTION_IS_CANCELLED"
     def __init__(self, id: int):
         super().__init__(
-            detail = f"Transcation ID {id} not found",
+            detail = f"Transcation ID {id} is cancelled",
             errorCode = self.errorCode,
             id = id
         )
