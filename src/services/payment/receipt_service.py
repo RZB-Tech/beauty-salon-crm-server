@@ -4,14 +4,14 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from src.core.dependencies.uow import UnitOfWork
-from src.exceptions.appointment_exceptions import AppointmentHasActiveReceipts, AppointmentNotFound
+from src.exceptions.appointment_exceptions import AppointmentCancelled, AppointmentHasActiveReceipts, AppointmentIsPaid, AppointmentNotFound
 from src.exceptions.base import BaseAppException
 from src.exceptions.client_exceptions import ClientNotFound, DepositNotEnough
 from src.exceptions.employee_exceptions import EmployeeNotFound
 from src.exceptions.general_exceptions import ObjectIsArchived, PaymentCancelDueExpired
 from src.exceptions.material_exceptions import MaterialAmountInsufficient, MaterialArchived, MaterialNotFound
 from src.exceptions.receipt_exceptions import ReceiptIsCancelled, ReceiptIsPaid, ReceiptNotFound, ReceiptOverpayment, ReceiptWithEmptyAppointmentRecords
-from src.repository.appointment.appointment_model import AppointmentServices
+from src.repository.appointment.appointment_model import AppointmentServices, AppointmentStatus
 from src.repository.receipt.receipt_model import Receipt, ReceiptItem, ReceiptStatus, ReceiptType
 from src.repository.payroll.payroll_model import Payroll, PayrollStatus, PayrollType
 from src.repository.transaction.transaction_model import Transaction, TransactionCategory, TransactionMethod, TransactionType
@@ -47,8 +47,11 @@ class ReceiptService():
         if data.receipt_type == ReceiptType.APPOINTMENT:
             appointment = await self.uow.appointments.get(data.appointment_id)
             if appointment is None: raise AppointmentNotFound(data.appointment_id)
-
+            if appointment.status == AppointmentStatus.CANCELLED: raise AppointmentCancelled(data.appointment_id)
+            if appointment.archived: raise ObjectIsArchived(data.appointment_id, "appointments")
+            if appointment.paid: raise AppointmentIsPaid(data.appointment_id)
             if len(appointment.records) == 0: raise ReceiptWithEmptyAppointmentRecords(data.appointment_id)
+
 
             newReceipt.appointment_id = appointment.id
             runningSubTotal = 0
@@ -132,9 +135,8 @@ class ReceiptService():
         # get receipt info
         receipt = stmt.scalar_one_or_none()
         if not receipt: raise ReceiptNotFound(data.receipt_id)
-
         if receipt.status == ReceiptStatus.CANCELLED: raise ReceiptIsCancelled(data.receipt_id)
-            
+        if receipt.archived: raise ObjectIsArchived(data.receipt_id, "receipts")
         # check if receipt is already paid
         if receipt.remaining_amount == 0: raise ReceiptIsPaid(data.receipt_id)
         
