@@ -52,7 +52,6 @@ class ReceiptService():
             if appointment.paid: raise AppointmentIsPaid(data.appointment_id)
             if len(appointment.records) == 0: raise ReceiptWithEmptyAppointmentRecords(data.appointment_id)
 
-
             newReceipt.appointment_id = appointment.id
             runningSubTotal = 0
             runningTotal = 0 
@@ -79,7 +78,6 @@ class ReceiptService():
             for item_data in data.receipt_items:
                 material = await self.uow.materials.get(item_data.material_id)
                 if material is None: raise MaterialNotFound(item_data.material_id)
-
                 if material.archived: raise ObjectIsArchived(material.id, "materials")
                 if material.quantity < item_data.quantity: raise MaterialAmountInsufficient(material.id, material.name, item_data.quantity, material.quantity)
                 
