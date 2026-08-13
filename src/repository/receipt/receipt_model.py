@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from src.repository.appointment.appointment_model import Appointment, AppointmentServices
     from src.repository.material.material_model import Material
     from src.repository.transaction.transaction_model import Transaction
-    from src.repository.promotion.promotion_model import Promotion
+    from src.repository.giftCard.giftCard_model import GiftCard
 
 class ReceiptStatus(StrEnum):
     PENDING = "pending"
@@ -34,6 +34,7 @@ class ReceiptItem(BaseFields):
     __tablename__ = "receipt_items"
     receipt_id: Mapped[int] = mapped_column(Integer)
     material_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
+    giftCard_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
     appointment_service_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
 
     receipt: Mapped["Receipt"] = relationship(
@@ -48,6 +49,10 @@ class ReceiptItem(BaseFields):
         primaryjoin = "and_(ReceiptItem.appointment_service_id == AppointmentServices.id, ReceiptItem.tenant_id == AppointmentServices.tenant_id)",
         foreign_keys = [appointment_service_id]
     )
+    giftCard: Mapped["GiftCard"] = relationship(
+        primaryjoin = "and_(ReceiptItem.giftCard_id == GiftCard.id, ReceiptItem.tenant_id == GiftCard.tenant_id)",
+        foreign_keys = [giftCard_id]
+    )
 
     base_price: Mapped[int] = mapped_column(Integer)
     final_price: Mapped[int] = mapped_column(Integer)
@@ -58,8 +63,9 @@ class ReceiptItem(BaseFields):
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_receipt_item_tenant"),
         CheckConstraint(
-            "(material_id IS NOT NULL AND appointment_service_id IS NULL) OR "
-            "(material_id IS NULL AND appointment_service_id IS NOT NULL)",
+            "(material_id IS NOT NULL AND appointment_service_id IS NULL AND giftCard_id IS NULL) OR "
+            "(material_id IS NULL AND appointment_service_id IS NOT NULL AND giftCard_id IS NULL) OR "
+            "(material_id IS NULL AND appointment_service_id IS NULL AND giftCard_id IS NOT NULL)",
             name="chk_receipt_item_exclusive_source"
         ),
         ForeignKeyConstraint(
@@ -79,6 +85,12 @@ class ReceiptItem(BaseFields):
             ["appointment_services.id", "appointment_services.tenant_id"],
             ondelete = "CASCADE",
             name = "fk_appointment_service_item_receipt"
+        ),
+        ForeignKeyConstraint(
+            ["giftCard_id", "tenant_id"],
+            ["gift_cards.id", "gift_cards.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_gift_card_item_receipt"
         )
     )
 
@@ -121,7 +133,6 @@ class Receipt(BaseFields):
     
     change_amount: Mapped[int] = mapped_column(Integer, default = 0)
     change_to_deposit: Mapped[bool] = mapped_column(Boolean, default = False)
-
 
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_receipt_tenant"),

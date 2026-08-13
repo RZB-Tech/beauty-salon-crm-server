@@ -24,6 +24,7 @@ class TransactionType(StrEnum):
 class TransactionCategory(StrEnum):
     RECEIPT = "receipt"
     EMPLOYEE_PAYMENT = "employee payment"
+    GIFT_CARD = "gift card"
     UTILITY = "utility"
     INTERNET = "internet"
     TELEPHONE = "telephone"
@@ -34,6 +35,7 @@ class TransactionMethod(StrEnum):
     CASH = "cash"
     BANK_TRANSFER = "bank transfer"
     DEPOSIT = "deposit"
+    GIFT_CARD = "gift card"
 
 class Transaction(BaseFields):
     __tablename__ = "transactions"

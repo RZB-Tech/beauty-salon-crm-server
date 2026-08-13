@@ -57,6 +57,7 @@ class ReceiptService():
             for record in appointment.records:
                 for service in record.services:
                     item = ReceiptItem(
+                        receipt_id = newReceipt.id,
                         appointment_service_id = service.id,
                         base_price = service.base_price,
                         final_price = service.final_price,
@@ -87,6 +88,7 @@ class ReceiptService():
                 runningSubTotal += item_price * item_data.quantity
                 
                 receipt_item = ReceiptItem(
+                    receipt_id = newReceipt.id,
                     material_id=item_data.material_id,
                     base_price = service.base_price,
                     final_price = service.final_price,
