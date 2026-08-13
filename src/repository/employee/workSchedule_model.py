@@ -23,7 +23,7 @@ class AbsenceEnum(StrEnum):
 class EmployeeAbsence(BaseFields):
     __tablename__ = "employee_absences"
     
-    employee_id: Mapped[int] = mapped_column(ForeignKey("employees.id", ondelete = "CASCADE"))
+    employee_id: Mapped[int] = mapped_column(Integer)
 
     start_date: Mapped[date] = mapped_column(Date)
     end_date: Mapped[date] = mapped_column(Date)
