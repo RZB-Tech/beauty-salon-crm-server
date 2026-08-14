@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING
 from datetime import datetime
 from enum import Enum, StrEnum
 from typing import Any, Generic, TypeVar, get_args, get_origin
-from sqlalchemy import Boolean, DateTime, ForeignKey, ForeignKeyConstraint, Integer, String, Text, UniqueConstraint, and_, func, select, text, Enum as SQLEnum
+from sqlalchemy import Boolean, DateTime, ForeignKey, Integer, String, Text, UniqueConstraint, and_, func, select, text, Enum as SQLEnum
 from sqlalchemy.orm import DeclarativeBase, Mapped, declared_attr, foreign, mapped_column, relationship, validates
 from sqlalchemy.ext.asyncio import AsyncSession
 from src.database.mixins import TenantMixin
@@ -113,18 +113,7 @@ class BaseFields(TenantMixin, Base):
             new_val = value.astimezone() if hasattr(value, 'astimezone') else value
             if current_val != new_val:
                 raise ValueError("Запрещено изменять дату создания объекта")
-            
-    @declared_attr
-    def __table_args__(cls):
-        return (
-            ForeignKeyConstraint(
-                ["created_by_actor_id", "tenant_id"],
-                ["actors.id", "actors.tenant_id"],
-                ondelete="SET NULL",
-                name=f"fk_{cls.__tablename__}_created_by_tenant",
-            ),
-        )
-            
+
 T = TypeVar('T')
 
 class BaseRepository(Generic[T]):

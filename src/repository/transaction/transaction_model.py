@@ -78,6 +78,12 @@ class Transaction(BaseFields):
             ondelete = "SET NULL (payout_id)",
             name = "fk_transcation_payout"
         ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_transactions_created_by_tenant"
+        ),
     )
  
     ALLOWED_FILTERS = {"amount", "type", "method", "category", "cancelled", "auto_generated", "archived"}

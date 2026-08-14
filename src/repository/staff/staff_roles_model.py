@@ -23,4 +23,10 @@ class StaffRole(BaseFields):
             ondelete = "CASCADE",
             name = "fk_staffs_roles_to_role"
         ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_staffs_roles_created_by_tenant"
+        ),
     )

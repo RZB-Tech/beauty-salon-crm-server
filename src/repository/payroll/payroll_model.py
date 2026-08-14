@@ -74,6 +74,12 @@ class Payout(BaseFields):
             ondelete = "CASCADE",
             name = "fk_payout_employee"
         ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_payouts_created_by_tenant"
+        ),
         Index("ix_payouts_tenant_employee", "tenant_id", "employee_id"),
     )
     
@@ -118,6 +124,12 @@ class Payroll(BaseFields):
             ["appointments.id", "appointments.tenant_id"],
             ondelete = "CASCADE",
             name = "fk_payroll_appointment"
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_payrolls_created_by_tenant"
         )
     )
 

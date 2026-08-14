@@ -40,7 +40,13 @@ class EmployeeAbsence(BaseFields):
             ["employees.id", "employees.tenant_id"],
             ondelete = "CASCADE",
             name = "fk_employee_absence_tenant"
-        )
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_employee_absences_created_by_tenant"
+        ),
     )
 
     ALLOWED_FILTERS = {"employee_id", "start_date", "end_date", "absence_type", "archived"}
@@ -64,7 +70,13 @@ class WorkSchedule(BaseFields):
             ["employees.id", "employees.tenant_id"],
             ondelete = "CASCADE",
             name = "fk_work_schedule_employee_tenant"
-        )
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_employee_work_schedules_created_by_tenant"
+        ),
     )
 
     ALLOWED_FILTERS = {"day", "start_time", "end_time", "archived"}

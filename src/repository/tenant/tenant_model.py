@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from sqlalchemy import (
     Boolean,
     ForeignKey,
+    ForeignKeyConstraint,
     String,
     Integer, DateTime,
     Text,
@@ -47,6 +48,15 @@ class TenantIntegration(BaseFields):
     __tablename__ = "tenant_integrations"
 
     telegram_bot_token: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_tenant_integrations_created_by_tenant"
+        ),
+    )
 
 class TenantSubscriptionStatus(StrEnum):
     ACTIVE = "active"

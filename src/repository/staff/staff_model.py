@@ -59,6 +59,12 @@ class Staff(BaseFields):
             ["actors.id", "actors.tenant_id"],
             ondelete = "set null (actor_id)",
             name = "fk_actor_staff"
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_staffs_created_by_tenant"
         )
     )
  

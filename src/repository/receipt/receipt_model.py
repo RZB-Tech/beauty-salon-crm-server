@@ -79,6 +79,12 @@ class ReceiptItem(BaseFields):
             ["appointment_services.id", "appointment_services.tenant_id"],
             ondelete = "CASCADE",
             name = "fk_appointment_service_item_receipt"
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_receipt_items_created_by_tenant"
         )
     )
 
@@ -151,6 +157,12 @@ class Receipt(BaseFields):
             ["clients.id", "clients.tenant_id"],
             ondelete = "RESTRICT",
             name = "fk_receipt_client"
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_receipts_created_by_tenant"
         )
     )
 

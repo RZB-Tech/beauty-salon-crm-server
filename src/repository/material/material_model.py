@@ -1,5 +1,6 @@
 from __future__ import annotations
 from sqlalchemy import (
+    ForeignKeyConstraint,
     Index,
     String,
     Integer,Text,
@@ -39,6 +40,12 @@ class Material(BaseFields):
             func.lower(article),
             "tenant_id",
             unique = True
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_materials_created_by_tenant"
         ),
     )
 

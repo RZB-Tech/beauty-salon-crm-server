@@ -25,12 +25,18 @@ class Specialization(BaseFields):
 
     __table_args__ = (
         Index(
-            "uq_specialization_name_lower", 
+            "uq_specialization_name_lower",
             func.lower(name),
             "tenant_id",
             unique=True
         ),
         UniqueConstraint("id", "tenant_id", name="uq_specialization_id_tenant"),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_specializations_created_by_tenant"
+        ),
     )
 
     employees: Mapped[list["Employee"]] = relationship(
@@ -60,6 +66,12 @@ class EmployeeServices(BaseFields):
             ["services.id", "services.tenant_id"],
             ondelete="CASCADE",
             name="fk_employee_services_to_service"
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_employee_services_created_by_tenant"
         ),
     )
 
@@ -103,6 +115,12 @@ class Employee(BaseFields):
             ["specializations.id", "specializations.tenant_id"],
             ondelete="SET NULL (specialization_id)",
             name="fk_employee_specialization_tenant"
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_employees_created_by_tenant"
         ),
     )
 
