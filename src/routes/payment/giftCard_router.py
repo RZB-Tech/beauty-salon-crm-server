@@ -54,7 +54,7 @@ async def update(params: RequestAllObject,
     response_model=GiftCardResponseSchema,
     status_code = 200,
     summary = "Получить подарчный купон по ID",
-    dependencies=[Depends(require_permission([PermissionCode.GIFT_CARD_UPDATE]))]
+    dependencies=[Depends(require_permission([PermissionCode.GIFT_CARD_GET]))]
 )
 async def get(id: int,
                  giftCardService: GiftCardService = Depends(get_giftCard_service)):

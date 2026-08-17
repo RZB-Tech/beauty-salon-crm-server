@@ -26,7 +26,7 @@ class StaffRole(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_staffs_roles_created_by_tenant"
         ),
     )

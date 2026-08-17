@@ -34,7 +34,7 @@ class Specialization(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_specializations_created_by_tenant"
         ),
     )
@@ -42,7 +42,8 @@ class Specialization(BaseFields):
     employees: Mapped[list["Employee"]] = relationship(
         back_populates="specialization",
         primaryjoin="and_(Employee.specialization_id == Specialization.id, Employee.tenant_id == Specialization.tenant_id)",
-        foreign_keys = "[Employee.specialization_id]"
+        foreign_keys = "[Employee.specialization_id]",
+        lazy = "raise"
     )
 
     ALLOWED_FILTERS = {"name", "archived"}
@@ -70,7 +71,7 @@ class EmployeeServices(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_employee_services_created_by_tenant"
         ),
     )
@@ -92,7 +93,8 @@ class Employee(BaseFields):
     specialization: Mapped["Specialization"] = relationship(
         back_populates="employees",
         primaryjoin="and_(Employee.specialization_id == Specialization.id, Employee.tenant_id == Specialization.tenant_id)",
-        foreign_keys = [specialization_id]
+        foreign_keys = [specialization_id],
+        lazy = "raise"
     )
 
     services: Mapped[list["Service"]] = relationship(
@@ -119,7 +121,7 @@ class Employee(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_employees_created_by_tenant"
         ),
     )

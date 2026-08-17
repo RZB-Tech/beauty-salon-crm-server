@@ -65,7 +65,7 @@ class GiftCardService():
 
         receiptData = Receipt(
             receipt_type = ReceiptType.DIRECT_SALE,
-            client_id = data.client_id if data.client_id is not None else None,
+            client_id = data.client_id,
             subtotal_amount = data.initial_amount,
             total_amount = data.initial_amount,
             status = ReceiptStatus.PAID

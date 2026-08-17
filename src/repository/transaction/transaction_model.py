@@ -16,6 +16,7 @@ from src.database.base import BaseFields
 if TYPE_CHECKING: 
     from src.repository.payroll.payroll_model import Payout
     from src.repository.receipt.receipt_model import Receipt
+    from src.repository.giftCard.giftCard_model import GiftCard
 
 class TransactionType(StrEnum):
     INCOME = "income"
@@ -61,6 +62,12 @@ class Transaction(BaseFields):
         back_populates = "transactions",
         primaryjoin = "and_(Transaction.payout_id == Payout.id, Transaction.tenant_id == Payout.tenant_id)",
         foreign_keys = [payout_id])
+
+    giftCard_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
+    giftCard: Mapped["GiftCard"] = relationship(
+        primaryjoin = "and_(Transaction.giftCard_id == GiftCard.id, Transaction.tenant_id == GiftCard.tenant_id)",
+        foreign_keys = [giftCard_id]
+    )
     
     gateway: Mapped[str | None] = mapped_column(String(50), nullable = True, default = "manual")
     gateway_transaction_id: Mapped[str | None] = mapped_column(String(255), nullable = True)
@@ -81,9 +88,15 @@ class Transaction(BaseFields):
             name = "fk_transcation_payout"
         ),
         ForeignKeyConstraint(
+            ["giftCard_id", "tenant_id"],
+            ["gift_cards.id", "gift_cards.tenant_id"],
+            ondelete = 'SET NULL ("giftCard_id")',
+            name = "fk_transaction_giftCard"
+        ),
+        ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_transactions_created_by_tenant"
         ),
     )

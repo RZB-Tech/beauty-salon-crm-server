@@ -11,7 +11,6 @@ if TYPE_CHECKING:
 
 class GiftCardStatus(StrEnum):
     ACTIVE = "active"
-    REDEEMED = "redeemed"
     EXPIRED = "expired"
     CANCELLED = "cancelled"
 
@@ -63,7 +62,7 @@ class GiftCard(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_employees_created_by_tenant"
         ),
     )

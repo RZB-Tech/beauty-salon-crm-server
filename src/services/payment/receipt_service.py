@@ -9,9 +9,12 @@ from src.exceptions.base import BaseAppException
 from src.exceptions.client_exceptions import ClientNotFound, DepositNotEnough
 from src.exceptions.employee_exceptions import EmployeeNotFound
 from src.exceptions.general_exceptions import ObjectIsArchived, PaymentCancelDueExpired
-from src.exceptions.material_exceptions import MaterialAmountInsufficient, MaterialArchived, MaterialNotFound
-from src.exceptions.receipt_exceptions import ReceiptIsCancelled, ReceiptIsPaid, ReceiptNotFound, ReceiptOverpayment, ReceiptWithEmptyAppointmentRecords
+from src.exceptions.giftCard_exceptions import GiftCardClientConflict, GiftCardInsufficientAmount, GiftCardNotFound, GiftCardUnusable
+from src.exceptions.material_exceptions import MaterialAmountInsufficient, MaterialNotFound
+from src.exceptions.receipt_exceptions import ReceiptHasNotClient, ReceiptIsCancelled, ReceiptIsPaid, ReceiptNotFound, ReceiptOverpayment, ReceiptWithEmptyAppointmentRecords
 from src.repository.appointment.appointment_model import AppointmentServices, AppointmentStatus
+from src.repository.client.client_model import Client
+from src.repository.giftCard.giftCard_model import GiftCardStatus
 from src.repository.receipt.receipt_model import Receipt, ReceiptItem, ReceiptStatus, ReceiptType
 from src.repository.payroll.payroll_model import Payroll, PayrollStatus, PayrollType
 from src.repository.transaction.transaction_model import Transaction, TransactionCategory, TransactionMethod, TransactionType
@@ -137,43 +140,67 @@ class ReceiptService():
         if not receipt: raise ReceiptNotFound(data.receipt_id)
         if receipt.status == ReceiptStatus.CANCELLED: raise ReceiptIsCancelled(data.receipt_id)
         if receipt.archived: raise ObjectIsArchived(data.receipt_id, "receipts")
-        # check if receipt is already paid
         if receipt.remaining_amount == 0: raise ReceiptIsPaid(data.receipt_id)
+
+        client: Client | None = None
         
         # create temp deposit adjustment to substract payment sum in case if payment method is deposit
         depositAdjustment = 0
         if data.method == TransactionMethod.DEPOSIT:
+            if receipt.client_id is None: raise ReceiptHasNotClient(data.receipt_id)
+            client = await self.uow.clients.get(receipt.client_id)
+            if client is None: raise ClientNotFound(receipt.client_id)
             depositAdjustment -= data.amount
 
+        if data.method == TransactionMethod.GIFT_CARD:
+            giftCard = await self.uow.giftCards.get(data.giftCard_id)
+            if giftCard is None: raise GiftCardNotFound(data.giftCard_id)
+            if giftCard.status != GiftCardStatus.ACTIVE: raise GiftCardUnusable(data.giftCard_id, giftCard.status)
+            if giftCard.client_id is not None and giftCard.client_id != receipt.client_id: 
+                raise GiftCardClientConflict(data.giftCard_id, data.client_id)
+            if data.amount > giftCard.remain_amount: raise GiftCardInsufficientAmount(data.giftCard_id, data.amount, giftCard.remain_amount)
+            if giftCard.issue_date < datetime.now(timezone.utc): raise GiftCardUnusable(data.giftCard_id, "issue date does not match today’s date") 
+            if giftCard.expiration_date is not None and giftCard.expiration_date < datetime.now(timezone.utc):
+                raise GiftCardUnusable(data.giftCard_id, GiftCardStatus.EXPIRED)
+            
         # add overpaid sum to client's deposit
         if receipt.paid_amount + data.amount >= receipt.total_amount:
-            receipt.status = ReceiptStatus.PAID
 
             overpayment = (receipt.paid_amount + data.amount) - receipt.total_amount
             applied_amount = data.amount - overpayment
 
+            if overpayment > 0:
+                # if there has overpayment:
+                # with method gift_card - only substract applied_amount from gift_card
+                if data.method == TransactionMethod.GIFT_CARD:
+                    giftCard.remain_amount -= applied_amount
+                else:
+                # if payment method not gift_card - consider overpayment to add client's deposit
+                    if not data.add_change_to_deposit: raise ReceiptOverpayment()
+                    if client is None:
+                        if receipt.client_id is None: raise ReceiptHasNotClient(data.receipt_id)
+                        client = await self.uow.clients.get(receipt.client_id)
+                        if client is None: raise ClientNotFound(receipt.client_id)
+                    receipt.change_amount = overpayment
+                    receipt.change_to_deposit = True
+                    depositAdjustment += overpayment
+
             # create new transcation for income from receipt payment
             await self.uow.transactions.create(Transaction(
                 receipt_id = receipt.id,
+                giftCard_id = data.giftCard_id,
                 amount = applied_amount,
-                type = TransactionType.INCOME,
+                type = TransactionType.INCOME if data.method in [TransactionMethod.CARD,
+                    TransactionMethod.CASH,
+                    TransactionMethod.BANK_TRANSFER] else TransactionType.EXPENSE,
                 method = TransactionMethod(data.method),
                 category = TransactionCategory.RECEIPT,
                 auto_generated = True
             ))
 
-            if receipt.appointment:
-                receipt.appointment.paid = True
-
-            if overpayment > 0:
-                if not data.add_change_to_deposit: raise ReceiptOverpayment()
-                receipt.change_amount = overpayment
-                receipt.change_to_deposit = True
-                
-                if data.add_change_to_deposit: depositAdjustment += overpayment
-                
             # add commission to employees
             if receipt.receipt_type == ReceiptType.APPOINTMENT:
+                receipt.appointment.paid = True 
                 for item in receipt.items:
                     if not item.appointment_service_id:
                         continue
@@ -196,14 +223,22 @@ class ReceiptService():
                                 auto_generated = True
                             )
                             await self.uow.payrolls.create(payroll_record)
+
+            receipt.status = ReceiptStatus.PAID
         else:
             receipt.change_amount = 0
             receipt.change_to_deposit = False
 
+            if data.method == TransactionMethod.GIFT_CARD:
+                giftCard.remain_amount -= data.amount
+
             await self.uow.transactions.create(Transaction(
                 receipt_id = receipt.id,
+                giftCard_id = data.giftCard_id,
                 amount = data.amount,
-                type = TransactionType.INCOME,
+                type = TransactionType.INCOME if data.method in [TransactionMethod.CARD,
+                    TransactionMethod.CASH,
+                    TransactionMethod.BANK_TRANSFER] else TransactionType.EXPENSE,
                 method = TransactionMethod(data.method),
                 category = TransactionCategory.RECEIPT,
                 auto_generated = True
@@ -211,34 +246,17 @@ class ReceiptService():
 
         # substract payment sum from client's deposit
         if depositAdjustment != 0:
-            client_id: int
-            client_id = (receipt.appointment.client_id
-                         if receipt.appointment_id
-                         else receipt.client_id)
-            client = await self.uow.clients.get(client_id)
-
-            if client is None: raise ClientNotFound(client_id)
-
             if data.method == TransactionMethod.DEPOSIT and data.amount > client.deposit:
                 raise DepositNotEnough(client.id, client.firstname, data.amount, client.deposit)
-            
+
             final_deposit_balance = client.deposit + depositAdjustment
             await self.uow.clients.update(client.id, deposit = final_deposit_balance)
-            await self.uow.transactions.create(Transaction(
-                    receipt_id = receipt.id,
-                    amount = data.amount,
-                    type = TransactionType.INCOME,
-                    method = TransactionMethod.DEPOSIT,
-                    category = TransactionCategory.RECEIPT,
-                    auto_generated = True
-                ))
 
         return await self.uow.receipts.get(receipt.id)
 
     async def cancel(self, id: int) -> Receipt:
         receipt = await self.uow.receipts.get(id)
         if receipt is None: raise ReceiptNotFound(id)
-        
         if receipt.status == ReceiptStatus.CANCELLED:
             raise ReceiptIsCancelled(id)
 
@@ -282,13 +300,17 @@ class ReceiptService():
                 await self.uow.materials.update(material.id, quantity = newQuantity)
 
         receipt.status = ReceiptStatus.CANCELLED
-        if receipt.appointment:
-            receipt.appointment.paid = False
+        if receipt.appointment: receipt.appointment.paid = False
 
         receipt.change_amount = 0
         receipt.change_to_deposit = False
 
-        for transaction in receipt.transactions: transaction.cancelled = True
+        for transaction in receipt.transactions: 
+            if transaction.giftCard_id is not None:
+                giftCard = await self.uow.giftCards.get(transaction.giftCard_id)
+                if giftCard is not None: await self.uow.giftCards.update(
+                    giftCard.id, remain_amount = min(giftCard.initial_amount, transaction.amount + giftCard.remain_amount))
+            transaction.cancelled = True
             
         return await self.uow.receipts.get(id)
 

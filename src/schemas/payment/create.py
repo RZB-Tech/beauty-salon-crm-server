@@ -12,7 +12,16 @@ class ReceiptPaymentCreateSchema(BaseModel):
     receipt_id: int = Field(ge = 1)
     amount: int = Field(ge = 1)
     method: TransactionMethod
+    giftCard_id: int | None = Field(None, ge = 1)
     add_change_to_deposit: bool = True
+
+    @model_validator(mode = "after")
+    def check_request(self) -> Self:
+        if self.giftCard_id is not None and self.method != TransactionMethod.GIFT_CARD:
+            raise ValueError("Transcation method has to be gift_card if paying with gift card")
+
+        return self
+
 
     model_config = ConfigDict(json_schema_extra = {
         "example": {

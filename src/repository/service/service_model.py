@@ -37,7 +37,7 @@ class ServiceCategory(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_service_categories_created_by_tenant"
         ),
     )
@@ -82,7 +82,7 @@ class Service(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_services_created_by_tenant"
         ),
     )

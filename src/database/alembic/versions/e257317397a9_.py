@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: c50512deeb1d
+Revision ID: e257317397a9
 Revises: 
-Create Date: 2026-08-17 15:12:37.307055
+Create Date: 2026-08-17 21:37:32.975684
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'c50512deeb1d'
+revision: str = 'e257317397a9'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -94,7 +94,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_clients_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_clients_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('firstname', 'lastname', 'middlename', 'birth_date', 'phone', 'tenant_id', name='uq_client_per_tenant'),
@@ -115,7 +115,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_materials_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_materials_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id', 'tenant_id', name='uq_material_tenant')
@@ -132,7 +132,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_roles_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_roles_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id', 'tenant_id', name='uq_roles_tenant')
@@ -146,7 +146,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_service_categories_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_service_categories_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id', 'tenant_id', name='uq_service_category_id_tenant')
@@ -161,7 +161,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_specializations_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_specializations_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id', 'tenant_id', name='uq_specialization_id_tenant')
@@ -176,7 +176,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_tenant_integrations_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_tenant_integrations_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -197,7 +197,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.CheckConstraint('start_time_est < end_time_est', name='chk_start_before_end'),
     sa.ForeignKeyConstraint(['client_id', 'tenant_id'], ['clients.id', 'clients.tenant_id'], name='fk_appoitment_client', ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_appointments_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_appointments_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('client_id', 'start_time_est', 'end_time_est', name='uq_client_appointment_time'),
@@ -222,7 +222,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_employees_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_employees_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['specialization_id', 'tenant_id'], ['specializations.id', 'specializations.tenant_id'], name='fk_employee_specialization_tenant', ondelete='SET NULL (specialization_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
@@ -245,7 +245,7 @@ def upgrade() -> None:
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['client_id', 'tenant_id'], ['clients.id', 'clients.tenant_id'], name='fk_notifications_client_tenant', ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_notifications_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_notifications_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id')
     )
@@ -262,7 +262,7 @@ def upgrade() -> None:
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['category_id', 'tenant_id'], ['service_categories.id', 'service_categories.tenant_id'], name='fk_service_category_tenant', ondelete='SET NULL (category_id)'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_services_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_services_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id', 'tenant_id', name='uq_service_id_tenant')
@@ -279,7 +279,7 @@ def upgrade() -> None:
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['appointment_id', 'tenant_id'], ['appointments.id', 'appointments.tenant_id'], name='fk_appointment_records_appointment', ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_appointment_records_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_appointment_records_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['employee_id', 'tenant_id'], ['employees.id', 'employees.tenant_id'], name='fk_appointment_records_employee', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
@@ -299,7 +299,7 @@ def upgrade() -> None:
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.CheckConstraint('start_date < end_date', name='chk_start_before_end'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_employee_absences_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_employee_absences_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['employee_id', 'tenant_id'], ['employees.id', 'employees.tenant_id'], name='fk_employee_absence_tenant', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
@@ -316,7 +316,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_employee_services_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_employee_services_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['employee_id', 'tenant_id'], ['employees.id', 'employees.tenant_id'], name='fk_employee_services_to_employee', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['service_id', 'tenant_id'], ['services.id', 'services.tenant_id'], name='fk_employee_services_to_service', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
@@ -337,7 +337,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.CheckConstraint('day_of_week BETWEEN 1 and 7', name='chk_valid_day'),
     sa.CheckConstraint('start_time < end_time', name='chk_start_before_end'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_employee_work_schedules_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_employee_work_schedules_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['employee_id', 'tenant_id'], ['employees.id', 'employees.tenant_id'], name='fk_work_schedule_employee_tenant', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
@@ -358,7 +358,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_payouts_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_payouts_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['employee_id', 'tenant_id'], ['employees.id', 'employees.tenant_id'], name='fk_payout_employee', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
@@ -382,7 +382,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_promotions_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_promotions_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['material_id', 'tenant_id'], ['materials.id', 'materials.tenant_id'], name='fk_uc_material', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['service_id', 'tenant_id'], ['services.id', 'services.tenant_id'], name='fk_uc_service', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
@@ -411,7 +411,7 @@ def upgrade() -> None:
     sa.CheckConstraint("\n            (appointment_id IS NOT NULL AND receipt_type = 'appointment')\n            OR\n            (appointment_id IS NULL AND receipt_type <> 'appointment')\n            ", name='ck_receipt_appointment_consistency'),
     sa.ForeignKeyConstraint(['appointment_id', 'tenant_id'], ['appointments.id', 'appointments.tenant_id'], name='fk_receipt_appoinment', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['client_id', 'tenant_id'], ['clients.id', 'clients.tenant_id'], name='fk_receipt_client', ondelete='RESTRICT'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_receipts_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_receipts_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id', 'tenant_id', name='uq_receipt_tenant')
@@ -436,7 +436,7 @@ def upgrade() -> None:
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_actor_staff', ondelete='set null (actor_id)'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_staffs_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_staffs_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['employee_id', 'tenant_id'], ['employees.id', 'employees.tenant_id'], name='fk_staff_employee', ondelete='SET NULL (employee_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
@@ -461,9 +461,9 @@ def upgrade() -> None:
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['appointment_record_id', 'tenant_id'], ['appointment_records.id', 'appointment_records.tenant_id'], name='fk_appointment_services_record', ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_appointment_services_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_appointment_services_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['material_id', 'tenant_id'], ['materials.id', 'materials.tenant_id'], name='fk_appointment_services_material', ondelete='RESTRICT'),
-    sa.ForeignKeyConstraint(['promotion_id', 'tenant_id'], ['promotions.id', 'promotions.tenant_id'], name='fk_appointment_service_promotion', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['promotion_id', 'tenant_id'], ['promotions.id', 'promotions.tenant_id'], name='fk_appointment_service_promotion', ondelete='SET NULL (promotion_id)'),
     sa.ForeignKeyConstraint(['service_id', 'tenant_id'], ['services.id', 'services.tenant_id'], name='fk_appointment_services_serivce', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
@@ -494,6 +494,7 @@ def upgrade() -> None:
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('issue_date', sa.DateTime(timezone=True), nullable=False),
     sa.Column('expiration_date', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('cancelled_reason', sa.Text(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -502,7 +503,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.CheckConstraint('initial_amount >= 1', name='cc_initial_amount_positive'),
     sa.ForeignKeyConstraint(['client_id', 'tenant_id'], ['clients.id', 'clients.tenant_id'], name='fk_gift_card_client', ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_employees_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_employees_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['receipt_id', 'tenant_id'], ['receipts.id', 'receipts.tenant_id'], name='fk_gift_card_receipt', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
@@ -527,7 +528,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.CheckConstraint('amount >= 1', name='ck_payorll_amount_non_negative'),
     sa.ForeignKeyConstraint(['appointment_id', 'tenant_id'], ['appointments.id', 'appointments.tenant_id'], name='fk_payroll_appointment', ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_payrolls_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_payrolls_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['employee_id', 'tenant_id'], ['employees.id', 'employees.tenant_id'], name='fk_payroll_employee', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['payout_id', 'tenant_id'], ['payouts.id', 'payouts.tenant_id'], name='fk_payroll_payout', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
@@ -545,7 +546,7 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_staffs_roles_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_staffs_roles_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['role_id', 'tenant_id'], ['roles.id', 'roles.tenant_id'], name='fk_staffs_roles_to_role', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['staff_id', 'tenant_id'], ['staffs.id', 'staffs.tenant_id'], name='fk_staffs_roles_to_staff', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
@@ -553,33 +554,6 @@ def upgrade() -> None:
     sa.UniqueConstraint('staff_id', 'role_id', name='pk_staffs_roles')
     )
     op.create_index(op.f('ix_staffs_roles_tenant_id'), 'staffs_roles', ['tenant_id'], unique=False)
-    op.create_table('transactions',
-    sa.Column('amount', sa.Integer(), nullable=False),
-    sa.Column('type', sa.String(length=50), nullable=False),
-    sa.Column('method', sa.String(length=50), nullable=False),
-    sa.Column('category', sa.String(length=50), nullable=False),
-    sa.Column('notes', sa.Text(), nullable=True),
-    sa.Column('cancelled', sa.Boolean(), server_default='false', nullable=False),
-    sa.Column('auto_generated', sa.Boolean(), server_default='false', nullable=False),
-    sa.Column('receipt_id', sa.Integer(), nullable=True),
-    sa.Column('payout_id', sa.Integer(), nullable=True),
-    sa.Column('gateway', sa.String(length=50), nullable=True),
-    sa.Column('gateway_transaction_id', sa.String(length=255), nullable=True),
-    sa.Column('gateway_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
-    sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_transactions_created_by_tenant', ondelete='SET NULL'),
-    sa.ForeignKeyConstraint(['payout_id', 'tenant_id'], ['payouts.id', 'payouts.tenant_id'], name='fk_transcation_payout', ondelete='SET NULL (payout_id)'),
-    sa.ForeignKeyConstraint(['receipt_id', 'tenant_id'], ['receipts.id', 'receipts.tenant_id'], name='fk_transcation_receipt', ondelete='SET NULL (receipt_id)'),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
-    sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('id', 'tenant_id', name='uq_transaction_tenant')
-    )
-    op.create_index(op.f('ix_transactions_tenant_id'), 'transactions', ['tenant_id'], unique=False)
     op.create_table('receipt_items',
     sa.Column('receipt_id', sa.Integer(), nullable=False),
     sa.Column('material_id', sa.Integer(), nullable=True),
@@ -597,7 +571,7 @@ def upgrade() -> None:
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.CheckConstraint('(material_id IS NOT NULL AND appointment_service_id IS NULL AND "giftCard_id" IS NULL) OR (material_id IS NULL AND appointment_service_id IS NOT NULL AND "giftCard_id" IS NULL) OR (material_id IS NULL AND appointment_service_id IS NULL AND "giftCard_id" IS NOT NULL)', name='chk_receipt_item_exclusive_source'),
     sa.ForeignKeyConstraint(['appointment_service_id', 'tenant_id'], ['appointment_services.id', 'appointment_services.tenant_id'], name='fk_appointment_service_item_receipt', ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_receipt_items_created_by_tenant', ondelete='SET NULL'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_receipt_items_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['material_id', 'tenant_id'], ['materials.id', 'materials.tenant_id'], name='fk_material_items_receipt', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['receipt_id', 'tenant_id'], ['receipts.id', 'receipts.tenant_id'], name='fk_receipt_items_receipt', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
@@ -605,16 +579,45 @@ def upgrade() -> None:
     sa.UniqueConstraint('id', 'tenant_id', name='uq_receipt_item_tenant')
     )
     op.create_index(op.f('ix_receipt_items_tenant_id'), 'receipt_items', ['tenant_id'], unique=False)
+    op.create_table('transactions',
+    sa.Column('amount', sa.Integer(), nullable=False),
+    sa.Column('type', sa.String(length=50), nullable=False),
+    sa.Column('method', sa.String(length=50), nullable=False),
+    sa.Column('category', sa.String(length=50), nullable=False),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('cancelled', sa.Boolean(), server_default='false', nullable=False),
+    sa.Column('auto_generated', sa.Boolean(), server_default='false', nullable=False),
+    sa.Column('receipt_id', sa.Integer(), nullable=True),
+    sa.Column('payout_id', sa.Integer(), nullable=True),
+    sa.Column('giftCard_id', sa.Integer(), nullable=True),
+    sa.Column('gateway', sa.String(length=50), nullable=True),
+    sa.Column('gateway_transaction_id', sa.String(length=255), nullable=True),
+    sa.Column('gateway_metadata', postgresql.JSONB(astext_type=sa.Text()), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
+    sa.Column('tenant_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_transactions_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
+    sa.ForeignKeyConstraint(['giftCard_id', 'tenant_id'], ['gift_cards.id', 'gift_cards.tenant_id'], name='fk_transaction_giftCard', ondelete='SET NULL ("giftCard_id")'),
+    sa.ForeignKeyConstraint(['payout_id', 'tenant_id'], ['payouts.id', 'payouts.tenant_id'], name='fk_transcation_payout', ondelete='SET NULL (payout_id)'),
+    sa.ForeignKeyConstraint(['receipt_id', 'tenant_id'], ['receipts.id', 'receipts.tenant_id'], name='fk_transcation_receipt', ondelete='SET NULL (receipt_id)'),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('id', 'tenant_id', name='uq_transaction_tenant')
+    )
+    op.create_index(op.f('ix_transactions_tenant_id'), 'transactions', ['tenant_id'], unique=False)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
-    op.drop_index(op.f('ix_receipt_items_tenant_id'), table_name='receipt_items')
-    op.drop_table('receipt_items')
     op.drop_index(op.f('ix_transactions_tenant_id'), table_name='transactions')
     op.drop_table('transactions')
+    op.drop_index(op.f('ix_receipt_items_tenant_id'), table_name='receipt_items')
+    op.drop_table('receipt_items')
     op.drop_index(op.f('ix_staffs_roles_tenant_id'), table_name='staffs_roles')
     op.drop_table('staffs_roles')
     op.drop_index(op.f('ix_payrolls_tenant_id'), table_name='payrolls')

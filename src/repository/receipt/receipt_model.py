@@ -89,7 +89,7 @@ class ReceiptItem(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_receipt_items_created_by_tenant"
         )
     )
@@ -166,7 +166,7 @@ class Receipt(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_receipts_created_by_tenant"
         )
     )

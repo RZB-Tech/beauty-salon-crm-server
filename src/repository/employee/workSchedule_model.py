@@ -1,13 +1,12 @@
 from __future__ import annotations
-from enum import Enum, StrEnum
+from enum import StrEnum
 from src.database.base import BaseFields
-from sqlalchemy import CheckConstraint, Enum as SQLEnum, ForeignKeyConstraint, Integer, String, Time, UniqueConstraint
+from sqlalchemy import CheckConstraint, ForeignKeyConstraint, Integer, String, Time, UniqueConstraint
 from typing import TYPE_CHECKING
 from sqlalchemy import (
-    ForeignKey,
     Date,Text
 )
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 from datetime import date, time
 
 if TYPE_CHECKING:
@@ -44,7 +43,7 @@ class EmployeeAbsence(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_employee_absences_created_by_tenant"
         ),
     )
@@ -74,7 +73,7 @@ class WorkSchedule(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_employee_work_schedules_created_by_tenant"
         ),
     )

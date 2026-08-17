@@ -47,3 +47,12 @@ class ReceiptIsCancelled(BaseAppException):
             detail = f"Receipt (ID {id}) is cancelled",
             errorCode = self.errorCode
         )
+
+class ReceiptHasNotClient(BaseAppException):
+    status = 409
+    errorCode = "RECEIPT_HAS_NO_CLIENT"
+    def __init__(self, id: int):
+        super().__init__(
+            detail = f"Receipt ID {id} has no client",
+            id = id
+        )

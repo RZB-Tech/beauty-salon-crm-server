@@ -90,13 +90,13 @@ class AppointmentServices(BaseFields):
         ForeignKeyConstraint(
             ["promotion_id", "tenant_id"],
             ["promotions.id", "promotions.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (promotion_id)",
             name = "fk_appointment_service_promotion"
         ),
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_appointment_services_created_by_tenant"
         )
     )
@@ -140,7 +140,7 @@ class AppointmentRecords(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_appointment_records_created_by_tenant"
         )
     )
@@ -188,7 +188,7 @@ class Appointment(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_appointments_created_by_tenant"
         ),
         CheckConstraint("start_time_est < end_time_est", name="chk_start_before_end")

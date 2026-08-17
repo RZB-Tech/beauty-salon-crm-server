@@ -77,7 +77,7 @@ class Payout(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_payouts_created_by_tenant"
         ),
         Index("ix_payouts_tenant_employee", "tenant_id", "employee_id"),
@@ -128,7 +128,7 @@ class Payroll(BaseFields):
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],
-            ondelete = "SET NULL",
+            ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_payrolls_created_by_tenant"
         )
     )
