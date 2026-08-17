@@ -5,6 +5,7 @@ from sqlalchemy import (
     Integer,
     Date,
     Text,
+    ForeignKeyConstraint,
     UniqueConstraint
 )
 from sqlalchemy.orm import Mapped, mapped_column
@@ -30,6 +31,12 @@ class Client(BaseFields):
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_client_tenant"),
         UniqueConstraint("firstname", "lastname", "middlename", "birth_date" ,"phone", "tenant_id", name = "uq_client_per_tenant"),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_clients_created_by_tenant"
+        ),
     )
 
     ALLOWED_FILTERS = {"firstname", "lastname", "middlename", "phone", "birth_date", "sex", "archived"}

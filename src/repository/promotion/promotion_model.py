@@ -73,6 +73,12 @@ class Promotion(BaseFields):
             ondelete="RESTRICT",
             name="fk_uc_material",
         ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_promotions_created_by_tenant"
+        ),
     )
 
     ALLOWED_FILTERS = {"name", "promo_type", "discount_value", "start_time", "end_time", "is_active", "archived"}

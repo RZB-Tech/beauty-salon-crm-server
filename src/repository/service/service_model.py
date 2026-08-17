@@ -28,12 +28,18 @@ class ServiceCategory(BaseFields):
 
     __table_args__ = (
         Index(
-            "uq_service_category_name_lower", 
+            "uq_service_category_name_lower",
             func.lower(name),
             "tenant_id",
             unique=True
         ),
-        UniqueConstraint("id", "tenant_id", name="uq_service_category_id_tenant")
+        UniqueConstraint("id", "tenant_id", name="uq_service_category_id_tenant"),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_service_categories_created_by_tenant"
+        ),
     )
 
     ALLOWED_FILTERS = {"name", "archived"}
@@ -72,6 +78,12 @@ class Service(BaseFields):
             ["service_categories.id", "service_categories.tenant_id"],
             ondelete="SET NULL (category_id)",
             name="fk_service_category_tenant"
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_services_created_by_tenant"
         ),
     )
 

@@ -92,6 +92,12 @@ class AppointmentServices(BaseFields):
             ["promotions.id", "promotions.tenant_id"],
             ondelete = "SET NULL",
             name = "fk_appointment_service_promotion"
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_appointment_services_created_by_tenant"
         )
     )
 
@@ -130,6 +136,12 @@ class AppointmentRecords(BaseFields):
             ["appointments.id", "appointments.tenant_id"],
             ondelete = "CASCADE",
             name = "fk_appointment_records_appointment"
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_appointment_records_created_by_tenant"
         )
     )
 
@@ -172,6 +184,12 @@ class Appointment(BaseFields):
             ["clients.id", "clients.tenant_id"],
             ondelete = "CASCADE",
             name = "fk_appoitment_client"
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_appointments_created_by_tenant"
         ),
         CheckConstraint("start_time_est < end_time_est", name="chk_start_before_end")
     )

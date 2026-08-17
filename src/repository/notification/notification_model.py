@@ -43,6 +43,12 @@ class Notification(BaseFields):
             ondelete = "CASCADE",
             name = "fk_notifications_client_tenant"
         ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_notifications_created_by_tenant"
+        ),
     )
 
     ALLOWED_FILTERS = {"client_id", "type", "scheduled_at", "delivered_at", "archived", "status"}
