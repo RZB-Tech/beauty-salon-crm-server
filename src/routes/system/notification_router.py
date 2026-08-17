@@ -11,6 +11,7 @@ from src.core.dependencies.uow import make_service_dependency
 from src.core.permissions import PermissionCode
 from src.schemas.base import PaginatedResponseSchema, RequestAllObject
 from src.schemas.notification.create import NotificationCreateSchema
+from src.schemas.notification.read import NotificationReadSchema
 from src.schemas.notification.response import NotificationResponseSchema
 from src.services.client.notification_service import NotificationService
 from src.core.config import settings
@@ -115,16 +116,16 @@ async def get(id: int,
     return await notificationService.get(id)
 
 @router.post(
-    "/{id}/read",
+    "/read",
     response_model = NotificationResponseSchema,
     status_code = 200,
     summary = "Отметить уведомление прочитанным",
     description = "Переводит уведомление в статус `read`. Уже прочитанное уведомление отметить повторно нельзя.",
     dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_CREATE]))]
 )
-async def read(id: int,
+async def read(data: NotificationReadSchema,
                notificationService: NotificationService = Depends(get_notification_service)):
-    return await notificationService.read(id)
+    return await notificationService.read(data)
 
 @router.post(
     "/{id}/cancel",

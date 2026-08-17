@@ -9,6 +9,7 @@ from src.repository.notification.notification_model import Notification, Notific
 from src.schemas.base import RequestAllObject
 from src.schemas.notification.create import NotificationCreateSchema
 from src.core.utils.sse_manager import sse_manager
+from src.schemas.notification.read import NotificationReadSchema
 
 class NotificationService():
     def __init__(self, uow: UnitOfWork):
@@ -40,12 +41,12 @@ class NotificationService():
             "totalPages": total_pages
         }
 
-    async def read(self, id: int) -> Notification:
-        notification = await self.uow.notifications.get(id)
-        if notification is None: raise NotificationNotFound(id)
-        if notification.status == NotificationStatus.READ: raise NotificationAlreadyRead(id)
+    async def read(self, data: NotificationReadSchema) -> Notification:
+        notification = await self.uow.notifications.get(data.id)
+        if notification is None: raise NotificationNotFound(data.id)
+        if notification.status == NotificationStatus.READ: raise NotificationAlreadyRead(data.id)
 
-        result = await self.uow.notifications.update(id, status = NotificationStatus.READ)
+        result = await self.uow.notifications.update(data.id, status = NotificationStatus.READ, notes = data.notes)
         if result is None: raise BaseAppException(detail = "Error while trying to change notification read status")
         return result
 

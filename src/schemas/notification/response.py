@@ -9,5 +9,6 @@ class NotificationResponseSchema(BaseResponseSchema):
     body: str
     type: NotificationType
     status: NotificationStatus
+    notes: str | None = None
     scheduled_at: datetime
     delivered_at: datetime | None = None

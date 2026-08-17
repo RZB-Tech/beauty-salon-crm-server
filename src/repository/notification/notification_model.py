@@ -34,6 +34,8 @@ class Notification(BaseFields):
     delivered_at: Mapped[datetime | None] = mapped_column(DateTime(timezone = True), nullable = True, default = None)
     status: Mapped[str] = mapped_column(String(50), default = NotificationStatus.PENDING)
 
+    notes: Mapped[str | None] = mapped_column(Text, nullable = True)
+
     __table_args__ = (
         ForeignKeyConstraint(
             ["client_id", "tenant_id"],
