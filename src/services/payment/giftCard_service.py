@@ -4,6 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.client_exceptions import ClientNotFound
 from src.exceptions.general_exceptions import ObjectIsArchived
+from src.exceptions.giftCard_exceptions import GiftCardNotFound
 from src.repository.giftCard.giftCard_model import GiftCard
 from src.repository.receipt.receipt_model import Receipt, ReceiptItem, ReceiptStatus, ReceiptType
 from src.repository.transaction.transaction_model import Transaction, TransactionCategory, TransactionMethod, TransactionType
@@ -127,10 +128,10 @@ class GiftCardService():
     #     if result is None: raise CannotUpdate(data.id, "promotions")
     #     return result
 
-    # async def get(self, id: int) -> Promotion:
-    #     promotion = await self.uow.promotions.get(id)
-    #     if promotion is None: raise PromotionNotFound(id)
-    #     return promotion
+    async def get(self, id: int) -> GiftCard:
+        giftCard = await self.uow.giftCards.get(id)
+        if giftCard is None: raise GiftCardNotFound(id)
+        return giftCard
 
     # async def get_all(self, data: RequestAllObject) -> dict:
     #     items, total_items = await self.uow.promotions.get_all(data)

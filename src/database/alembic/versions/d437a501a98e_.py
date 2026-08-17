@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: b45b6e1c2a0a
+Revision ID: d437a501a98e
 Revises: 
-Create Date: 2026-08-14 12:22:12.430866
+Create Date: 2026-08-17 15:00:52.848167
 
 """
 from typing import Sequence, Union
@@ -12,7 +12,7 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = 'b45b6e1c2a0a'
+revision: str = 'd437a501a98e'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -217,6 +217,7 @@ def upgrade() -> None:
     sa.Column('scheduled_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('delivered_at', sa.DateTime(timezone=True), nullable=True),
     sa.Column('status', sa.String(length=50), nullable=False),
+    sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -466,6 +467,30 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('idx_audit_logs_tenant_date', 'audit_logs', ['tenant_id', 'changed_at'], unique=False)
+    op.create_table('gift_cards',
+    sa.Column('code', sa.String(length=50), nullable=False),
+    sa.Column('client_id', sa.Integer(), nullable=True),
+    sa.Column('receipt_id', sa.Integer(), nullable=False),
+    sa.Column('initial_amount', sa.Integer(), nullable=False),
+    sa.Column('remain_amount', sa.Integer(), nullable=False),
+    sa.Column('status', sa.String(length=50), nullable=False),
+    sa.Column('issue_date', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('expiration_date', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
+    sa.Column('tenant_id', sa.Integer(), nullable=False),
+    sa.CheckConstraint('initial_amount >= 1', name='cc_initial_amount_positive'),
+    sa.ForeignKeyConstraint(['client_id', 'tenant_id'], ['clients.id', 'clients.tenant_id'], name='fk_gift_card_client', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['receipt_id', 'tenant_id'], ['receipts.id', 'receipts.tenant_id'], name='fk_gift_card_receipt', ondelete='RESTRICT'),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('id', 'tenant_id', name='uq_gift_card_tenant')
+    )
+    op.create_index(op.f('ix_gift_cards_tenant_id'), 'gift_cards', ['tenant_id'], unique=False)
+    op.create_index('uq_gift_card_code', 'gift_cards', [sa.literal_column('lower(code)')], unique=True)
     op.create_table('payrolls',
     sa.Column('employee_id', sa.Integer(), nullable=False),
     sa.Column('payout_id', sa.Integer(), nullable=True),
@@ -536,6 +561,7 @@ def upgrade() -> None:
     op.create_table('receipt_items',
     sa.Column('receipt_id', sa.Integer(), nullable=False),
     sa.Column('material_id', sa.Integer(), nullable=True),
+    sa.Column('giftCard_id', sa.Integer(), nullable=True),
     sa.Column('appointment_service_id', sa.Integer(), nullable=True),
     sa.Column('base_price', sa.Integer(), nullable=False),
     sa.Column('final_price', sa.Integer(), nullable=False),
@@ -547,8 +573,9 @@ def upgrade() -> None:
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.CheckConstraint('(material_id IS NOT NULL AND appointment_service_id IS NULL) OR (material_id IS NULL AND appointment_service_id IS NOT NULL)', name='chk_receipt_item_exclusive_source'),
+    sa.CheckConstraint('(material_id IS NOT NULL AND appointment_service_id IS NULL AND giftCard_id IS NULL) OR (material_id IS NULL AND appointment_service_id IS NOT NULL AND giftCard_id IS NULL) OR (material_id IS NULL AND appointment_service_id IS NULL AND giftCard_id IS NOT NULL)', name='chk_receipt_item_exclusive_source'),
     sa.ForeignKeyConstraint(['appointment_service_id', 'tenant_id'], ['appointment_services.id', 'appointment_services.tenant_id'], name='fk_appointment_service_item_receipt', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['giftCard_id', 'tenant_id'], ['gift_cards.id', 'gift_cards.tenant_id'], name='fk_gift_card_item_receipt', ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['material_id', 'tenant_id'], ['materials.id', 'materials.tenant_id'], name='fk_material_items_receipt', ondelete='RESTRICT'),
     sa.ForeignKeyConstraint(['receipt_id', 'tenant_id'], ['receipts.id', 'receipts.tenant_id'], name='fk_receipt_items_receipt', ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
@@ -571,6 +598,9 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_payrolls_tenant_id'), table_name='payrolls')
     op.drop_index('ix_payrolls_tenant_employee', table_name='payrolls')
     op.drop_table('payrolls')
+    op.drop_index('uq_gift_card_code', table_name='gift_cards')
+    op.drop_index(op.f('ix_gift_cards_tenant_id'), table_name='gift_cards')
+    op.drop_table('gift_cards')
     op.drop_index('idx_audit_logs_tenant_date', table_name='audit_logs')
     op.drop_table('audit_logs')
     op.drop_index(op.f('ix_appointment_services_tenant_id'), table_name='appointment_services')
