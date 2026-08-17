@@ -3,13 +3,15 @@ import secrets
 from sqlalchemy.exc import IntegrityError
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.client_exceptions import ClientNotFound
-from src.exceptions.general_exceptions import ObjectIsArchived
-from src.exceptions.giftCard_exceptions import GiftCardNotFound
-from src.repository.giftCard.giftCard_model import GiftCard
+from src.exceptions.general_exceptions import CannotUpdate, ObjectIsArchived
+from src.exceptions.giftCard_exceptions import GiftCardCharged, GiftCardNotFound
+from src.repository.giftCard.giftCard_model import GiftCard, GiftCardStatus
 from src.repository.receipt.receipt_model import Receipt, ReceiptItem, ReceiptStatus, ReceiptType
 from src.repository.transaction.transaction_model import Transaction, TransactionCategory, TransactionMethod, TransactionType
 from src.schemas.base import RequestAllObject
 from src.schemas.giftCard.create import GiftCardCreateSchema
+from src.schemas.giftCard.update import GiftCardUpdateSchema
+from src.schemas.giftCard.request import GiftCardCancelSchema
 
 ALLOWED_CHARS = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ"
 MAX_CODE_GENERATION_ATTEMPTS = 5
@@ -93,55 +95,46 @@ class GiftCardService():
 
         return giftCard
 
-    # async def update(self, data: PromotionUpdateSchema) -> Promotion:
-    #     promotion = await self.uow.promotions.get(data.id)
-    #     if promotion is None: raise PromotionNotFound(data.id)
-    #     if promotion.archived: raise ObjectIsArchived(data.id, "promotions")
+    async def update(self, data: GiftCardUpdateSchema) -> GiftCard:
+        promotion = await self.uow.giftCards.get(data.id)
+        if promotion is None: raise GiftCardNotFound(data.id)
+        if promotion.archived: raise ObjectIsArchived(data.id, "gift_cards")
 
-    #     effective_promo_type = data.promo_type if data.promo_type is not None else promotion.promo_type
-
-    #     if effective_promo_type == PromotionType.PERCENTAGE and data.discount_value is None:
-    #         if promotion.discount_value > 100 or promotion.discount_value < 0:
-    #             raise PromotionDiscountPercentageExceed(promotion.discount_value)
-    #     if effective_promo_type == PromotionType.PERCENTAGE and data.discount_value is not None and (
-    #         data.discount_value > 100 or data.discount_value < 0
-    #     ):
-    #         raise PromotionDiscountPercentageExceed(data.discount_value)
-
-    #     if data.service_id:
-    #         checkIfUsing = await self.uow.promotions.get_by_object(data.service_id, "service")
-    #         if checkIfUsing is not None and checkIfUsing.is_active:
-    #             raise PromotionTargetConflict("service", data.service_id, checkIfUsing.id, checkIfUsing.name)
-            
-    #         await self._unusable_object(data.service_id, "services")
-
-    #     if data.material_id:
-    #         checkIfUsing = await self.uow.promotions.get_by_object(data.material_id, "material")
-    #         if checkIfUsing is not None and checkIfUsing.is_active:
-    #             raise PromotionTargetConflict("material", data.material_id, checkIfUsing.id, checkIfUsing.name)
-            
-    #         await self._unusable_object(data.material_id, "materials")
-
-    #     data.promo_type = effective_promo_type
-    #     dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
-    #     result = await self.uow.promotions.update(data.id, **dataDict)
-    #     if result is None: raise CannotUpdate(data.id, "promotions")
-    #     return result
+        dataDict = data.model_dump(exclude = {"id"}, exclude_unset = True)
+        result = await self.uow.giftCards.update(data.id, **dataDict)
+        if result is None: raise CannotUpdate(data.id, "gift_cards")
+        return result
 
     async def get(self, id: int) -> GiftCard:
         giftCard = await self.uow.giftCards.get(id)
         if giftCard is None: raise GiftCardNotFound(id)
         return giftCard
 
-    # async def get_all(self, data: RequestAllObject) -> dict:
-    #     items, total_items = await self.uow.promotions.get_all(data)
+    async def get_all(self, data: RequestAllObject) -> dict:
+        items, total_items = await self.uow.giftCards.get_all(data)
 
-    #     total_pages = math.ceil(total_items / data.pageSize) if data.pageSize > 0 else 0
+        total_pages = math.ceil(total_items / data.pageSize) if data.pageSize > 0 else 0
         
-    #     return {
-    #         "items": items,
-    #         "page": data.page,
-    #         "pageSize": data.pageSize,
-    #         "totalItems": total_items,
-    #         "totalPages": total_pages
-    #     }
+        return {
+            "items": items,
+            "page": data.page,
+            "pageSize": data.pageSize,
+            "totalItems": total_items,
+            "totalPages": total_pages
+        }
+
+    async def cancel(self, data: GiftCardCancelSchema) -> GiftCard:
+        giftCard = await self.uow.giftCards.get(data.id)
+        if giftCard is None: raise GiftCardNotFound(data.id)
+
+        if giftCard.initial_amount != giftCard.remain_amount:
+            raise GiftCardCharged(data.id)
+
+        result = await self.uow.giftCards.update(data.id, status = GiftCardStatus.CANCELLED)
+
+        transactions = await self.uow.transactions.get_by_receipt(result.receipt_id)
+        for transaction in transactions: await self.uow.transactions.update(
+            transaction.id,
+            cancelled = True)
+
+        return result

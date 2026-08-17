@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from datetime import datetime
 from enum import StrEnum
-from sqlalchemy import CheckConstraint, DateTime, ForeignKeyConstraint, Index, Integer, String, UniqueConstraint, func, text
+from sqlalchemy import CheckConstraint, DateTime, ForeignKeyConstraint, Index, Integer, String, Text, UniqueConstraint, func, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database.base import BaseFields
 
@@ -38,6 +38,8 @@ class GiftCard(BaseFields):
     issue_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     expiration_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable = True)
 
+    cancelled_reason: Mapped[str | None] = mapped_column(Text, nullable = True)
+
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_gift_card_tenant"),
         CheckConstraint("initial_amount >= 1", "cc_initial_amount_positive"),
@@ -57,7 +59,13 @@ class GiftCard(BaseFields):
             ["receipts.id", "receipts.tenant_id"],
             ondelete = "RESTRICT",
             name = "fk_gift_card_receipt"
-        )
+        ),
+        ForeignKeyConstraint(
+            ["created_by_actor_id", "tenant_id"],
+            ["actors.id", "actors.tenant_id"],
+            ondelete = "SET NULL",
+            name = "fk_employees_created_by_tenant"
+        ),
     )
 
     ALLOWED_FILTERS = {"code", "client_id", "initial_amount", "remain_amount", "status", "issue_date", "expiraton_date"}

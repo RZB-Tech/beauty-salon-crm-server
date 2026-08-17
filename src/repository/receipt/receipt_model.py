@@ -63,9 +63,9 @@ class ReceiptItem(BaseFields):
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_receipt_item_tenant"),
         CheckConstraint(
-            "(material_id IS NOT NULL AND appointment_service_id IS NULL AND giftCard_id IS NULL) OR "
-            "(material_id IS NULL AND appointment_service_id IS NOT NULL AND giftCard_id IS NULL) OR "
-            "(material_id IS NULL AND appointment_service_id IS NULL AND giftCard_id IS NOT NULL)",
+            '(material_id IS NOT NULL AND appointment_service_id IS NULL AND "giftCard_id" IS NULL) OR '
+            '(material_id IS NULL AND appointment_service_id IS NOT NULL AND "giftCard_id" IS NULL) OR '
+            '(material_id IS NULL AND appointment_service_id IS NULL AND "giftCard_id" IS NOT NULL)',
             name="chk_receipt_item_exclusive_source"
         ),
         ForeignKeyConstraint(

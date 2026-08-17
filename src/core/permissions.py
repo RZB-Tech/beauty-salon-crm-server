@@ -103,6 +103,11 @@ class PermissionCode(IntEnum):
     PROMOTION_UPDATE = 13003
     PROMOTION_MANAGE = 13999
 
+    GIFT_CARD_CREATE = 14001
+    GIFT_CARD_UPDATE = 14002
+    GIFT_CARD_GET = 14003
+    GIFT_CARD_MANAGE = 14004
+
 PERMISSIONS: dict[int, dict[str, str]] = {
     PermissionCode.MATERIAL_CREATE: {"resource": "material", "name": "Create material"},
     PermissionCode.MATERIAL_UPDATE: {"resource": "material", "name": "Update material"},
@@ -150,6 +155,11 @@ PERMISSIONS: dict[int, dict[str, str]] = {
     PermissionCode.PROMOTION_GET: {"resource": "promotion", "name": "Get promotion(s)"},
     PermissionCode.PROMOTION_UPDATE: {"resource": "promotion", "name": "Update promotion"},
     PermissionCode.PROMOTION_MANAGE: {"resource": "promotion", "name": "Manage promotions"},
+
+    PermissionCode.GIFT_CARD_CREATE: {"resource": "gift_cards", "name": "Create gift card"},
+    PermissionCode.GIFT_CARD_UPDATE: {"resource": "gift_cards", "name": "Update gift card"},
+    PermissionCode.GIFT_CARD_GET: {"resource": "gift_cards", "name": "Get gift card"},
+    PermissionCode.GIFT_CARD_MANAGE: {"resource": "gift_cards", "name": "Manage gift cards"},
 
     PermissionCode.SPECIALIZATION_CREATE: {"resource": "specialization", "name": "Create specialization"},
     PermissionCode.SPECIALIZATION_UPDATE: {"resource": "specialization", "name": "Update specialization"},
