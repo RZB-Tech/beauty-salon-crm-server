@@ -121,7 +121,7 @@ async def get(id: int,
     status_code = 200,
     summary = "Отметить уведомление прочитанным",
     description = "Переводит уведомление в статус `read`. Уже прочитанное уведомление отметить повторно нельзя.",
-    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_CREATE]))]
+    dependencies=[Depends(require_permission([PermissionCode.NOTIFICATION_READ]))]
 )
 async def read(data: NotificationReadSchema,
                notificationService: NotificationService = Depends(get_notification_service)):
