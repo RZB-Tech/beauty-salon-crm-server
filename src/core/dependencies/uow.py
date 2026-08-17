@@ -9,6 +9,7 @@ from src.repository.employee.absence_repository import EmployeeAbsenceRepository
 from src.repository.employee.employee_repository import EmployeeRepository
 from src.repository.employee.specialization_repository import SpecializationRepository
 from src.repository.employee.workSchedule_repository import WorkScheduleRepository
+from src.repository.giftCard.giftCard_repository import GiftCardRepository
 from src.repository.material.material_repository import MaterialRepository
 from src.repository.service.serviceCategory_repository import ServiceCategoryRepository
 from src.repository.service.service_repository import ServiceRepository
@@ -50,6 +51,7 @@ class UnitOfWork:
         self.receipts = ReceiptRepository()
         self.transactions = TransactionRepository()
         self.promotions = PromotionRepository()
+        self.giftCards = GiftCardRepository()
         
         self.notifications = NotificationRepository()
 
