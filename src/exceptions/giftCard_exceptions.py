@@ -45,11 +45,11 @@ class GiftCardCancelled(BaseAppException):
 
 class GiftCardUnusable(BaseAppException):
     statusCode = 409
-    errorCode = "GIFT_CARD_UNSABLE"
+    errorCode = "GIFT_CARD_UNUSABLE"
 
     def __init__(self, id: int, status: str):
         super().__init__(
-            detial = f"Gift card ID {id} is unusable, reasons: {status}",
+            detail = f"Gift card ID {id} is unusable, reasons: {status}",
             id = id,
             status = status
         )
