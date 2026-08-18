@@ -30,7 +30,7 @@ async def create(data: GiftCardCreateSchema,
     response_model=GiftCardResponseSchema,
     status_code= 200,
     summary = "Обновить подарочный купон",
-    description = "Обновляет подарочный купон по её `id`. Нельзя обновить архивированную акцию",
+    description = "Обновляет подарочный купон по её `id`. Можно указать опциональное поле `client_id`, если указывается, то созданные купон может быть использован только этим клиентом. Нельзя обновить архивированную акцию",
     dependencies=[Depends(require_permission([PermissionCode.GIFT_CARD_UPDATE]))]
 )
 async def update(data: GiftCardUpdateSchema,
@@ -64,7 +64,7 @@ async def get(id: int,
     "/cancel",
     response_model = GiftCardResponseSchema,
     status_code = 200,
-    summary = "Отменить подарочный купон",
+    summary = "Отменить подарочный купон. Можно отменить только не использованный купон (если остаток == `initial_amount`)",
     dependencies = [Depends(require_permission([PermissionCode.GIFT_CARD_UPDATE]))]
 )
 async def cancel(data: GiftCardCancelSchema,
