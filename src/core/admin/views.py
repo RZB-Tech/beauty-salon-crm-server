@@ -34,9 +34,9 @@ class TenantAdmin(ModelView, model = Tenant):
     can_delete = False
     can_view_details = True
 
-    column_list = [Tenant.id, Tenant.name, Tenant.TIN, Tenant.created_at, Tenant.active]
+    column_list = [Tenant.id, Tenant.name, Tenant.TIN, Tenant.parent_id, Tenant.created_at, Tenant.active]
     column_details_list = [
-        Tenant.id, Tenant.name, Tenant.TIN, Tenant.active,
+        Tenant.id, Tenant.name, Tenant.TIN, Tenant.parent_id, Tenant.active,
         Tenant.preferences, Tenant.integration,
         Tenant.created_at, Tenant.updated_at,
     ]

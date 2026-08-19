@@ -6,14 +6,15 @@ from src.database.base import Actor, ActorType
 from src.repository import Tenant, TenantIntegration, Staff
 from src.schemas.tenant.base import TenantPreferencesSchema
 
-async def provision_tenant(db: AsyncSession, 
-                           company_name: str, 
-                           admin_login: str, 
-                           admin_firstname: str, 
+async def provision_tenant(db: AsyncSession,
+                           company_name: str,
+                           admin_login: str,
+                           admin_firstname: str,
                            admin_password: str | None = None,
-                           company_tin: str | None = None, ) -> Tenant:
+                           company_tin: str | None = None,
+                           parent_id: int | None = None, ) -> Tenant:
     defaultPreferences = TenantPreferencesSchema().model_dump()
-    tenant = Tenant(name=company_name, TIN=company_tin, preferences = defaultPreferences)
+    tenant = Tenant(name=company_name, TIN=company_tin, preferences = defaultPreferences, parent_id = parent_id)
     db.add(tenant)
     await db.flush()
 

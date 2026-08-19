@@ -27,3 +27,12 @@ class TenantIntegrationsNotFound(BaseAppException):
             detail = f"Tenant integrations ID {id} not found",
             errorCode = self.errorCode
         )
+
+class TenantCannotCreateBranch(BaseAppException):
+    statusCode = 403
+    errorCode = "TENANT_CANNOT_CREATE_BRANCH"
+    def __init__(self):
+        super().__init__(
+            detail = "Only a parent organization can create branches",
+            errorCode = self.errorCode
+        )

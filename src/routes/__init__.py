@@ -19,6 +19,7 @@ from src.routes.payment.transaction_router import router as TransactionR
 from src.routes.payment.payout_router import router as PayoutR
 from src.routes.system.notification_router import router as notificationR
 from src.routes.system.tenantPreferences_router import router as tenantPreferencesR
+from src.routes.system.tenantBranches_router import router as tenantBranchesR
 from src.routes.employee.specialization_router import router as specializationR
 from src.routes.system.role_router import router as roleR
 from src.routes.system.permission_router import router as permissionR
@@ -163,6 +164,12 @@ protected_router.include_router(
     tenantPreferencesR,
     prefix = "/tenant-preferences",
     tags = ["Tenant preferences"]
+)
+
+protected_router.include_router(
+    tenantBranchesR,
+    prefix = "/tenant-branches",
+    tags = ["Tenant branches"]
 )
 
 protected_router.include_router(

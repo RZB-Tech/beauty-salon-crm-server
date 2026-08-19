@@ -25,6 +25,11 @@ class Tenant(Base):
 
     active: Mapped[bool] = mapped_column(Boolean, default = True, server_default="true")
     preferences: Mapped[dict] = mapped_column(JSONB, default = dict)
+
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("tenants.id", ondelete = "RESTRICT"), nullable = True, index = True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),
@@ -42,6 +47,13 @@ class Tenant(Base):
         viewonly = True,
         uselist = False,
         primaryjoin = "Tenant.id == TenantIntegration.tenant_id",
+    )
+
+    parent: Mapped["Tenant | None"] = relationship(
+        "Tenant", remote_side = [id], back_populates = "branches"
+    )
+    branches: Mapped[list["Tenant"]] = relationship(
+        "Tenant", back_populates = "parent"
     )
 
 class TenantIntegration(BaseFields):

@@ -97,6 +97,9 @@ class PermissionCode(IntEnum):
     TENANT_PREFERENCES_READ = 12002
     TENANT_PREFERENCES_UPDATE = 12003
     TENANT_MANAGE = 12004
+    TENANT_BRANCH_CREATE = 12011
+    TENANT_BRANCH_READ = 12012
+    TENANT_BRANCH_MANAGE = 12013
 
     PROMOTION_CREATE = 13001
     PROMOTION_GET = 13002
@@ -209,6 +212,9 @@ PERMISSIONS: dict[int, dict[str, str]] = {
     PermissionCode.TENANT_PREFERENCES_READ: {"resource": "organization settings", "name": "View organization settings"},
     PermissionCode.TENANT_PREFERENCES_UPDATE: {"resource": "organization settings", "name": "Update organization settings"},
     PermissionCode.TENANT_MANAGE: {"resource": "organization settings", "name": "Full access to organization settings / integrations"},
+    PermissionCode.TENANT_BRANCH_CREATE: {"resource": "organization branch", "name": "Create branch organization"},
+    PermissionCode.TENANT_BRANCH_READ: {"resource": "organization branch", "name": "View branch organizations"},
+    PermissionCode.TENANT_BRANCH_MANAGE: {"resource": "organization branch", "name": "Full access to branch organizations"},
 }
 
 def compute_effective_permissions(staff: "Staff") -> list[int]:
