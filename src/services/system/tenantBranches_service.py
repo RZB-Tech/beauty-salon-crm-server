@@ -1,7 +1,7 @@
 from src.core.dependencies.context import cleared_actor_context, get_current_actor_id, get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.database.session import SessionLocal
-from src.exceptions.tenant_exceptions import TenantCannotCreateBranch, TenantNotFound
+from src.exceptions.tenant_exceptions import TenantNotFound
 from src.repository.tenant.tenant_model import Tenant
 from src.schemas.tenant.create import TenantBranchCreateSchema
 from src.services.system.tenant_service import provision_tenant
@@ -18,7 +18,6 @@ class TenantBranchesService:
 
     async def create(self, data: TenantBranchCreateSchema) -> dict:
         tenant = await self._get_current_tenant_or_raise()
-        if tenant.parent_id is not None: raise TenantCannotCreateBranch()
 
         creator_actor_id = get_current_actor_id()
 
@@ -40,6 +39,12 @@ class TenantBranchesService:
                 )
                 await session.commit()
         return result
+
+    async def get(self, id: int) -> Tenant:
+        
+        tenant = await self.uow.tenants.get(id = id)
+        if tenant is None: raise TenantNotFound(id)
+        return tenant
 
     async def get_all(self) -> list[Tenant]:
         tenant = await self._get_current_tenant_or_raise()

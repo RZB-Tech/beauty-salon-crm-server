@@ -28,11 +28,11 @@ class TenantIntegrationsNotFound(BaseAppException):
             errorCode = self.errorCode
         )
 
-class TenantCannotCreateBranch(BaseAppException):
+class TenantOnlyForParent(BaseAppException):
     statusCode = 403
-    errorCode = "TENANT_CANNOT_CREATE_BRANCH"
+    errorCode = "ONLY_FOR_PARENT_TENANT"
     def __init__(self):
         super().__init__(
-            detail = "Only a parent organization can create branches",
+            detail = "This action is only available to the parent organization",
             errorCode = self.errorCode
         )

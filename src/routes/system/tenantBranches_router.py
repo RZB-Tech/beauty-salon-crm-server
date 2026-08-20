@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, status
 
-from src.core.dependencies.permissions import require_permission
+from src.core.dependencies.permissions import require_parent_tenant, require_permission
 from src.core.dependencies.uow import make_service_dependency
 from src.core.permissions import PermissionCode
 from src.schemas.tenant.create import TenantBranchCreateSchema
@@ -17,7 +17,10 @@ get_tenant_branches_service = make_service_dependency(TenantBranchesService)
     status_code = status.HTTP_201_CREATED,
     summary = "Создать филиал",
     description = "Создает новый филиал (дочернюю организацию) и его администратора. Доступно только головной организации — у филиала создавать свои филиалы нельзя.",
-    dependencies = [Depends(require_permission([PermissionCode.TENANT_BRANCH_CREATE]))]
+    dependencies = [
+        Depends(require_permission([PermissionCode.TENANT_BRANCH_CREATE])),
+        Depends(require_parent_tenant),
+    ]
 )
 async def create(data: TenantBranchCreateSchema,
                  tenantBranchesService: TenantBranchesService = Depends(get_tenant_branches_service)):
@@ -29,7 +32,10 @@ async def create(data: TenantBranchCreateSchema,
     status_code = status.HTTP_200_OK,
     summary = "Список филиалов",
     description = "Возвращает список филиалов текущей организации.",
-    dependencies = [Depends(require_permission([PermissionCode.TENANT_BRANCH_READ]))]
+    dependencies = [
+        Depends(require_permission([PermissionCode.TENANT_BRANCH_READ])),
+        Depends(require_parent_tenant),
+    ]
 )
 async def get_all(tenantBranchesService: TenantBranchesService = Depends(get_tenant_branches_service)):
     return await tenantBranchesService.get_all()
