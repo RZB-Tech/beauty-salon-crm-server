@@ -119,6 +119,7 @@ class StaffService():
         await set_staff_permissions(
             staff.id,
             staff.staff_type,
+            staff.active,
             compute_effective_permissions(staff),
             ttl = settings.REFRESH_TOKEN_EXPIRE_SECONDS
         )

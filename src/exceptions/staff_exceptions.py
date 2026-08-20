@@ -26,3 +26,11 @@ class StaffTenantConflict(BaseAppException):
         super().__init__(
             detail = f"Staff ID {staffID} does not belong to organization ID {tenantID}"
         )
+
+class StaffLoginDuplicate(BaseAppException):
+    statusCode = 409
+    errorCode = "STAFF_LOGIN_DUPLICATE"
+    def __init__(self):
+        super().__init__(
+            detail = "Staff login duplicates"
+        )

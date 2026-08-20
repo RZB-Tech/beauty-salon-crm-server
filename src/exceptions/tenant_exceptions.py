@@ -44,3 +44,12 @@ class BranchDoesNotBelongToTenant(BaseAppException):
         super().__init__(
             detail = f"Branch ID {branchID} does not belong to the organization ID {parentID}"
         )
+
+class TenantNameTaken(BaseAppException):
+    statusCode = 409
+    errorCode = "TENANT_NAME_TAKEN"
+    def __init__(self, name: str):
+        super().__init__(
+            detail = f"Organization name '{name}' is already taken",
+            name = name
+        )

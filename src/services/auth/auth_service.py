@@ -71,6 +71,7 @@ class AuthService():
         await set_staff_permissions(
             staff.id,
             staff.staff_type,
+            staff.active,
             compute_effective_permissions(staff),
             ttl = settings.ACCESS_TOKEN_EXPIRE_SECONDS
         )
@@ -144,6 +145,7 @@ class AuthService():
         await set_staff_permissions(
             user.id,
             user.staff_type,
+            user.active,
             compute_effective_permissions(user),
             ttl = settings.ACCESS_TOKEN_EXPIRE_SECONDS
         )

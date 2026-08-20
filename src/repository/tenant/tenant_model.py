@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
-from pydantic import BaseModel
 from sqlalchemy import (
     Boolean,
     ForeignKey,
@@ -10,7 +9,7 @@ from sqlalchemy import (
     Text,
     func
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, CITEXT
 from enum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
@@ -20,7 +19,7 @@ class Tenant(Base):
     __tablename__ = "tenants"
 
     id: Mapped[int] = mapped_column(primary_key = True, autoincrement = True)
-    name: Mapped[str] = mapped_column(String(255), unique = True)
+    name: Mapped[str] = mapped_column(CITEXT, index = True)
     TIN: Mapped[str] = mapped_column(String(255), nullable = True)
 
     active: Mapped[bool] = mapped_column(Boolean, default = True, server_default="true")

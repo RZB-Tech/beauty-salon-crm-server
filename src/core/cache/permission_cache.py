@@ -24,9 +24,9 @@ def get_redis_client() -> Redis:
 def _key(staff_id: int) -> str:
     return f"staff:{staff_id}:permissions"
 
-async def set_staff_permissions(staff_id: int, staff_type: str, permissions: list[int], ttl: int) -> None:
+async def set_staff_permissions(staff_id: int, staff_type: str, active: bool, permissions: list[int], ttl: int) -> None:
     try:
-        payload = json.dumps({"staff_type": staff_type, "permissions": permissions})
+        payload = json.dumps({"staff_type": staff_type, "active": active, "permissions": permissions})
         await get_redis_client().set(_key(staff_id), payload, ex = ttl)
     except RedisError:
         logger.warning("Redis unavailable, skipping permissions cache write for staff %s", staff_id)

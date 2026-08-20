@@ -26,3 +26,42 @@ class TenantBranchCreateResponseSchema(BaseModel):
     tenant: TenantBranchResponseSchema
     login: str
     password: str
+
+class TenantBranchReportItemSchema(BaseModel):
+    tenant_id: int
+    tenant_name: str
+    staffs: int
+    employees: int
+    clients: int
+    appointments: int
+    services: int
+    materials: int
+    income: int
+    expense: int
+
+class TenantBranchReportTotalsSchema(BaseModel):
+    staffs: int
+    employees: int
+    clients: int
+    appointments: int
+    services: int
+    materials: int
+    income: int
+    expense: int
+
+class TenantBranchReportSchema(BaseModel):
+    branches: list[TenantBranchReportItemSchema]
+    total: TenantBranchReportTotalsSchema
+
+class BranchCreateAdminResponse(BaseModel):
+    login: str
+    password: str
+
+class BranchAdminResponseSchema(BaseModel):
+    id: int
+    login: str
+    firstname: str
+    staff_type: str
+    active: bool
+
+    model_config = ConfigDict(from_attributes = True)

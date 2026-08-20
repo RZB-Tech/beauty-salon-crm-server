@@ -6,21 +6,24 @@ from src.core.dependencies.auth import get_current_staff
 from src.core.dependencies.uow import UnitOfWork, get_request_uow
 from src.core.permissions import PERMISSION_DOMAIN_MANAGE, PERMISSIONS, PermissionCode, compute_effective_permissions
 from src.exceptions.auth_exceptions import AdminPreviligesRequired, NotEnoughPermissions
-from src.exceptions.staff_exceptions import StaffNotFound
+from src.exceptions.staff_exceptions import StaffIsInactive, StaffNotFound
 from src.exceptions.tenant_exceptions import TenantNotFound, TenantOnlyForParent
 from src.repository.staff.staff_model import StaffType
 
 async def _resolve_staff_type_and_permissions(staff_id: int, uow: UnitOfWork) -> tuple[str, set[int]]:
     cached = await get_staff_permissions(staff_id)
     if cached is not None:
+        if not cached.get("active", True): raise StaffIsInactive()
         return cached["staff_type"], set(cached["permissions"])
 
     staff = await uow.staffs.get(id = staff_id)
     if staff is None:
         raise StaffNotFound()
+    if not staff.active:
+        raise StaffIsInactive()
 
     permissions = compute_effective_permissions(staff)
-    await set_staff_permissions(staff.id, staff.staff_type, permissions, ttl = settings.REFRESH_TOKEN_EXPIRE_SECONDS)
+    await set_staff_permissions(staff.id, staff.staff_type, staff.active, permissions, ttl = settings.REFRESH_TOKEN_EXPIRE_SECONDS)
     return staff.staff_type, set(permissions)
 
 def require_permission(codes: list[int], condition: Literal["all", "or"] = "all"):
