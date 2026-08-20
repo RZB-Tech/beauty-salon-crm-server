@@ -1,4 +1,4 @@
-from src.core.dependencies.context import cleared_actor_context, get_current_tenant_id
+from src.core.dependencies.context import cleared_actor_context, get_current_actor_id, get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.database.session import SessionLocal
 from src.exceptions.tenant_exceptions import TenantCannotCreateBranch, TenantNotFound
@@ -20,6 +20,8 @@ class TenantBranchesService:
         tenant = await self._get_current_tenant_or_raise()
         if tenant.parent_id is not None: raise TenantCannotCreateBranch()
 
+        creator_actor_id = get_current_actor_id()
+
         # provision_tenant writes rows tagged with the new branch's tenant_id, which the
         # request's tenant-scoped session (self.uow.db) would reject as cross-tenant data
         # injection (src/core/dependencies/tenantFilter.py). Use a standalone session
@@ -34,6 +36,7 @@ class TenantBranchesService:
                     admin_firstname = data.admin_firstname,
                     admin_password = data.admin_password,
                     parent_id = tenant.id,
+                    created_by_actor_id = creator_actor_id,
                 )
                 await session.commit()
         return result

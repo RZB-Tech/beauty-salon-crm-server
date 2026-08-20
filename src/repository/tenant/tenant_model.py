@@ -30,6 +30,13 @@ class Tenant(Base):
         ForeignKey("tenants.id", ondelete = "RESTRICT"), nullable = True, index = True
     )
 
+    # Deliberately a plain FK to actors.id, not the usual (actor_id, tenant_id)
+    # composite - the creator is the parent tenant's actor, not this tenant's,
+    # so pairing it with this row's own id would never match.
+    created_by_actor_id: Mapped[int | None] = mapped_column(
+        ForeignKey("actors.id", ondelete = "SET NULL"), nullable = True, index = True
+    )
+
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

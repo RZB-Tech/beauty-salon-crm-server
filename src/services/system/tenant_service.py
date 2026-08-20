@@ -12,9 +12,16 @@ async def provision_tenant(db: AsyncSession,
                            admin_firstname: str,
                            admin_password: str | None = None,
                            company_tin: str | None = None,
-                           parent_id: int | None = None, ) -> Tenant:
+                           parent_id: int | None = None,
+                           created_by_actor_id: int | None = None, ) -> Tenant:
     defaultPreferences = TenantPreferencesSchema().model_dump()
-    tenant = Tenant(name=company_name, TIN=company_tin, preferences = defaultPreferences, parent_id = parent_id)
+    tenant = Tenant(
+        name=company_name,
+        TIN=company_tin,
+        preferences = defaultPreferences,
+        parent_id = parent_id,
+        created_by_actor_id = created_by_actor_id,
+    )
     db.add(tenant)
     await db.flush()
 
