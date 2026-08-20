@@ -1,4 +1,4 @@
-from src.core.dependencies.context import get_current_tenant_id
+from src.core.dependencies.context import cleared_actor_context, get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.database.session import SessionLocal
 from src.exceptions.tenant_exceptions import TenantCannotCreateBranch, TenantNotFound
@@ -25,16 +25,17 @@ class TenantBranchesService:
         # injection (src/core/dependencies/tenantFilter.py). Use a standalone session
         # without that filter attached, same as sqladmin's TenantCreateView does.
         async with SessionLocal() as session:
-            result = await provision_tenant(
-                session,
-                company_name = data.company_name,
-                company_tin = data.company_tin,
-                admin_login = data.admin_login,
-                admin_firstname = data.admin_firstname,
-                admin_password = data.admin_password,
-                parent_id = tenant.id,
-            )
-            await session.commit()
+            with cleared_actor_context():
+                result = await provision_tenant(
+                    session,
+                    company_name = data.company_name,
+                    company_tin = data.company_tin,
+                    admin_login = data.admin_login,
+                    admin_firstname = data.admin_firstname,
+                    admin_password = data.admin_password,
+                    parent_id = tenant.id,
+                )
+                await session.commit()
         return result
 
     async def get_all(self) -> list[Tenant]:
