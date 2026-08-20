@@ -16,6 +16,9 @@ class Settings(BaseSettings):
     ADMIN_ACCESS_TOKEN_EXPIRE_SECONDS: int
     SQLADMIN_SESSION_SECRET: str
 
+    ERROR_ALERTS_BOT_TOKEN: str | None = None
+    ERROR_ALERTS_CHAT_ID: str | None = None
+
     @property
     def PRIVATE_KEY(self) -> str:
         with open(self.PRIVATE_KEY_PATH, 'r') as f: return f.read()
