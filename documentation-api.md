@@ -186,6 +186,202 @@
 
 ---
 
+### Tenant Branches / Филиалы (/api/v1/tenant-branches)
+
+**Как это работает.** Любая организация (tenant) может стать «головной» и завести собственные дочерние организации — «филиалы» (branches). Технически это те же самостоятельные tenant'ы (у каждого свой набор сотрудников, клиентов, услуг, чеков и т.д. — данные между филиалами и головной организацией не шарятся автоматически и полностью изолированы друг от друга, как у любых двух независимых организаций), но связанные полем `parent_id`.
+
+Ключевые правила:
+
+- Заводить филиалы и управлять ими может **только сама головная организация** — сотрудник, чья организация не имеет родителя (`parent_id == null`). Если под эти эндпоинты попадает сотрудник филиала (у которого `parent_id` уже указывает на головную организацию), сервер вернёт `403 ONLY_FOR_PARENT_TENANT`.
+- Иерархия ограничена **двумя уровнями** — у филиала не может быть своих филиалов.
+- У головной организации нет «постраничного списка» данных филиалов (записей клиентов, чеков и т.п.) — только агрегированные **отчёты** (`GET /report`, `GET /report/{id}`): количество сотрудников/сотрудников-исполнителей/клиентов/записей/услуг/товаров и суммы доходов/расходов по каждому филиалу и по организации в целом.
+- Первый админ филиала создаётся либо сразу вместе с филиалом (`POST /api/v1/tenant-branches`), либо отдельно позже (`POST /create-branch-admin`, можно создать нескольких админов).
+- Логин сотрудника уникален **глобально** (не в рамках одной организации) — при совпадении логина вернётся `409 STAFF_LOGIN_DUPLICATE`.
+- Изменения `active`/`staff_type` админа филиала и `active` самого филиала применяются **сразу** (на следующий же запрос), а не после истечения токена — так что деактивированный админ/филиал мгновенно теряет доступ.
+
+---
+
+- POST `` — создать филиал (и его первого админа)
+  - request: `src/schemas/tenant/create.py::TenantBranchCreateSchema`
+    ```json
+    {
+      "company_name": "Z-company",
+      "company_tin": "3342421123",
+      "admin_login": "aleksandr",
+      "admin_firstname": "makedonian",
+      "admin_password": "theGreat"
+    }
+    ```
+    `company_tin` и `admin_password` необязательны — если `admin_password` не передан, сервер сгенерирует случайный и вернёт его в ответе.
+  - response: `TenantBranchCreateResponseSchema`, status 201
+    ```json
+    {
+      "tenant": {
+        "id": 8,
+        "name": "Z-company",
+        "TIN": "3342421123",
+        "parent_id": 1,
+        "active": true,
+        "created_at": "2026-08-20T10:00:00Z"
+      },
+      "login": "aleksandr",
+      "password": "theGreat"
+    }
+    ```
+
+- POST `/create-branch-admin` — создать ещё одного админа для уже существующего филиала
+  - request: `src/schemas/tenant/create.py::BranchAdminCreateSchema`
+    ```json
+    {
+      "branch_id": 8,
+      "admin_login": "aleksandr2",
+      "admin_firstname": "Alexander",
+      "admin_password": null
+    }
+    ```
+  - response: `BranchCreateAdminResponse`, status 201
+    ```json
+    {
+      "login": "aleksandr2",
+      "password": "kJ8$mQ2pXzW1vT9r"
+    }
+    ```
+    (пароль сгенерирован автоматически, т.к. `admin_password` не был передан)
+
+- GET `` — список филиалов текущей (головной) организации
+  - response: `list[TenantBranchResponseSchema]`, status 200
+    ```json
+    [
+      {
+        "id": 8,
+        "name": "Z-company",
+        "TIN": "3342421123",
+        "parent_id": 1,
+        "active": true,
+        "created_at": "2026-08-20T10:00:00Z"
+      }
+    ]
+    ```
+
+- POST `/reset-admin-password` — сбросить/задать пароль админа филиала
+  - request: `src/schemas/tenant/update.py::UpdateBranchAdminPassword`
+    ```json
+    {
+      "branch_id": 8,
+      "admin_id": 5,
+      "password": null
+    }
+    ```
+  - response: `str | null`, status 200
+    - `password` не передан → в ответе новый сгенерированный пароль (строка);
+    - `password` передан → ответ пустой (`null`), т.к. пароль уже известен вызывающему.
+
+- GET `/report` — агрегированный отчёт по всем филиалам + итог
+  - response: `TenantBranchReportSchema`, status 200
+    ```json
+    {
+      "branches": [
+        {
+          "tenant_id": 8,
+          "tenant_name": "Z-company",
+          "staffs": 3,
+          "employees": 5,
+          "clients": 120,
+          "appointments": 340,
+          "services": 12,
+          "materials": 8,
+          "income": 15000000,
+          "expense": 2000000
+        }
+      ],
+      "total": {
+        "staffs": 3,
+        "employees": 5,
+        "clients": 120,
+        "appointments": 340,
+        "services": 12,
+        "materials": 8,
+        "income": 15000000,
+        "expense": 2000000
+      }
+    }
+    ```
+    `income`/`expense` считаются по неотменённым и незаархивированным транзакциям; остальные поля — количество незаархивированных записей.
+
+- GET `/report/{id}` — отчёт по одному конкретному филиалу (без `total`)
+  - response: `TenantBranchReportItemSchema`, status 200
+    ```json
+    {
+      "tenant_id": 8,
+      "tenant_name": "Z-company",
+      "staffs": 3,
+      "employees": 5,
+      "clients": 120,
+      "appointments": 340,
+      "services": 12,
+      "materials": 8,
+      "income": 15000000,
+      "expense": 2000000
+    }
+    ```
+
+- PATCH `/update-admin` — изменить `active` и/или `staff_type` админа филиала
+  - request: `src/schemas/tenant/update.py::UpdateBranchAdminSchema`
+    ```json
+    {
+      "branch_id": 8,
+      "admin_id": 5,
+      "active": false
+    }
+    ```
+    Нужно указать хотя бы одно из полей `active`/`staff_type`.
+  - response: `BranchAdminResponseSchema`, status 200
+    ```json
+    {
+      "id": 5,
+      "login": "aleksandr2",
+      "firstname": "Alexander",
+      "staff_type": "administrator",
+      "active": false
+    }
+    ```
+
+- PATCH `/update` — изменить данные самого филиала (`name` / `TIN` / `active`)
+  - request: `src/schemas/tenant/update.py::UpdateBranchSchema`
+    ```json
+    {
+      "branch_id": 8,
+      "name": "Z-company Tashkent"
+    }
+    ```
+    Нужно указать хотя бы одно из полей `name`/`TIN`/`active`. При смене `name` сервер проверяет, что оно не занято другой организацией (`409 TENANT_NAME_TAKEN`).
+  - response: `TenantBranchResponseSchema`, status 200
+    ```json
+    {
+      "id": 8,
+      "name": "Z-company Tashkent",
+      "TIN": "3342421123",
+      "parent_id": 1,
+      "active": true,
+      "created_at": "2026-08-20T10:00:00Z"
+    }
+    ```
+
+**Специфичные для этого домена ошибки** (полный список и описания — `documentation-exceptions.md`):
+
+| errorCode                          | statusCode | Когда возникает                                                                 |
+| ----------------------------------- | ---------- | -------------------------------------------------------------------------------- |
+| `ONLY_FOR_PARENT_TENANT`            | 403        | Запрос сделан от имени филиала, а не головной организации.                       |
+| `BRANCH_DOES_NOT_BELONG_TO_TENANT`  | 409        | Указанный `branch_id` — не филиал текущей организации.                          |
+| `TENANT_NAME_TAKEN`                 | 409        | Новое `name` уже занято другой организацией.                                    |
+| `STAFF_TENANT_CONFLICT`             | 409        | Указанный `admin_id` не относится к указанному `branch_id`.                     |
+| `STAFF_LOGIN_DUPLICATE`             | 409        | Такой `admin_login` уже используется (логины уникальны глобально).              |
+| `TENANT_NOT_FOUND`                  | 404        | Головная организация или филиал с указанным id не найдены.                      |
+| `STAFF_NOT_FOUND`                   | 404        | Админ с указанным `admin_id` не найден.                                         |
+
+
+---
+
 ## Возможные ошибки (генерируются на уровне сервисов)
 
 Ниже перечислены ключевые ошибки, которые возникают в сервисах (код ответа и сообщение), собраны из `src/services`:
