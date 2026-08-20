@@ -17,3 +17,9 @@ class TenantPreferencesUpdateSchema(BaseModel):
             "cancel_payment_due": 24
         }
     })
+
+class UpdateBranchAdminPassword(BaseModel):
+    branch_id: int = Field(ge = 1)
+    admin_id: int = Field(ge = 1)
+    password: str | None = Field(None, min_length = 6)
+

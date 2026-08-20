@@ -18,3 +18,11 @@ class StaffNotFound(BaseAppException):
             detail="Staff not found",
             errorCode = self.errorCode
         )
+
+class StaffTenantConflict(BaseAppException):
+    statusCode = 409
+    errorCode = "STAFF_TENANT_CONFLICT"
+    def __init__(self, staffID: int, tenantID: int):
+        super().__init__(
+            detail = f"Staff ID {staffID} does not belong to organization ID {tenantID}"
+        )

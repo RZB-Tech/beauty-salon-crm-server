@@ -3,12 +3,6 @@ from src.database.base import BaseRepository
 from src.repository.tenant.tenant_model import Tenant
 
 class TenantRepository(BaseRepository[Tenant]):
-    async def create(self, staff: Tenant) -> Tenant:
-        self.db.add(staff)
-        await self.db.flush()
-        await self.db.refresh(staff)
-        return staff
-
     async def get(self, id: int | None = None, name: str | None = None) -> Tenant | None:
         result: Result | None
         if id:

@@ -36,3 +36,11 @@ class TenantOnlyForParent(BaseAppException):
             detail = "This action is only available to the parent organization",
             errorCode = self.errorCode
         )
+
+class BranchDoesNotBelongToTenant(BaseAppException):
+    statusCode = 409
+    errorCode = "BRANCH_DOES_NOT_BELONG_TO_TENANT"
+    def __init__(self, parentID: int, branchID: int):
+        super().__init__(
+            detail = f"Branch ID {branchID} does not belong to the organization ID {parentID}"
+        )
