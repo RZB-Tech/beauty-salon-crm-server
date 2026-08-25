@@ -94,8 +94,8 @@ class ReceiptService():
                 receipt_item = ReceiptItem(
                     receipt_id = newReceipt.id,
                     material_id=item_data.material_id,
-                    base_price = service.base_price,
-                    final_price = service.final_price,
+                    base_price = item_price,
+                    final_price = item_price,
                     quantity=item_data.quantity
                 )
                 
