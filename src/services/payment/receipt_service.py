@@ -125,6 +125,7 @@ class ReceiptService():
             )
     
     async def make_payment(self, data: ReceiptPaymentCreateSchema) -> Receipt:
+        print(data.model_dump_json(indent = 4))
         stmt = await self.uow.db.execute(select(Receipt)
             .where(Receipt.id == data.receipt_id)
             .options(
@@ -159,31 +160,27 @@ class ReceiptService():
             if giftCard.client_id is not None and giftCard.client_id != receipt.client_id: 
                 raise GiftCardClientConflict(data.giftCard_id, data.client_id)
             if data.amount > giftCard.remain_amount: raise GiftCardInsufficientAmount(data.giftCard_id, data.amount, giftCard.remain_amount)
-            if giftCard.issue_date < datetime.now(timezone.utc): raise GiftCardUnusable(data.giftCard_id, "issue date does not match today’s date") 
             if giftCard.expiration_date is not None and giftCard.expiration_date < datetime.now(timezone.utc):
                 raise GiftCardUnusable(data.giftCard_id, GiftCardStatus.EXPIRED)
             
         # add overpaid sum to client's deposit
         if receipt.paid_amount + data.amount >= receipt.total_amount:
-
             overpayment = (receipt.paid_amount + data.amount) - receipt.total_amount
             applied_amount = data.amount - overpayment
+            if data.method == TransactionMethod.GIFT_CARD:
+                giftCard.remain_amount -= applied_amount
+                print(giftCard.remain_amount)
 
             if overpayment > 0:
-                # if there has overpayment:
-                # with method gift_card - only substract applied_amount from gift_card
-                if data.method == TransactionMethod.GIFT_CARD:
-                    giftCard.remain_amount -= applied_amount
-                else:
-                # if payment method not gift_card - consider overpayment to add client's deposit
-                    if not data.add_change_to_deposit: raise ReceiptOverpayment()
-                    if client is None:
-                        if receipt.client_id is None: raise ReceiptHasNotClient(data.receipt_id)
-                        client = await self.uow.clients.get(receipt.client_id)
-                        if client is None: raise ClientNotFound(receipt.client_id)
-                    receipt.change_amount = overpayment
-                    receipt.change_to_deposit = True
-                    depositAdjustment += overpayment
+            # if payment method not gift_card - consider overpayment to add client's deposit
+                if not data.add_change_to_deposit: raise ReceiptOverpayment()
+                if client is None:
+                    if receipt.client_id is None: raise ReceiptHasNotClient(data.receipt_id)
+                    client = await self.uow.clients.get(receipt.client_id)
+                    if client is None: raise ClientNotFound(receipt.client_id)
+                receipt.change_amount = overpayment
+                receipt.change_to_deposit = True
+                depositAdjustment += overpayment
 
             # create new transcation for income from receipt payment
             await self.uow.transactions.create(Transaction(
