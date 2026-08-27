@@ -1,7 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from src.repository.transaction.transaction_model import TransactionMethod
 
@@ -12,7 +12,17 @@ class GiftCardCreateSchema(BaseModel):
     expiration_date: datetime | None = None
     payment_method: TransactionMethod
 
-    @model_validator(mode = "after")
+    @field_validator("issue_date", "expiration_date")
+    @classmethod
+    def ensure_aware(cls, v: datetime | None) -> datetime | None:
+        if v is None:
+            return v
+        if v.tzinfo is None:
+            # treat naive input as UTC
+            return v.replace(tzinfo=timezone.utc)
+        return v.astimezone(timezone.utc)
+
+    @model_validator(mode="after")
     def validate_model(self) -> Self:
         if self.expiration_date is not None and self.issue_date >= self.expiration_date:
             raise ValueError("`issue_date` has to be earlier than `expiration_date`")
