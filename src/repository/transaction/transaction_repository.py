@@ -1,10 +1,14 @@
+from datetime import timedelta
+
 from sqlalchemy import and_, func, or_, select
+from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
 from src.repository.appointment.appointment_model import Appointment
-from src.repository.receipt.receipt_model import Receipt
+from src.repository.receipt.receipt_model import Receipt, ReceiptItem
 from src.repository.payroll.payroll_model import Payout
 from src.repository.transaction.transaction_model import Transaction
+from src.schemas.analytics.request import GetReportWithFilters
 from src.schemas.base import RequestAllObject
 from src.schemas.client.request import ClientFinanceReportRequest
 from src.schemas.employee.request import EmployeeFinanceReportRequest
@@ -75,3 +79,17 @@ class TransactionRepository(BaseRepository[Transaction]):
 
         result = await self.db.execute(stmt)
         return list(result.scalars().unique().all())
+
+    async def get_analytics(self, data: GetReportWithFilters) -> list[Transaction]:
+        stmt = (
+            select(Transaction)
+            .where(and_(
+                Transaction.created_at >= data.start_date,
+                Transaction.created_at < data.end_date + timedelta(days = 1)
+            ))
+            .options(selectinload(Transaction.receipt).selectinload(Receipt.items).selectinload(ReceiptItem.appointment_service),
+                     selectinload(Transaction.receipt).selectinload(Receipt.transactions),
+                     selectinload(Transaction.giftCard))
+        )
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
