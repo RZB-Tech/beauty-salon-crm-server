@@ -189,7 +189,7 @@ class ReceiptService():
                             if not data.add_change_to_deposit
                             else TransactionType.INCOME),
                     method = TransactionMethod(data.method),
-                    category = TransactionCategory.RECEIPT,
+                    category = TransactionCategory.CHANGE,
                     auto_generated = True
                 ))
 

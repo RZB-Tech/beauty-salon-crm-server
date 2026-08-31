@@ -21,10 +21,11 @@ if TYPE_CHECKING:
 class TransactionType(StrEnum):
     INCOME = "income"
     EXPENSE = "expense"
-
+    
 class TransactionCategory(StrEnum):
     RECEIPT = "receipt"
     EMPLOYEE_PAYMENT = "employee payment"
+    CHANGE = "change"
     GIFT_CARD = "gift card"
     UTILITY = "utility"
     INTERNET = "internet"
