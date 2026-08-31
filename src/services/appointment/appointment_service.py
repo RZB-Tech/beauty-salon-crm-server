@@ -150,22 +150,9 @@ class AppointmentService():
 
     async def get_analytics(self, data: GetReportWithFilters) -> ApppointmentAnalyticsResponse:
         appointments = await self.uow.appointments.get_analytics(data)
-        if len(appointments) == 0: return ApppointmentAnalyticsResponse(
-            amount = 0, finished = 0, cancelled = 0, absent = 0
+        return ApppointmentAnalyticsResponse(
+            amount = appointments.amount,
+            finished = appointments.finished,
+            cancelled = appointments.cancelled,
+            absent = appointments.absent
         )
-
-        result = {
-            "amount": len(appointments),
-            "finished": 0,
-            "cancelled": 0,
-            "absent": 0,
-        }
-
-        for appointment in appointments:
-            if appointment.status == AppointmentStatus.CANCELLED:
-                if appointment.cancelled_reason == AppointmentCancelledReason.CLIENT_CANCELLED:
-                    result["absent"] += 1
-                else: result["cancelled"] += 1
-            if appointment.status == AppointmentStatus.FINISHED: result["finished"] += 1
-
-        return ApppointmentAnalyticsResponse.model_validate(result)

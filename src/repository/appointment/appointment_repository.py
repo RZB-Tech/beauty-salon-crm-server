@@ -1,10 +1,10 @@
 from datetime import datetime, timedelta
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import Row, and_, case, func, select
 from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
-from src.repository.appointment.appointment_model import Appointment, AppointmentRecords, AppointmentServices, AppointmentStatus
+from src.repository.appointment.appointment_model import Appointment, AppointmentCancelledReason, AppointmentRecords, AppointmentServices, AppointmentStatus
 from src.schemas.analytics.request import GetReportWithFilters
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.appointment.create import AppointmentCreateSchema
@@ -202,14 +202,31 @@ class AppointmentRepository(BaseRepository[Appointment]):
         items = result.scalars().unique().all()
         return items, total_items
 
-    async def get_analytics(self, data: GetReportWithFilters) -> list[Appointment]:
+    async def get_analytics(self, data: GetReportWithFilters) -> Row:
         stmt = (
-            select(Appointment)
+            select(
+                func.count(Appointment.id).label("amount"),
+                func.sum(
+                    case(
+                        (Appointment.status == AppointmentStatus.FINISHED, 1), 
+                        else_ = 0)).label("finished"),
+                func.sum(
+                    case(
+                        (Appointment.status == AppointmentStatus.CANCELLED, 1), 
+                        else_ = 0)).label("cancelled"),
+                func.sum(
+                    case(
+                        (and_(
+                            Appointment.status == AppointmentStatus.CANCELLED,
+                            Appointment.status == AppointmentCancelledReason.CLIENT_CANCELLED
+                        ), 1), 
+                        else_ = 0)).label("absent")
+            )
             .where(and_(
                 Appointment.created_at >= data.start_date,
-                Appointment.created_at < data.end_date + timedelta(days = 1)
+                Appointment.created_at < data.end_date + timedelta(days=1)
             ))
         )
 
         result = await self.db.execute(stmt)
-        return result.scalars().all()
+        return result.one()
