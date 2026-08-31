@@ -21,13 +21,13 @@ class StaffRepository(BaseRepository[Staff]):
 
     async def get(self, id: int | None = None, login: str | None = None) -> Staff | None:
         result: Result | None
-        if id:
+        if id is not None:
             result = await self.db.execute(
                 select(Staff)
                 .where(Staff.id == id)
                 .options(selectinload(Staff.roles))
             )
-        elif login:
+        elif login is not None:
             result = await self.db.execute(
                 select(Staff)
                 .where(Staff.login == login)
