@@ -106,7 +106,8 @@ class TransactionService():
                 "profit": 0,
                 "percentage": 0,
             },
-            "total_profit": 0
+            "not_fully_paid_receipts_sum": 0,
+            "total_profit": 0,
         }
 
         result["total_profit"] = sum([transation.amount for transation in transactions])
@@ -142,6 +143,8 @@ class TransactionService():
                             servicePrice = item.appointment_service.final_price
                             result["by_service"]["amount"] += 1
                             result["by_service"]["profit"] += servicePrice
+                    elif item.appointment_service and transaction.receipt.remaining_amount >= 1:
+                        result["not_fully_paid_receipts_sum"] += transaction.amount
 
         totalProfit = result["total_profit"]
         for methodData in result["payment_methods"].values():

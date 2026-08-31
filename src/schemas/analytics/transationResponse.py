@@ -16,4 +16,5 @@ class TransactionAnalyticsResponse(BaseModel):
     by_service: PaymentMethodsAnalyticsDetailsResponse
     by_material: PaymentMethodsAnalyticsDetailsResponse
     by_giftCard: PaymentMethodsAnalyticsDetailsResponse
+    not_fully_paid_receipts_sum: int
     total_profit: int
