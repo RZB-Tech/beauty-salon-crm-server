@@ -64,20 +64,22 @@ class EmployeeRepository(BaseRepository[Employee]):
         return result.scalars().unique().all()
 
     async def get_analytics(self, data: GetReportWithFilters) -> list[Row]:
+        services_final_price_sum = func.coalesce(
+            func.sum(
+                case(
+                    (AppointmentServices.service_id.isnot(None), AppointmentServices.final_price),
+                    else_ = 0
+                )
+            ),
+            0
+        )
+
         stmt = (
             select(
                 Employee.id.label("employee_id"),
                 func.count(func.distinct(Appointment.id)).label("appointments_amount"),
                 func.count(AppointmentServices.id).label("services_amount"),
-                func.coalesce(
-                    func.sum(
-                        case(
-                            (AppointmentServices.service_id.isnot(None), AppointmentServices.final_price),
-                            else_ = 0
-                        )
-                    ),
-                    0
-                ).label("services_final_price_sum"),
+                services_final_price_sum.label("services_final_price_sum"),
             )
             .select_from(Employee)
             .outerjoin(
@@ -106,6 +108,7 @@ class EmployeeRepository(BaseRepository[Employee]):
                 ),
             )
             .group_by(Employee.id)
+            .order_by(services_final_price_sum.desc())
         )
         result = await self.db.execute(stmt)
         return result.all()
