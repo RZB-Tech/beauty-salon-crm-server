@@ -1,10 +1,11 @@
 from datetime import timedelta
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import Numeric, Row, and_, case, cast, func, select
 from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
 from src.repository.receipt.receipt_model import Receipt, ReceiptStatus
+from src.repository.transaction.transaction_model import Transaction
 from src.schemas.analytics.request import GetReportWithFilters
 from src.schemas.base import RequestAllObject
 
@@ -70,14 +71,42 @@ class ReceiptRepository(BaseRepository[Receipt]):
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
-    async def get_analytics(self, data: GetReportWithFilters) -> list[Receipt]:
-        stmt = (
-            select(Receipt)
+    async def get_analytics(self, data: GetReportWithFilters) -> Row:
+        paid_amount_subq = (
+            select(func.coalesce(func.sum(Transaction.amount), 0))
+            .where(Transaction.receipt_id == Receipt.id)
+            .correlate(Receipt)
+            .scalar_subquery()
+        )
+
+        # Equivalent of the WITH totals AS (...) block
+        totals = (
+            select(
+                func.count(Receipt.id).label("amount"),
+                func.sum(case((Receipt.status == ReceiptStatus.PAID, 1), else_=0)).label("paid"),
+                func.sum(case((Receipt.status == ReceiptStatus.PENDING, 1), else_=0)).label("unpaid"),
+                func.sum(case((Receipt.status == ReceiptStatus.CANCELLED, 1), else_=0)).label("cancelled"),
+                func.coalesce(func.sum(paid_amount_subq), 0).label("total_paid_sum"),
+            )
             .where(and_(
                 Receipt.created_at >= data.start_date,
-                Receipt.created_at < data.end_date + timedelta(days = 1)
+                Receipt.created_at < data.end_date + timedelta(days=1)
             ))
-            .options(selectinload(Receipt.transactions))
+            .cte("totals")
         )
+
+        # Outer SELECT referencing the CTE
+        stmt = select(
+            totals.c.amount,
+            totals.c.paid,
+            totals.c.unpaid,
+            totals.c.cancelled,
+            totals.c.total_paid_sum,
+            func.round(
+                cast(totals.c.total_paid_sum, Numeric) / func.nullif(totals.c.amount, 0),
+                2
+            ).label("average"),
+        )
+
         result = await self.db.execute(stmt)
-        return result.scalars().all()
+        return result.one()

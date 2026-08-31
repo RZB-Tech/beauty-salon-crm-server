@@ -1,7 +1,7 @@
 from datetime import timedelta
 
 from sqlalchemy import and_, func, or_, select
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
 from src.repository.appointment.appointment_model import Appointment
@@ -87,9 +87,13 @@ class TransactionRepository(BaseRepository[Transaction]):
                 Transaction.created_at >= data.start_date,
                 Transaction.created_at < data.end_date + timedelta(days = 1)
             ))
-            .options(selectinload(Transaction.receipt).selectinload(Receipt.items).selectinload(ReceiptItem.appointment_service),
-                     selectinload(Transaction.receipt).selectinload(Receipt.transactions),
-                     selectinload(Transaction.giftCard))
+            .options(
+                joinedload(Transaction.receipt)
+                    .selectinload(Receipt.items)
+                    .joinedload(ReceiptItem.appointment_service),
+                joinedload(Transaction.receipt).selectinload(Receipt.transactions),
+                joinedload(Transaction.giftCard),
+            )
         )
         result = await self.db.execute(stmt)
         return result.scalars().all()
