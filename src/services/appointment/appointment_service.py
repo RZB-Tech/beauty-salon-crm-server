@@ -6,9 +6,11 @@ from src.exceptions.employee_exceptions import EmployeeDoesNotProvideService, Em
 from src.exceptions.general_exceptions import CannotUpdate, ObjectIsArchived, PriceChangedReasonEmpty
 from src.exceptions.material_exceptions import MaterialAmountInsufficient, MaterialArchived, MaterialNotFound
 from src.exceptions.service_exceptions import ServiceIsArchived, ServiceNotFound
-from src.repository.appointment.appointment_model import Appointment, AppointmentStatus
+from src.repository.appointment.appointment_model import Appointment, AppointmentCancelledReason, AppointmentStatus
 from src.repository.promotion.promotion_model import PromotionType
 from src.repository.receipt.receipt_model import Receipt
+from src.schemas.analytics.appointmentResponse import ApppointmentAnalyticsResponse
+from src.schemas.analytics.request import GetReportWithFilters
 from src.schemas.appointment.create import AppointmentCreateSchema
 from src.schemas.appointment.update import AppointmentCancelSchema, AppointmentUpdateSchema
 from src.schemas.base import RequestAllObject
@@ -145,3 +147,25 @@ class AppointmentService():
     @require_exists("appointments")
     async def get_receipts(self, id: int) -> list[Receipt]:
         return await self.uow.receipts.get_by_appointment(id)
+
+    async def get_analytics(self, data: GetReportWithFilters) -> ApppointmentAnalyticsResponse:
+        appointments = await self.uow.appointments.get_analytics(data)
+        if len(appointments) == 0: return ApppointmentAnalyticsResponse(
+            amount = 0, finished = 0, cancelled = 0, absent = 0
+        )
+
+        result = {
+            "amount": len(appointments),
+            "finished": 0,
+            "cancelled": 0,
+            "absent": 0,
+        }
+
+        for appointment in appointments:
+            if appointment.status == AppointmentStatus.CANCELLED:
+                if appointment.cancelled_reason == AppointmentCancelledReason.CLIENT_CANCELLED:
+                    result["absent"] += 1
+                else: result["cancelled"] += 1
+            if appointment.status == AppointmentStatus.FINISHED: result["finished"] += 1
+
+        return ApppointmentAnalyticsResponse.model_validate(result)
