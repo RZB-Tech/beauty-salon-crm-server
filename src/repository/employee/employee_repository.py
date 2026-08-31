@@ -1,10 +1,13 @@
-from typing import Any
-from sqlalchemy import func, select
+from datetime import timedelta
+
+from sqlalchemy import Row, and_, case, func, select
 from sqlalchemy.orm import joinedload, selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
-from src.database.base import Actor, BaseRepository
+from src.database.base import BaseRepository
+from src.repository.appointment.appointment_model import Appointment, AppointmentRecords, AppointmentServices
 from src.repository.employee.employee_model import Employee
 from src.schemas.base import RequestAllObject
+from src.schemas.analytics.request import GetReportWithFilters
 
 class EmployeeRepository(BaseRepository[Employee]):
     async def create(self, employee: Employee) -> Employee:
@@ -59,3 +62,50 @@ class EmployeeRepository(BaseRepository[Employee]):
 
         result = await self.db.execute(stmt)
         return result.scalars().unique().all()
+
+    async def get_analytics(self, data: GetReportWithFilters) -> list[Row]:
+        stmt = (
+            select(
+                Employee.id.label("employee_id"),
+                func.count(func.distinct(Appointment.id)).label("appointments_amount"),
+                func.count(AppointmentServices.id).label("services_amount"),
+                func.coalesce(
+                    func.sum(
+                        case(
+                            (AppointmentServices.service_id.isnot(None), AppointmentServices.final_price),
+                            else_ = 0
+                        )
+                    ),
+                    0
+                ).label("services_final_price_sum"),
+            )
+            .select_from(Employee)
+            .outerjoin(
+                AppointmentRecords,
+                and_(
+                    AppointmentRecords.employee_id == Employee.id,
+                    AppointmentRecords.tenant_id == Employee.tenant_id,
+                ),
+            )
+            .outerjoin(
+                Appointment,
+                and_(
+                    AppointmentRecords.appointment_id == Appointment.id,
+                    AppointmentRecords.tenant_id == Appointment.tenant_id,
+                    Appointment.paid.is_(True),
+                    Appointment.created_at >= data.start_date,
+                    Appointment.created_at < data.end_date + timedelta(days = 1)
+                ),
+            )
+            .outerjoin(
+                AppointmentServices,
+                and_(
+                    AppointmentServices.appointment_record_id == AppointmentRecords.id,
+                    AppointmentServices.tenant_id == AppointmentRecords.tenant_id,
+                    Appointment.id.isnot(None),
+                ),
+            )
+            .group_by(Employee.id)
+        )
+        result = await self.db.execute(stmt)
+        return result.all()

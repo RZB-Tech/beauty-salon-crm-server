@@ -9,11 +9,13 @@ from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.service_exceptions import ServiceIsArchived, ServiceOneOrMoreNotFound
 from src.exceptions.specialization_exceptions import SpecializationIsArchived, SpecializationNotFound
 from src.repository.employee.employee_model import Employee
+from src.schemas.analytics.employeeResponse import EmployeeAnalyticsBaseResponse, EmployeeAnalyticsResponse
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.employee.create import EmployeeCreateSchema
 from src.schemas.employee.update import EmployeeUpdateSchema
 from src.services.employee.workSchedule_service import WorkScheduleService
 from src.exceptions.employee_exceptions import EmployeeNotFound, EmployeeIsArchived
+from src.schemas.analytics.request import GetReportWithFilters
 
 class EmployeeService():
     def __init__(self, uow: UnitOfWork):
@@ -226,3 +228,18 @@ class EmployeeService():
             return self._export_json(data)
 
         return self._export_excel(data)
+
+    async def get_analytics(self, data: GetReportWithFilters) -> EmployeeAnalyticsResponse:
+        rows = await self.uow.employees.get_analytics(data)
+        return EmployeeAnalyticsResponse(
+            items = [
+                EmployeeAnalyticsBaseResponse(
+                    employee_id = row.employee_id,
+                    appointments = row.appointments_amount,
+                    services = row.services_amount,
+                    revenue = row.services_final_price_sum
+                )
+                for row in rows
+            ]
+        )
+        
