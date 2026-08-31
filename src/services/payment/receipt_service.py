@@ -126,8 +126,7 @@ class ReceiptService():
                 error = error_msg
             )
     
-    async def make_payment(self, data: ReceiptPaymentCreateSchema) -> Receipt:
-        print(data.model_dump_json(indent = 4))
+    async def make_payment(self, data: ReceiptPaymentCreateSchema) -> Receipt:        
         stmt = await self.uow.db.execute(select(Receipt)
             .where(Receipt.id == data.receipt_id)
             .options(
@@ -175,14 +174,24 @@ class ReceiptService():
 
             if overpayment > 0:
             # if payment method not gift_card - consider overpayment to add client's deposit
-                if not data.add_change_to_deposit: raise ReceiptOverpayment()
                 if client is None:
                     if receipt.client_id is None: raise ReceiptHasNotClient(data.receipt_id)
                     client = await self.uow.clients.get(receipt.client_id)
                     if client is None: raise ClientNotFound(receipt.client_id)
                 receipt.change_amount = overpayment
-                receipt.change_to_deposit = True
+                receipt.change_to_deposit = data.add_change_to_deposit
                 depositAdjustment += overpayment
+
+                await self.uow.transactions.create(Transaction(
+                    receipt_id = receipt.id,
+                    amount = overpayment,
+                    type = (TransactionType.EXPENSE
+                            if not data.add_change_to_deposit
+                            else TransactionType.INCOME),
+                    method = TransactionMethod(data.method),
+                    category = TransactionCategory.RECEIPT,
+                    auto_generated = True
+                ))
 
             # create new transcation for income from receipt payment
             await self.uow.transactions.create(Transaction(
