@@ -7,9 +7,10 @@ from datetime import time, timedelta, timezone
 
 from src.database.session import SessionLocal
 from src.repository.client.client_model import Client, Sex
-from src.repository.employee.employee_model import Employee
+from src.repository.employee.employee_model import Employee, EmployeeServices
 from src.repository.employee.workSchedule_model import WorkSchedule
 from src.repository.material.material_model import Material, MeasurementUnit
+from src.repository.service.service_model import Service, ServiceCategory
 from sqlalchemy import select
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -299,6 +300,125 @@ async def seed_materials(count: int = 100) -> None:
 
     print(f"Created {created} materials")
 
+async def seed_service_categories() -> None:
+    print("Creating service categories...")
+
+    created = 0
+
+    category_names = [
+        "Hair",
+        "Nails",
+        "Skin Care",
+        "Massage",
+        "Makeup",
+        "Barbershop",
+        "Spa",
+        "Epilation",
+        "Eyebrows & Eyelashes",
+        "Cosmetology",
+    ]
+
+    async with SessionLocal() as session:
+        for name in category_names:
+            category = ServiceCategory(
+                name=name,
+                created_by_actor_id = 1,
+                tenant_id = 1
+            )
+
+            if await add_one(session, category):
+                created += 1
+
+    print(f"Created {created} service categories")
+
+async def seed_services(count: int = 50) -> None:
+    print(f"Creating {count} services...")
+
+    created = 0
+
+    service_names = [
+        "Haircut",
+        "Hair Coloring",
+        "Hair Styling",
+        "Manicure",
+        "Pedicure",
+        "Facial Cleansing",
+        "Classic Massage",
+        "Makeup",
+        "Beard Trim",
+        "Eyebrow Shaping",
+        "Eyelash Extension",
+        "Body Wrap",
+        "Waxing",
+        "Peeling",
+        "Hair Treatment",
+    ]
+
+    async with SessionLocal() as session:
+        categories = await session.scalars(
+            select(ServiceCategory)
+        )
+
+        category_ids = [category.id for category in categories.all()]
+
+        for _ in range(count):
+            service = Service(
+                name=f"{random.choice(service_names)} {fake.unique.word()}",
+
+                price=random.randint(50_000, 1_500_000),
+
+                estimated_time=random.choice([15, 30, 45, 60, 90, 120]),
+
+                category_id=random.choice(category_ids) if category_ids else None,
+
+                created_by_actor_id = 1,
+                tenant_id = 1
+            )
+
+            if await add_one(session, service):
+                created += 1
+
+    print(f"Created {created} services")
+
+async def seed_employee_services() -> None:
+    print("Assigning services to employees...")
+
+    created = 0
+
+    async with SessionLocal() as session:
+        employees = await session.scalars(
+            select(Employee)
+        )
+        services = await session.scalars(
+            select(Service)
+        )
+
+        employee_ids = [employee.id for employee in employees.all()]
+        service_ids = [service.id for service in services.all()]
+
+        if not employee_ids or not service_ids:
+            print("Skipping employee services: no employees or services found")
+            return
+
+        for employee_id in employee_ids:
+            assigned_services = random.sample(
+                service_ids,
+                k=random.randint(1, min(5, len(service_ids)))
+            )
+
+            for service_id in assigned_services:
+                employee_service = EmployeeServices(
+                    employee_id=employee_id,
+                    service_id=service_id,
+                    created_by_actor_id = 1,
+                    tenant_id = 1
+                )
+
+                if await add_one(session, employee_service):
+                    created += 1
+
+    print(f"Created {created} employee-service assignments")
+
 UZT = timezone(timedelta(hours = 5))
 
 async def seed_work_schedules() -> None:
@@ -415,9 +535,12 @@ async def main():
     seed_tenants()
     seed_actors()
     seed_admin_user()
+    await seed_service_categories()
+    await seed_services()
     await seed_employees()
     await seed_clients()
     await seed_materials()
+    await seed_employee_services()
     await seed_work_schedules()
     await seed_payrolls()
 
