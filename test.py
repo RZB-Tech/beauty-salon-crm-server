@@ -1,4 +1,11 @@
-def foo(*args, **kwargs):
-    print(f"{args}\n{kwargs}")
+from dataclasses import dataclass
 
-foo(4, status = "CANCELLED")
+@dataclass
+class Receipt:
+    amount: int
+
+receipts = [
+    Receipt(100), Receipt(200), Receipt(300)
+]
+total = sum([receipt.amount for receipt in receipts])
+print(total)

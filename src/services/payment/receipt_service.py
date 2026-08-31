@@ -18,6 +18,8 @@ from src.repository.giftCard.giftCard_model import GiftCardStatus
 from src.repository.receipt.receipt_model import Receipt, ReceiptItem, ReceiptStatus, ReceiptType
 from src.repository.payroll.payroll_model import Payroll, PayrollStatus, PayrollType
 from src.repository.transaction.transaction_model import Transaction, TransactionCategory, TransactionMethod, TransactionType
+from src.schemas.analytics.receiptResponse import ReceiptAnalyticsResponse
+from src.schemas.analytics.request import GetReportWithFilters
 from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema, ReceiptPaymentCreateSchema
 from src.schemas.tenant.base import TenantPreferencesSchema
@@ -356,3 +358,29 @@ class ReceiptService():
             "totalItems": total_items,
             "totalPages": total_pages
         }
+
+    async def get_analytics(self, data: GetReportWithFilters) -> ReceiptAnalyticsResponse:
+        receipts = await self.uow.receipts.get_analytics(data)
+        if len(receipts) == 0: return ReceiptAnalyticsResponse(
+            amount = 0, paid = 0, unpaid = 0,
+            cancelled = 0, average_receipt_sum = 0, total_paid_sum = 0
+        )
+
+        result = {
+            "amount": len(receipts),
+            "paid": 0,
+            "unpaid": 0,
+            "cancelled": 0,
+            "average_receipt_sum": 0,
+            "total_paid_sum": 0
+        }
+        receiptsPaidSum = sum([receipt.paid_amount for receipt in receipts])
+        result["average_receipt_sum"] = round(receiptsPaidSum / len(receipts), 2)
+        result["total_paid_sum"] = receiptsPaidSum
+
+        for receipt in receipts:
+            if receipt.status == ReceiptStatus.PAID: result["paid"] += 1
+            if receipt.status == ReceiptStatus.PENDING: result["unpaid"] += 1
+            if receipt.status == ReceiptStatus.CANCELLED: result["cancelled"] += 1
+
+        return ReceiptAnalyticsResponse.model_validate(result)

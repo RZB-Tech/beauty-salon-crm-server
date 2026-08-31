@@ -1,8 +1,11 @@
-from sqlalchemy import func, select
+from datetime import timedelta
+
+from sqlalchemy import and_, func, select
 from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
 from src.repository.receipt.receipt_model import Receipt, ReceiptStatus
+from src.schemas.analytics.request import GetReportWithFilters
 from src.schemas.base import RequestAllObject
 
 class ReceiptRepository(BaseRepository[Receipt]):
@@ -64,5 +67,17 @@ class ReceiptRepository(BaseRepository[Receipt]):
             .order_by(Receipt.id.desc())
             .options(selectinload(Receipt.items),
                      selectinload(Receipt.transactions)))
+        result = await self.db.execute(stmt)
+        return result.scalars().all()
+
+    async def get_analytics(self, data: GetReportWithFilters) -> list[Receipt]:
+        stmt = (
+            select(Receipt)
+            .where(and_(
+                Receipt.created_at >= data.start_date,
+                Receipt.created_at < data.end_date + timedelta(days = 1)
+            ))
+            .options(selectinload(Receipt.transactions))
+        )
         result = await self.db.execute(stmt)
         return result.scalars().all()

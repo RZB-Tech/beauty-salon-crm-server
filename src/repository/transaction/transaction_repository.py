@@ -40,42 +40,6 @@ class TransactionRepository(BaseRepository[Transaction]):
         )
         return result.scalars().all()
     
-    # async def get_by_employee(self, data: EmployeeFinanceReportRequest) -> list[Transaction]:
-    #     stmt = (
-    #         select(Transaction)
-    #         .join(
-    #             Payout,
-    #             and_(
-    #                 Transaction.payout_id == Payout.id,
-    #                 Transaction.tenant_id == Payout.tenant_id,
-    #             )
-    #         )
-    #         .outerjoin(
-    #             Appointment,
-    #             and_(
-    #                 Receipt.appointment_id == Appointment.id,
-    #                 Receipt.tenant_id == Appointment.tenant_id,
-    #             )
-    #         )
-    #         .where(
-    #             or_(
-    #                 Receipt.client_id == data.clientID,
-    #                 Appointment.client_id == data.clientID,
-    #             )
-    #         )
-    #         .where(Transaction.cancelled.is_(False))
-    #         .order_by(Transaction.created_at.desc())
-    #     )
-
-    #     if data.start_date:
-    #         stmt = stmt.where(Transaction.created_at >= data.start_date)
-
-    #     if data.end_date:
-    #         stmt = stmt.where(Transaction.created_at <= data.end_date)
-
-    #     result = await self.db.execute(stmt)
-    #     return list(result.scalars().unique().all())
-    
     async def get_by_client(self, data: ClientFinanceReportRequest) -> list[Transaction]:
         stmt = (
             select(Transaction)

@@ -27,6 +27,7 @@ from src.routes.system.staff_router import router as staffR
 from src.routes.payment.promotion_router import router as promotionR
 from src.routes.payment.giftCard_router import router as giftCardR
 from src.schemas.base import FilterFieldSchema, FilterTables
+from src.routes.system.analytics_router import router as analyticsR
 
 open_router = APIRouter(prefix = "/api/v1")
 open_router.include_router(
@@ -51,6 +52,12 @@ async def get_table_filters(table: FilterTables):
     model = MODEL_REGISTRY.get(table.value)
     if model is None: raise HTTPException(404)
     return get_filter_schema(model)
+
+protected_router.include_router(
+    analyticsR, 
+    prefix="/analytics", 
+    tags=["Analytics"]
+)
 
 protected_router.include_router(
     appointmentR, 

@@ -28,4 +28,4 @@ class ClientRepository(BaseRepository[Client]):
         stmt = stmt.order_by(Client.id.desc()).offset(offset_value).limit(data.pageSize)
         result = await self.db.execute(stmt)
         items = result.scalars().all()
-        return items, total_items
+        return items, total_items 
