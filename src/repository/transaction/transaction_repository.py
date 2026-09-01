@@ -1,6 +1,6 @@
 from datetime import timedelta
 
-from sqlalchemy import and_, func, or_, select
+from sqlalchemy import Row, and_, func, or_, select, text
 from sqlalchemy.orm import joinedload, selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
@@ -8,7 +8,7 @@ from src.repository.appointment.appointment_model import Appointment
 from src.repository.receipt.receipt_model import Receipt, ReceiptItem
 from src.repository.payroll.payroll_model import Payout
 from src.repository.transaction.transaction_model import Transaction
-from src.schemas.analytics.request import GetReportWithFilters
+from src.schemas.analytics.request import GetReportWithFilters, TranscationsByPeriod
 from src.schemas.base import RequestAllObject
 from src.schemas.client.request import ClientFinanceReportRequest
 from src.schemas.employee.request import EmployeeFinanceReportRequest
@@ -97,3 +97,22 @@ class TransactionRepository(BaseRepository[Transaction]):
         )
         result = await self.db.execute(stmt)
         return result.scalars().all()
+
+    async def get_revenue_by_period(self, data: GetReportWithFilters, period: str) -> list[Row]:
+        date_trunc_expr = func.date_trunc(period, Transaction.created_at)
+
+        stmt = (
+            select(
+                date_trunc_expr.label("date"),
+                func.sum(Transaction.amount).label("revenue"),
+            )
+            .where(and_(
+                Transaction.created_at >= data.start_date,
+                Transaction.created_at < data.end_date + timedelta(days=1)
+            ))
+            .group_by(date_trunc_expr)
+            .order_by(date_trunc_expr)
+        )
+
+        result = await self.db.execute(stmt)
+        return result.all()

@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from datetime import date
 
 class PaymentMethodsAnalyticsDetailsResponse(BaseModel):
     amount: int
@@ -18,3 +19,10 @@ class TransactionAnalyticsResponse(BaseModel):
     by_giftCard: PaymentMethodsAnalyticsDetailsResponse
     not_fully_paid_receipts_sum: int
     total_profit: int
+
+class TransactionByPeriodBaseResponse(BaseModel):
+    date: date
+    revenue: int
+
+class TransactionByPeriodResponse(BaseModel):
+    items: list[TransactionByPeriodBaseResponse]
