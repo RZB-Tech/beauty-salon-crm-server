@@ -235,6 +235,7 @@ class EmployeeService():
             items = [
                 EmployeeAnalyticsBaseResponse(
                     employee_id = row.employee_id,
+                    employee_fullname = row.fullname,
                     appointments = row.appointments_amount,
                     services = row.services_amount,
                     revenue = row.services_final_price_sum

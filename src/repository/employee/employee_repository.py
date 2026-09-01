@@ -77,6 +77,7 @@ class EmployeeRepository(BaseRepository[Employee]):
         stmt = (
             select(
                 Employee.id.label("employee_id"),
+                func.concat_ws(' ', Employee.lastname, Employee.firstname, Employee.middlename).label("fullname"),
                 func.count(func.distinct(Appointment.id)).label("appointments_amount"),
                 func.count(AppointmentServices.id).label("services_amount"),
                 services_final_price_sum.label("services_final_price_sum"),
