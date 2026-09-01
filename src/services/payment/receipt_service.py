@@ -12,6 +12,7 @@ from src.exceptions.general_exceptions import ObjectIsArchived, PaymentCancelDue
 from src.exceptions.giftCard_exceptions import GiftCardClientConflict, GiftCardInsufficientAmount, GiftCardNotFound, GiftCardUnusable
 from src.exceptions.material_exceptions import MaterialAmountInsufficient, MaterialNotFound
 from src.exceptions.receipt_exceptions import ReceiptHasNotClient, ReceiptIsCancelled, ReceiptIsPaid, ReceiptNotFound, ReceiptOverpayment, ReceiptWithEmptyAppointmentRecords
+from src.exceptions.tenant_exceptions import TenantNotFound
 from src.repository.appointment.appointment_model import AppointmentServices, AppointmentStatus
 from src.repository.client.client_model import Client
 from src.repository.giftCard.giftCard_model import GiftCardStatus

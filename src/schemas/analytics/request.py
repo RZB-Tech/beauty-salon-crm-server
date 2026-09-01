@@ -2,9 +2,10 @@ from datetime import date
 from enum import StrEnum
 from typing import Self
 
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, Field, model_validator
 
 class GetReportWithFilters(BaseModel):
+    branch_id: int | None = Field(None, ge = 1)
     start_date: date
     end_date: date
 

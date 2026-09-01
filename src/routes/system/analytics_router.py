@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends
+from src.core.dependencies.permissions import require_parent_tenant
 from src.core.dependencies.uow import make_service_dependency
 from src.schemas.analytics.appointmentResponse import ApppointmentAnalyticsResponse
 from src.schemas.analytics.employeeResponse import EmployeeAnalyticsResponse
@@ -11,6 +12,7 @@ from src.services.employee.employee_service import EmployeeService
 from src.services.employee.service_service import ServiceService
 from src.services.payment.receipt_service import ReceiptService
 from src.services.payment.transaction_service import TransactionService
+from src.core.dependencies.auth import get_current_staff
 
 router = APIRouter()
 
@@ -20,11 +22,19 @@ get_transaction_service = make_service_dependency(TransactionService)
 get_employee_service = make_service_dependency(EmployeeService)
 get_service_service = make_service_dependency(ServiceService)
 
+async def require_parent_tenant_if_branch(
+    data: GetReportWithFilters,
+    user = Depends(get_current_staff)
+) -> GetReportWithFilters:
+    if data.branch_id is not None:
+        await require_parent_tenant(user)
+    return data
+
 @router.post(
     "/receipts/kpi",
     status_code = 200,
     response_model = ReceiptAnalyticsResponse)
-async def login(data: GetReportWithFilters,
+async def login(data: GetReportWithFilters = Depends(require_parent_tenant_if_branch),
                 receiptService: ReceiptService = Depends(get_receipt_service)):
     return await receiptService.get_analytics(data)
 
@@ -32,7 +42,7 @@ async def login(data: GetReportWithFilters,
     "/appointments/kpi",
     status_code = 200,
     response_model = ApppointmentAnalyticsResponse)
-async def login(data: GetReportWithFilters,
+async def login(data: GetReportWithFilters = Depends(require_parent_tenant_if_branch),
                 appointmentService: AppointmentService = Depends(get_appointment_service)):
     return await appointmentService.get_analytics(data)
 
@@ -40,7 +50,7 @@ async def login(data: GetReportWithFilters,
     "/transactions/kpi",
     status_code = 200,
     response_model = TransactionAnalyticsResponse)
-async def login(data: GetReportWithFilters,
+async def login(data: GetReportWithFilters = Depends(require_parent_tenant_if_branch),
                 transactionService: TransactionService = Depends(get_transaction_service)):
     return await transactionService.get_analytics(data)
 
@@ -48,7 +58,7 @@ async def login(data: GetReportWithFilters,
     "/transactions/by-period",
     status_code = 200,
     response_model = TransactionByPeriodResponse)
-async def login(data: TranscationsByPeriod,
+async def login(data: TranscationsByPeriod  = Depends(require_parent_tenant_if_branch),
                 transactionService: TransactionService = Depends(get_transaction_service)):
     return await transactionService.get_revenue_by_period(data)
 
@@ -56,7 +66,7 @@ async def login(data: TranscationsByPeriod,
     "/employees/kpi",
     status_code = 200,
     response_model = EmployeeAnalyticsResponse)
-async def login(data: GetReportWithFilters,
+async def login(data: GetReportWithFilters = Depends(require_parent_tenant_if_branch),
                 employeeService: EmployeeService = Depends(get_employee_service)):
     return await employeeService.get_analytics(data)
 
@@ -64,6 +74,6 @@ async def login(data: GetReportWithFilters,
     "/services/kpi",
     status_code = 200,
     response_model = ServiceAnalyticsResponse)
-async def login(data: GetReportWithFilters,
+async def login(data: GetReportWithFilters = Depends(require_parent_tenant_if_branch),
                 serviceService: ServiceService = Depends(get_service_service)):
     return await serviceService.get_analytics(data)

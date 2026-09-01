@@ -6,6 +6,7 @@ from src.core.cache.permission_cache import delete_staff_permissions
 from src.core.cache.tenant_cache import delete_tenant_active
 from src.core.dependencies.context import cleared_actor_context, get_current_actor_id, get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
+from src.core.utils.common import get_current_tenant_or_raise
 from src.database.base import Actor, ActorType
 from src.database.session import SessionLocal
 from src.exceptions.staff_exceptions import StaffLoginDuplicate, StaffNotFound, StaffTenantConflict
@@ -43,15 +44,8 @@ class TenantBranchesService:
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
 
-    async def _get_current_tenant_or_raise(self) -> Tenant:
-        tenant_id = get_current_tenant_id()
-        tenant = await self.uow.tenants.get(id = tenant_id)
-        if tenant is None: raise TenantNotFound(tenant_id)
-        return tenant
-
     async def create(self, data: TenantBranchCreateSchema) -> dict:
-        tenant = await self._get_current_tenant_or_raise()
-
+        tenant = await get_current_tenant_or_raise(self.uow)
         creator_actor_id = get_current_actor_id()
 
         # provision_tenant writes rows tagged with the new branch's tenant_id, which the
@@ -75,7 +69,7 @@ class TenantBranchesService:
         return result
 
     async def get_all(self) -> list[Tenant]:
-        tenant = await self._get_current_tenant_or_raise()
+        tenant = await get_current_tenant_or_raise(self.uow)
         return await self.uow.tenants.get_branches(tenant.id)
 
     async def _compute_tenant_counts(self, tenant_ids: list[int]) -> dict[int, dict[str, int]]:
@@ -122,7 +116,7 @@ class TenantBranchesService:
         return counts
 
     async def get_report(self) -> TenantBranchReportSchema:
-        tenant = await self._get_current_tenant_or_raise()
+        tenant = await get_current_tenant_or_raise(self.uow)
         branches = await self.uow.tenants.get_branches(tenant.id)
 
         tenant_ids = [branch.id for branch in branches]
@@ -153,7 +147,7 @@ class TenantBranchesService:
         return TenantBranchReportSchema(branches = branches_report, total = total)
 
     async def get_branch_report(self, branch_id: int) -> TenantBranchReportItemSchema:
-        parentTenant = await self._get_current_tenant_or_raise()
+        parentTenant = await get_current_tenant_or_raise(self.uow)
         branch = await self.uow.tenants.get(id = branch_id)
         if branch is None: raise TenantNotFound(branch_id)
         if branch.parent_id != parentTenant.id: raise BranchDoesNotBelongToTenant(parentTenant.id, branch_id)
@@ -167,7 +161,7 @@ class TenantBranchesService:
         )
 
     async def create_branch_admin(self, data: BranchAdminCreateSchema) -> BranchCreateAdminResponse:
-        parentTenant = await self._get_current_tenant_or_raise()
+        parentTenant = await get_current_tenant_or_raise(self.uow)
         tenant = await self.uow.tenants.get(id = data.branch_id)
         if tenant is None: raise TenantNotFound(data.branch_id)
         if tenant.parent_id != parentTenant.id: raise BranchDoesNotBelongToTenant(parentTenant.id, data.branch_id)
@@ -212,7 +206,7 @@ class TenantBranchesService:
         If provided `password` - set hashed password and return None\n
         If `password` has not provided - generate random password, set hashed and return
         """
-        parentTenant = await self._get_current_tenant_or_raise()
+        parentTenant = await get_current_tenant_or_raise(self.uow)
         tenant = await self.uow.tenants.get(id = data.branch_id)
         if tenant is None: raise TenantNotFound(data.branch_id)
         if tenant.parent_id != parentTenant.id: raise BranchDoesNotBelongToTenant(parentTenant.id, data.branch_id)
@@ -249,7 +243,7 @@ class TenantBranchesService:
         return plainPassword if data.password is None else None
 
     async def update_branch_admin(self, data: UpdateBranchAdminSchema) -> BranchAdminResponseSchema:
-        parentTenant = await self._get_current_tenant_or_raise()
+        parentTenant = await get_current_tenant_or_raise(self.uow)
         tenant = await self.uow.tenants.get(id = data.branch_id)
         if tenant is None: raise TenantNotFound(data.branch_id)
         if tenant.parent_id != parentTenant.id: raise BranchDoesNotBelongToTenant(parentTenant.id, data.branch_id)
@@ -288,7 +282,7 @@ class TenantBranchesService:
         return BranchAdminResponseSchema.model_validate(updatedAdmin)
 
     async def update_branch(self, data: UpdateBranchSchema) -> Tenant:
-        parentTenant = await self._get_current_tenant_or_raise()
+        parentTenant = await get_current_tenant_or_raise(self.uow)
         tenant = await self.uow.tenants.get(id = data.branch_id)
         if tenant is None: raise TenantNotFound(data.branch_id)
         if tenant.parent_id != parentTenant.id: raise BranchDoesNotBelongToTenant(parentTenant.id, data.branch_id)

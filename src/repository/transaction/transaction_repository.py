@@ -80,12 +80,13 @@ class TransactionRepository(BaseRepository[Transaction]):
         result = await self.db.execute(stmt)
         return list(result.scalars().unique().all())
 
-    async def get_analytics(self, data: GetReportWithFilters) -> list[Transaction]:
+    async def get_analytics(self, data: GetReportWithFilters, branchID: int) -> list[Transaction]:
         stmt = (
             select(Transaction)
             .where(and_(
                 Transaction.created_at >= data.start_date,
-                Transaction.created_at < data.end_date + timedelta(days = 1)
+                Transaction.created_at < data.end_date + timedelta(days = 1),
+                Transaction.tenant_id == branchID
             ))
             .options(
                 joinedload(Transaction.receipt)
