@@ -1,11 +1,14 @@
-from sqlalchemy import func, select
+from datetime import timedelta
+
+from sqlalchemy import Row, and_, func, select
 from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
+from src.repository.appointment.appointment_model import Appointment, AppointmentRecords, AppointmentServices
 from src.repository.service.service_model import Service
+from src.schemas.analytics.request import GetReportWithFilters
 from src.schemas.base import RequestAllObject
 from src.schemas.service.create import ServiceCreateSchema
-from src.schemas.service.update import ServiceUpdateSchema
 
 class ServiceRepository(BaseRepository[Service]):
 
@@ -39,3 +42,26 @@ class ServiceRepository(BaseRepository[Service]):
         result = await self.db.execute(stmt)
         items = result.scalars().all()
         return items, total_items
+
+    async def get_analytics(self, data: GetReportWithFilters) -> list[Row]:
+        stmt = (
+            select(
+                Service.name,
+                AppointmentServices.service_id,
+                func.count().label("amount"),
+                func.sum(AppointmentServices.final_price).label("revenue"),
+            )
+            .join(AppointmentRecords, AppointmentServices.appointment_record_id == AppointmentRecords.id)
+            .join(Appointment, AppointmentRecords.appointment_id == Appointment.id)
+            .join(Service, Service.id == AppointmentServices.service_id)
+            .where(Appointment.paid.is_(True))
+            .where(and_(
+                AppointmentServices.service_id.isnot(None),
+                AppointmentServices.created_at >= data.start_date,
+                AppointmentServices.created_at < data.end_date + timedelta(days = 1)
+            ))
+            .group_by(Service.name, AppointmentServices.service_id)
+        )
+
+        result = await self.db.execute(stmt)
+        return result.all()

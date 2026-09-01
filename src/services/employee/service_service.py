@@ -8,6 +8,8 @@ from src.exceptions.base import BaseAppException
 from src.exceptions.category_exceptions import ServiceCategoryIsArchived, ServiceCategoryNotFound
 from src.exceptions.service_exceptions import ServiceNotFound
 from src.repository.service.service_model import Service, ServiceCategory
+from src.schemas.analytics.request import GetReportWithFilters
+from src.schemas.analytics.serviceResponse import ServiceAnalyticsBaseResponse, ServiceAnalyticsResponse
 from src.schemas.base import RequestAllObject
 from src.schemas.service.create import ServiceCreateSchema
 from src.schemas.service.update import ServiceUpdateSchema
@@ -171,3 +173,17 @@ class ServiceService():
             "created_categories": len(new_categories),
             "created_services": created_services,
         }
+
+    async def get_analytics(self, data: GetReportWithFilters) -> ServiceAnalyticsResponse:
+        rows = await self.uow.services.get_analytics(data)
+        return ServiceAnalyticsResponse(
+            items = [
+                ServiceAnalyticsBaseResponse(
+                    service_id = row.service_id,
+                    service_name = row.name,
+                    amount = row.amount,
+                    revenue = row.revenue
+                )
+                for row in rows
+            ]
+        )
