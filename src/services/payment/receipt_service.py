@@ -175,7 +175,7 @@ class ReceiptService():
 
             if overpayment > 0:
             # if payment method not gift_card - consider overpayment to add client's deposit
-                if client is None:
+                if client is None and receipt.client_id is not None:
                     if receipt.client_id is None: raise ReceiptHasNotClient(data.receipt_id)
                     client = await self.uow.clients.get(receipt.client_id)
                     if client is None: raise ClientNotFound(receipt.client_id)
@@ -254,7 +254,7 @@ class ReceiptService():
             ))
 
         # substract payment sum from client's deposit
-        if depositAdjustment != 0:
+        if depositAdjustment != 0 and client is not None:
             if data.method == TransactionMethod.DEPOSIT and data.amount > client.deposit:
                 raise DepositNotEnough(client.id, client.firstname, data.amount, client.deposit)
 
