@@ -140,7 +140,7 @@ class ReceiptService():
         
         # get receipt info
         receipt = stmt.scalar_one_or_none()
-        if not receipt: raise ReceiptNotFound(data.receipt_id)
+        if receipt is None: raise ReceiptNotFound(data.receipt_id)
         if receipt.status == ReceiptStatus.CANCELLED: raise ReceiptIsCancelled(data.receipt_id)
         if receipt.archived: raise ObjectIsArchived(data.receipt_id, "receipts")
         if receipt.remaining_amount == 0: raise ReceiptIsPaid(data.receipt_id)
