@@ -3,6 +3,7 @@ from fastapi import UploadFile
 from sqlalchemy import select
 from src.core.dependencies.context import get_current_actor_id, get_current_staff_id, get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
+from src.core.utils.common import check_branch_belong_to_tenant
 from src.exceptions.auth_exceptions import AuthTenantContextEmpty
 from src.exceptions.base import BaseAppException
 from src.exceptions.category_exceptions import ServiceCategoryIsArchived, ServiceCategoryNotFound
@@ -175,7 +176,18 @@ class ServiceService():
         }
 
     async def get_analytics(self, data: GetReportWithFilters) -> ServiceAnalyticsResponse:
+        branchID: int
+        if data.branch_id is not None:
+            await check_branch_belong_to_tenant(self.uow, data.branch_id)
+            branchID = data.branch_id
+        else: branchID = get_current_tenant_id()
+
+        data.branch_id = branchID
+
         rows = await self.uow.services.get_analytics(data)
+
+        if len(rows) == 0: return ServiceAnalyticsResponse(items = [])
+
         return ServiceAnalyticsResponse(
             items = [
                 ServiceAnalyticsBaseResponse(

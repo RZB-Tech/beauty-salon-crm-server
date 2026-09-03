@@ -51,9 +51,23 @@ class ServiceRepository(BaseRepository[Service]):
                 func.count().label("amount"),
                 func.sum(AppointmentServices.final_price).label("revenue"),
             )
-            .join(AppointmentRecords, AppointmentServices.appointment_record_id == AppointmentRecords.id)
-            .join(Appointment, AppointmentRecords.appointment_id == Appointment.id)
-            .join(Service, Service.id == AppointmentServices.service_id)
+            .select_from(Service)
+            .where(Service.tenant_id == data.branch_id)
+            .join(AppointmentServices,
+                  and_(
+                      AppointmentServices.service_id == Service.id,
+                      AppointmentServices.tenant_id == data.branch_id
+                  ))
+            .join(AppointmentRecords,
+                  and_(
+                      AppointmentServices.appointment_record_id == AppointmentRecords.id,
+                      AppointmentRecords.tenant_id == data.branch_id
+                  ))
+            .join(Appointment,
+                  and_(
+                      AppointmentRecords.appointment_id == Appointment.id,
+                      Appointment.tenant_id == data.branch_id
+                  ))
             .where(Appointment.paid.is_(True))
             .where(and_(
                 AppointmentServices.service_id.isnot(None),
@@ -61,6 +75,7 @@ class ServiceRepository(BaseRepository[Service]):
                 AppointmentServices.created_at < data.end_date + timedelta(days = 1)
             ))
             .group_by(Service.name, AppointmentServices.service_id)
+            .execution_options(skip_tenant_filter = True)
         )
 
         result = await self.db.execute(stmt)
