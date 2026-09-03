@@ -3,6 +3,7 @@ from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
+from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.appointment_exceptions import AppointmentCancelled, AppointmentHasActiveReceipts, AppointmentIsPaid, AppointmentNotFound
 from src.exceptions.base import BaseAppException
@@ -25,7 +26,7 @@ from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema, ReceiptPaymentCreateSchema
 from src.schemas.tenant.base import TenantPreferencesSchema
 from src.services.system.tenantPreferences_service import TenantPreferencesService
-from src.core.utils.common import as_utc
+from src.core.utils.common import as_utc, check_branch_belong_to_tenant
 
 class ReceiptService():
     def __init__(self, uow: UnitOfWork):
@@ -370,13 +371,19 @@ class ReceiptService():
         }
 
     async def get_analytics(self, data: GetReportWithFilters) -> ReceiptAnalyticsResponse:
-        row = await self.uow.receipts.get_analytics(data)
+        branchID: int
+        if data.branch_id is not None:
+            await check_branch_belong_to_tenant(self.uow, data.branch_id)
+            branchID = data.branch_id
+        else: branchID = get_current_tenant_id()
+
+        row = await self.uow.receipts.get_analytics(data, branchID)
         return ReceiptAnalyticsResponse(
-            amount = row.amount,
-            paid = row.paid,
-            unpaid = row.unpaid,
-            cancelled = row.cancelled,
+            amount = row.amount or 0,
+            paid = row.paid or 0,
+            unpaid = row.unpaid or 0,
+            cancelled = row.cancelled or 0,
             average_receipt_sum = row.average or 0,
-            total_paid_sum = row.total_paid_sum
+            total_paid_sum = row.total_paid_sum or 0
         )
         

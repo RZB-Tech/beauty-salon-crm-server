@@ -3,7 +3,7 @@ import re
 
 from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
-from src.exceptions.tenant_exceptions import TenantNotFound
+from src.exceptions.tenant_exceptions import BranchDoesNotBelongToTenant, TenantNotFound
 from src.repository.tenant.tenant_model import Tenant
 
 def as_utc(value: datetime) -> datetime:
@@ -19,3 +19,21 @@ async def get_current_tenant_or_raise(uow: UnitOfWork) -> Tenant:
     tenant = await uow.tenants.get(id = tenant_id)
     if tenant is None: raise TenantNotFound(tenant_id)
     return tenant
+
+async def check_branch_belong_to_tenant(uow: UnitOfWork,  
+                                        branchID: int,
+                                        parentID: int | None = None) -> bool:
+    """
+    If parentID is not provided - parentID will use current context tenant's ID
+    """
+    parent: Tenant
+    if parentID is not None:
+        parent = await uow.tenants.get(id = parentID)
+        if parent is None: raise TenantNotFound(parentID)
+    else: parent = await get_current_tenant_or_raise(uow)
+
+    branch = await uow.tenants.get(id = branchID)
+    if branch is None: raise TenantNotFound(branchID)
+    if branch.parent_id != parent.id: BranchDoesNotBelongToTenant(parent.id, branchID)
+
+    return True
