@@ -1,3 +1,5 @@
+from typing import TypeVar
+
 from fastapi import APIRouter, Depends
 from src.core.dependencies.permissions import require_parent_tenant
 from src.core.dependencies.uow import get_request_uow, make_service_dependency
@@ -22,14 +24,23 @@ get_transaction_service = make_service_dependency(TransactionService)
 get_employee_service = make_service_dependency(EmployeeService)
 get_service_service = make_service_dependency(ServiceService)
 
-async def require_parent_tenant_if_branch(
-    data: GetReportWithFilters,
-    user = Depends(get_current_staff),
-    uow = Depends(get_request_uow)
-) -> GetReportWithFilters:
-    if data.branch_id is not None:
-        await require_parent_tenant(user, uow)
-    return data
+T = TypeVar("T", bound = GetReportWithFilters)
+
+def make_require_parent_tenant_if_branch(model: type[T]):
+    async def dependency(
+        data,
+        user = Depends(get_current_staff),
+        uow = Depends(get_request_uow)
+    ):
+        if data.branch_id is not None:
+            await require_parent_tenant(user, uow)
+        return data
+    dependency.__annotations__["data"] = model
+    dependency.__annotations__["return"] = model
+    return dependency
+
+require_parent_tenant_if_branch = make_require_parent_tenant_if_branch(GetReportWithFilters)
+require_parent_tenant_if_branch_by_period = make_require_parent_tenant_if_branch(TranscationsByPeriod)
 
 @router.post(
     "/receipts/kpi",
@@ -59,7 +70,7 @@ async def analytics_transactions_kpi(data: GetReportWithFilters = Depends(requir
     "/transactions/by-period",
     status_code = 200,
     response_model = TransactionByPeriodResponse)
-async def analytics_transactions_byPeriod(data: TranscationsByPeriod  = Depends(require_parent_tenant_if_branch),
+async def analytics_transactions_byPeriod(data: TranscationsByPeriod  = Depends(require_parent_tenant_if_branch_by_period),
                 transactionService: TransactionService = Depends(get_transaction_service)):
     return await transactionService.get_revenue_by_period(data)
 

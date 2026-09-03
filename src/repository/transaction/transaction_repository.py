@@ -109,11 +109,13 @@ class TransactionRepository(BaseRepository[Transaction]):
                 func.sum(Transaction.amount).label("revenue"),
             )
             .where(and_(
+                Transaction.tenant_id == data.branch_id,
                 Transaction.created_at >= data.start_date,
                 Transaction.created_at < data.end_date + timedelta(days=1)
             ))
             .group_by(date_trunc_expr)
             .order_by(date_trunc_expr)
+            .execution_options(skip_tenant_filter = True)
         )
 
         result = await self.db.execute(stmt)

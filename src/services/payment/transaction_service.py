@@ -173,13 +173,21 @@ class TransactionService():
         return TransactionAnalyticsResponse.model_validate(result)
 
     async def get_revenue_by_period(self, data: TranscationsByPeriod) -> TransactionByPeriodResponse:
+        branchID: int
+        if data.branch_id is not None:
+            await check_branch_belong_to_tenant(self.uow, data.branch_id)
+            branchID = data.branch_id
+        else: branchID = get_current_tenant_id()
+        
+        data.branch_id = branchID
+
         period: str
         match data.period:
             case PeriodEnum.BY_DAY: period = "day"
             case PeriodEnum.BY_WEEK: period = "week"
             case PeriodEnum.BY_MONTH: period = "month"
             case PeriodEnum.BY_YEAR: period = "year"
-        print(period)
+
         rows = await self.uow.transactions.get_revenue_by_period(data, period)
         return TransactionByPeriodResponse(
             items = [
