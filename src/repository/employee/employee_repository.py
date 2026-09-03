@@ -83,11 +83,12 @@ class EmployeeRepository(BaseRepository[Employee]):
                 services_final_price_sum.label("services_final_price_sum"),
             )
             .select_from(Employee)
+            .where(Employee.tenant_id == data.branch_id)
             .outerjoin(
                 AppointmentRecords,
                 and_(
                     AppointmentRecords.employee_id == Employee.id,
-                    AppointmentRecords.tenant_id == Employee.tenant_id,
+                    AppointmentRecords.tenant_id == data.branch_id
                 ),
             )
             .outerjoin(
@@ -97,7 +98,8 @@ class EmployeeRepository(BaseRepository[Employee]):
                     AppointmentRecords.tenant_id == Appointment.tenant_id,
                     Appointment.paid.is_(True),
                     Appointment.created_at >= data.start_date,
-                    Appointment.created_at < data.end_date + timedelta(days = 1)
+                    Appointment.created_at < data.end_date + timedelta(days = 1),
+                    Appointment.tenant_id == data.branch_id
                 ),
             )
             .outerjoin(
@@ -105,11 +107,13 @@ class EmployeeRepository(BaseRepository[Employee]):
                 and_(
                     AppointmentServices.appointment_record_id == AppointmentRecords.id,
                     AppointmentServices.tenant_id == AppointmentRecords.tenant_id,
+                    AppointmentServices.tenant_id == data.branch_id,
                     Appointment.id.isnot(None),
                 ),
             )
             .group_by(Employee.id)
             .order_by(services_final_price_sum.desc())
+            .execution_options(skip_tenant_filter = True)
         )
         result = await self.db.execute(stmt)
         return result.all()

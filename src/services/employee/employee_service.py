@@ -5,7 +5,9 @@ import math
 from fastapi.responses import StreamingResponse
 from openpyxl import Workbook
 from src.core.decorators.requireID import require_exists
+from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
+from src.core.utils.common import check_branch_belong_to_tenant
 from src.exceptions.service_exceptions import ServiceIsArchived, ServiceOneOrMoreNotFound
 from src.exceptions.specialization_exceptions import SpecializationIsArchived, SpecializationNotFound
 from src.repository.employee.employee_model import Employee
@@ -230,7 +232,18 @@ class EmployeeService():
         return self._export_excel(data)
 
     async def get_analytics(self, data: GetReportWithFilters) -> EmployeeAnalyticsResponse:
+        branchID: int
+        if data.branch_id is not None:
+            await check_branch_belong_to_tenant(self.uow, data.branch_id)
+            branchID = data.branch_id
+        else: branchID = get_current_tenant_id()
+
+        data.branch_id = branchID
+
         rows = await self.uow.employees.get_analytics(data)
+
+        if len(rows) == 0: return EmployeeAnalyticsResponse(items = [])
+
         return EmployeeAnalyticsResponse(
             items = [
                 EmployeeAnalyticsBaseResponse(
