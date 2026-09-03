@@ -74,7 +74,10 @@ class ReceiptRepository(BaseRepository[Receipt]):
     async def get_analytics(self, data: GetReportWithFilters) -> Row:
         paid_amount_subq = (
             select(func.coalesce(func.sum(Transaction.amount), 0))
-            .where(Transaction.receipt_id == Receipt.id)
+            .where(and_(
+                Transaction.receipt_id == Receipt.id,
+                Transaction.tenant_id == data.branch_id
+            ))
             .correlate(Receipt)
             .scalar_subquery()
         )
@@ -107,7 +110,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
                 cast(totals.c.total_paid_sum, Numeric) / func.nullif(totals.c.amount, 0),
                 2
             ).label("average"),
-        )
+        ).execution_options(skip_tenant_filter = True)
 
         result = await self.db.execute(stmt)
         return result.one()
