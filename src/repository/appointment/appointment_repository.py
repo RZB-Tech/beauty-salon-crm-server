@@ -224,7 +224,8 @@ class AppointmentRepository(BaseRepository[Appointment]):
             )
             .where(and_(
                 Appointment.created_at >= data.start_date,
-                Appointment.created_at < data.end_date + timedelta(days=1)
+                Appointment.created_at < data.end_date + timedelta(days=1),
+                Appointment.tenant_id == data.branch_id
             ))
         )
 

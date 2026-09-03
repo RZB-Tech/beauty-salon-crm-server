@@ -377,7 +377,8 @@ class ReceiptService():
             branchID = data.branch_id
         else: branchID = get_current_tenant_id()
 
-        row = await self.uow.receipts.get_analytics(data, branchID)
+        data.branch_id = branchID
+        row = await self.uow.receipts.get_analytics(data)
         return ReceiptAnalyticsResponse(
             amount = row.amount or 0,
             paid = row.paid or 0,

@@ -71,7 +71,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
         result = await self.db.execute(stmt)
         return result.scalars().all()
 
-    async def get_analytics(self, data: GetReportWithFilters, branchID: int) -> Row:
+    async def get_analytics(self, data: GetReportWithFilters) -> Row:
         paid_amount_subq = (
             select(func.coalesce(func.sum(Transaction.amount), 0))
             .where(Transaction.receipt_id == Receipt.id)
@@ -91,7 +91,7 @@ class ReceiptRepository(BaseRepository[Receipt]):
             .where(and_(
                 Receipt.created_at >= data.start_date,
                 Receipt.created_at < data.end_date + timedelta(days=1),
-                Receipt.tenant_id == branchID
+                Receipt.tenant_id == data.branch_id
             ))
             .cte("totals")
         )

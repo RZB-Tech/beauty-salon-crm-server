@@ -22,7 +22,7 @@ async def get_current_tenant_or_raise(uow: UnitOfWork) -> Tenant:
 
 async def check_branch_belong_to_tenant(uow: UnitOfWork,  
                                         branchID: int,
-                                        parentID: int | None = None) -> bool:
+                                        parentID: int | None = None) -> None:
     """
     If parentID is not provided - parentID will use current context tenant's ID
     """
@@ -34,6 +34,4 @@ async def check_branch_belong_to_tenant(uow: UnitOfWork,
 
     branch = await uow.tenants.get(id = branchID)
     if branch is None: raise TenantNotFound(branchID)
-    if branch.parent_id != parent.id: BranchDoesNotBelongToTenant(parent.id, branchID)
-
-    return True
+    if branch.parent_id != parent.id: raise BranchDoesNotBelongToTenant(parent.id, branchID)

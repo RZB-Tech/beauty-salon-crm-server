@@ -1,6 +1,8 @@
 import math
 from src.core.decorators.requireID import require_exists
+from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
+from src.core.utils.common import check_branch_belong_to_tenant
 from src.exceptions.appointment_exceptions import AppointmentCancelled, AppointmentHasActiveReceipts, AppointmentIsPaid, AppointmentNotFound, ClientAppointmentConflict, EmployeeAppointmentConflict
 from src.exceptions.employee_exceptions import EmployeeDoesNotProvideService, EmployeeDoesNotWork, EmployeeInactive, EmployeeIsArchived, EmployeeNotFound
 from src.exceptions.general_exceptions import CannotUpdate, ObjectIsArchived, PriceChangedReasonEmpty
@@ -149,10 +151,17 @@ class AppointmentService():
         return await self.uow.receipts.get_by_appointment(id)
 
     async def get_analytics(self, data: GetReportWithFilters) -> ApppointmentAnalyticsResponse:
+        branchID: int
+        if data.branch_id is not None:
+            await check_branch_belong_to_tenant(self.uow, data.branch_id)
+            branchID = data.branch_id
+        else: branchID = get_current_tenant_id()
+
+        data.branch_id = branchID
         appointments = await self.uow.appointments.get_analytics(data)
         return ApppointmentAnalyticsResponse(
-            amount = appointments.amount,
-            finished = appointments.finished,
-            cancelled = appointments.cancelled,
-            absent = appointments.absent
+            amount = appointments.amount or 0,
+            finished = appointments.finished or 0,
+            cancelled = appointments.cancelled or 0,
+            absent = appointments.absent or 0
         )
