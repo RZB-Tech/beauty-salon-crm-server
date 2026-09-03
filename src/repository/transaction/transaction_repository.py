@@ -95,6 +95,7 @@ class TransactionRepository(BaseRepository[Transaction]):
                 joinedload(Transaction.receipt).selectinload(Receipt.transactions),
                 joinedload(Transaction.giftCard),
             )
+            .execution_options(skip_tenant_filter = True)
         )
         result = await self.db.execute(stmt)
         return result.scalars().all()

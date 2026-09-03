@@ -227,6 +227,7 @@ class AppointmentRepository(BaseRepository[Appointment]):
                 Appointment.created_at < data.end_date + timedelta(days=1),
                 Appointment.tenant_id == data.branch_id
             ))
+            .execution_options(skip_tenant_filter = True)
         )
 
         result = await self.db.execute(stmt)
