@@ -10,7 +10,7 @@ from src.core.utils.common import get_current_tenant_or_raise
 from src.database.base import Actor, ActorType
 from src.database.session import SessionLocal
 from src.exceptions.staff_exceptions import StaffLoginDuplicate, StaffNotFound, StaffTenantConflict
-from src.exceptions.tenant_exceptions import BranchDoesNotBelongToTenant, TenantNameTaken, TenantNotFound
+from src.exceptions.tenant_exceptions import BranchDoesNotBelongToTenant, TenantNotFound
 from src.repository.appointment.appointment_model import Appointment
 from src.repository.client.client_model import Client
 from src.repository.employee.employee_model import Employee
@@ -47,8 +47,6 @@ class TenantBranchesService:
     async def create(self, data: TenantBranchCreateSchema) -> dict:
         tenant = await get_current_tenant_or_raise(self.uow)
         creator_actor_id = get_current_actor_id()
-        duplicateCheck = await self.uow.tenants.get(name = data.company_name)
-        if duplicateCheck is not None: raise TenantNameTaken(data.company_name)
 
         # provision_tenant writes rows tagged with the new branch's tenant_id, which the
         # request's tenant-scoped session (self.uow.db) would reject as cross-tenant data
@@ -290,11 +288,6 @@ class TenantBranchesService:
         if tenant.parent_id != parentTenant.id: raise BranchDoesNotBelongToTenant(parentTenant.id, data.branch_id)
 
         updateFields = data.model_dump(exclude = {"branch_id"}, exclude_unset = True)
-
-        if "name" in updateFields:
-            existing = await self.uow.tenants.get(name = updateFields["name"])
-            if existing is not None and existing.id != tenant.id:
-                raise TenantNameTaken(updateFields["name"])
 
         # Tenant isn't TenantMixin (no tenant_id column), so this write doesn't hit the
         # cross-tenant before_flush guard the way Staff/TenantIntegration updates do -
