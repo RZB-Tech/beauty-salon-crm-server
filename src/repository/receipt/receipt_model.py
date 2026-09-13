@@ -1,4 +1,5 @@
 from __future__ import annotations
+from decimal import Decimal
 from enum import StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
@@ -7,6 +8,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint,
@@ -54,8 +56,8 @@ class ReceiptItem(BaseFields):
         foreign_keys = [giftCard_id]
     )
 
-    base_price: Mapped[int] = mapped_column(Integer)
-    final_price: Mapped[int] = mapped_column(Integer)
+    base_price: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2))
+    final_price: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2))
     quantity: Mapped[int] = mapped_column(Integer, default = 1)
 
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
@@ -95,11 +97,11 @@ class ReceiptItem(BaseFields):
     )
 
     @property
-    def discount_amount(self) -> int:
+    def discount_amount(self) -> Decimal:
         return self.final_price - self.base_price
     
     @property
-    def total_price(self) -> int:
+    def total_price(self) -> Decimal:
         return self.final_price * self.quantity
 
 class Receipt(BaseFields):
@@ -128,10 +130,10 @@ class Receipt(BaseFields):
     receipt_type: Mapped[str] = mapped_column(String(50))
     status: Mapped[str] = mapped_column(String(50), default = ReceiptStatus.PENDING)
 
-    subtotal_amount: Mapped[int] = mapped_column(Integer, default = 0)
-    total_amount: Mapped[int] = mapped_column(Integer, default = 0)
+    subtotal_amount: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default = 0)
+    total_amount: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default = 0)
     
-    change_amount: Mapped[int] = mapped_column(Integer, default = 0)
+    change_amount: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default = 0)
     change_to_deposit: Mapped[bool] = mapped_column(Boolean, default = False)
 
     __table_args__ = (
@@ -172,15 +174,15 @@ class Receipt(BaseFields):
     )
 
     @property
-    def paid_amount(self) -> int:
+    def paid_amount(self) -> Decimal:
         return sum(transaction.amount for transaction in self.transactions)
     
     @property
-    def remaining_amount(self) -> int:
+    def remaining_amount(self) -> Decimal:
         return max(0, self.total_amount - self.paid_amount)
 
     @property
-    def discount_amount(self) -> int:
+    def discount_amount(self) -> Decimal:
         return self.total_amount - self.subtotal_amount
     
     ALLOWED_FILTERS = {"total_amount", "receipt_type", "status", "archived"}

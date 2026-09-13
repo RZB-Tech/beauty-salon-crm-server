@@ -9,8 +9,10 @@ from sqlalchemy import (
     DateTime,
     String,
     Text,
-    UniqueConstraint
+    UniqueConstraint,
+    Numeric
 )
+from decimal import Decimal
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from src.database.base import BaseFields
@@ -51,8 +53,8 @@ class AppointmentServices(BaseFields):
     )
 
     quantity: Mapped[int] = mapped_column(Integer, default = 1)
-    base_price: Mapped[int] = mapped_column(Integer, default = 0)
-    final_price: Mapped[int] = mapped_column(Integer, default = 0)
+    base_price: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default = 0)
+    final_price: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default = 0)
     price_changed_reason: Mapped[str | None] = mapped_column(Text, nullable = True)
 
     promotion_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
@@ -64,7 +66,7 @@ class AppointmentServices(BaseFields):
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
 
     @property
-    def discount_amount(self) -> int:
+    def discount_amount(self) -> Decimal:
         return (self.final_price - self.base_price) * self.quantity
 
     __table_args__ = (
@@ -171,7 +173,7 @@ class Appointment(BaseFields):
     cancelled_reason: Mapped[str | None] = mapped_column(String(50), default = None, nullable = True)
 
     @property
-    def total_price(self) -> int:
+    def total_price(self) -> Decimal:
         return sum(service.final_price * service.quantity 
                    for record in self.records 
                    for service in record.services)

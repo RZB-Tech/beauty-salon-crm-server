@@ -2,7 +2,7 @@ from enum import IntEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 from src.repository.material.material_model import MeasurementUnit
-from src.schemas.base import BaseUpdateSchema
+from src.schemas.base import BaseUpdateSchema, MoneyOptional
 
 class MaterialUpdateSchema(BaseUpdateSchema):
     id: int = Field(..., ge = 1)
@@ -13,7 +13,7 @@ class MaterialUpdateSchema(BaseUpdateSchema):
 
     measurement_unit: MeasurementUnit | None = None
     volume: int | None = Field(None, ge = 0)
-    sell_price: int | None = Field(None, ge = 0)
+    sell_price: MoneyOptional
 
     archived: bool | None = None
 

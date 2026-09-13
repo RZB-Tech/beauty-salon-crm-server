@@ -1,14 +1,16 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from src.repository.promotion.promotion_model import PromotionType
+from src.schemas.base import MoneyRequired
 
 class PromotionCreateSchema(BaseModel):
     name: str = Field(max_length = 255)
     promo_type: PromotionType
     service_id: int | None = Field(None, ge = 1)
     material_id: int | None = Field(None, ge = 1)
-    discount_value: int = Field(ge = 1)
+    discount_value: MoneyRequired
     description: str | None = None
     start_time: datetime | None = None
     end_time: datetime | None = None
@@ -22,7 +24,7 @@ class PromotionCreateSchema(BaseModel):
         if self.service_id is None and self.material_id is None:
             raise ValueError("Either 'service_id' or 'material_id' has to be provided")
 
-        if self.promo_type == PromotionType.PERCENTAGE and self.discount_value and not (1 <= self.discount_value <= 100):
+        if self.promo_type == PromotionType.PERCENTAGE and self.discount_value and not (Decimal("1") <= self.discount_value <= Decimal("100")):
             raise ValueError("Promotion with type 'percentage' has to be in range 1 and 100")
     
         return self

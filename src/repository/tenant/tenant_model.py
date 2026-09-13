@@ -1,9 +1,11 @@
 from __future__ import annotations
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
     ForeignKey,
     ForeignKeyConstraint,
+    Numeric,
     String,
     Integer, DateTime,
     Text,
@@ -33,7 +35,11 @@ class Tenant(Base):
     # composite - the creator is the parent tenant's actor, not this tenant's,
     # so pairing it with this row's own id would never match.
     created_by_actor_id: Mapped[int | None] = mapped_column(
-        ForeignKey("actors.id", ondelete = "SET NULL"), nullable = True, index = True
+        ForeignKey(
+            "actors.id", ondelete = "SET NULL", use_alter = True,
+            name = "fk_tenants_created_by_actor_id",
+        ),
+        nullable = True, index = True,
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -89,7 +95,7 @@ class TenantSubscriptions(Base):
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete = "cascade"))
     plan_id: Mapped[int] = mapped_column(ForeignKey("subscription_plans.id"))
     status: Mapped[str] = mapped_column(String(50))
-    amount_paid: Mapped[int] = mapped_column(Integer, nullable = True)
+    amount_paid: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), nullable = True)
     billing_interval: Mapped[int] = mapped_column()
 
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone = True))

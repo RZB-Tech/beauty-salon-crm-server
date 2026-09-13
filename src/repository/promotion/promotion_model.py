@@ -1,4 +1,5 @@
 from __future__ import annotations
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from enum import StrEnum
 from datetime import datetime
@@ -32,7 +33,7 @@ class Promotion(BaseFields):
         foreign_keys = [material_id]
     )
 
-    discount_value: Mapped[int | None] = mapped_column(Numeric, nullable = True) 
+    discount_value: Mapped[Decimal | None] = mapped_column(Numeric(precision = 30, scale = 2), nullable = True) 
     
     start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)

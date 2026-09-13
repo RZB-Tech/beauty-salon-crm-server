@@ -1,6 +1,6 @@
 from datetime import date
 from pydantic import  BaseModel, ConfigDict, Field
-from src.schemas.base import BaseResponseSchema
+from src.schemas.base import BaseResponseSchema, MoneyResponse
 from src.schemas.service.response import ServiceResponseSchema
 from src.schemas.work_schedule.response import AbsenceResponseSchema, WorkScheduleBaseResponseSchema
 
@@ -13,9 +13,9 @@ class EmployeeResponseBase(BaseResponseSchema):
     active: bool = True
     specialization_id: int | None = None
     services: list[ServiceResponseSchema]
-    salary_fixed: int = 0
-    percent_from_services: int = 0
-    percent_from_sales: int = 0
+    salary_fixed: MoneyResponse
+    percent_from_services: MoneyResponse
+    percent_from_sales: MoneyResponse
     notes: str | None = None
     
     model_config = ConfigDict(from_attributes=True)

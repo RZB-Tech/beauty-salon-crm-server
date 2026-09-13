@@ -1,11 +1,12 @@
 from __future__ import annotations
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
+    Numeric,
     String,
     Boolean,
-    BigInteger,
     Integer,
     Date,
     UniqueConstraint,
@@ -104,9 +105,9 @@ class Employee(BaseFields):
         secondaryjoin = "and_(Service.id == foreign(employee_services.c.service_id), Service.tenant_id == foreign(employee_services.c.tenant_id))"
     )
 
-    salary_fixed: Mapped[int] = mapped_column(BigInteger, default=0)
-    percent_from_services: Mapped[int] = mapped_column(Integer, default=0)
-    percent_from_sales: Mapped[int] = mapped_column(Integer, default=0)
+    salary_fixed: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default=0)
+    percent_from_services: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default=0)
+    percent_from_sales: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default=0)
 
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
 

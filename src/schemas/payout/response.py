@@ -1,6 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 from src.repository.payroll.payroll_model import PayoutType
-from src.schemas.base import BaseResponseSchema
+from src.schemas.base import BaseResponseSchema, MoneyResponse
 from src.schemas.payroll.response import PayrollResponseSchema
 
 class PayoutResponseSchema(BaseResponseSchema):
@@ -10,4 +10,4 @@ class PayoutResponseSchema(BaseResponseSchema):
     type: PayoutType
     notes: str | None = None
     payrolls: list[PayrollResponseSchema] = Field(default_factory = list)
-    total_amount: int
+    total_amount: MoneyResponse

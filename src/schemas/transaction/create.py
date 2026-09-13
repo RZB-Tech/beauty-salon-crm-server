@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 from src.repository.transaction.transaction_model import TransactionCategory, TransactionMethod, TransactionType
+from src.schemas.base import MoneyRequired
 
 NOT_ALLOWED_CATEGORIES = {
     TransactionCategory.RECEIPT,
@@ -10,7 +11,7 @@ class TransactionCreateSchema(BaseModel):
     type: TransactionType
     category: TransactionCategory
     method: TransactionMethod
-    amount: int = Field(ge = 1)
+    amount: MoneyRequired
 
     notes: str | None = None
 

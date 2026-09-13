@@ -1,9 +1,9 @@
 from src.repository.payroll.payroll_model import PayrollType
-from src.schemas.base import BaseResponseSchema
+from src.schemas.base import BaseResponseSchema, MoneyResponse
 
 class PayrollResponseSchema(BaseResponseSchema):
     employee_id: int
-    amount: int
+    amount: MoneyResponse
     type: PayrollType
     notes: str | None = None
     payout_id: int | None = None

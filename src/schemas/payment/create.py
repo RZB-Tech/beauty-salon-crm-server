@@ -3,6 +3,7 @@ from typing import Self
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from src.repository.receipt.receipt_model import ReceiptType
 from src.repository.transaction.transaction_model import TransactionMethod
+from src.schemas.base import MoneyRequired
 
 class ReceiptItemCreateSchema(BaseModel):
     material_id: int = Field(ge=1)
@@ -10,7 +11,7 @@ class ReceiptItemCreateSchema(BaseModel):
 
 class ReceiptPaymentCreateSchema(BaseModel):
     receipt_id: int = Field(ge = 1)
-    amount: int = Field(ge = 1)
+    amount: MoneyRequired
     method: TransactionMethod
     giftCard_id: int | None = Field(None, ge = 1)
     add_change_to_deposit: bool = True

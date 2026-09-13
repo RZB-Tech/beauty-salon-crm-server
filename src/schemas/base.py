@@ -1,7 +1,8 @@
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
-from typing import Any, ClassVar, Generic, TypeVar
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing import Annotated, Any, ClassVar, Generic, Optional, TypeVar
+from pydantic import BaseModel, ConfigDict, Field, PlainSerializer, model_validator
 
 from src.database.base import ActorType
 
@@ -85,3 +86,16 @@ class FilterFieldSchema(BaseModel):
     field: str
     type: str
     options: list[str] | None = None
+
+MoneyRequired = Annotated[
+    Decimal,
+    Field(ge = 1, decimal_places = 2, max_digits = 30, examples = ["100", "100.0", "100.00"])
+]
+MoneyOptional = Annotated[
+    Decimal | None,
+    Field(default = None, ge = 1, decimal_places = 2, max_digits = 30)
+]
+MoneyResponse = Annotated[
+    Decimal,
+    Field(ge = 0, decimal_places = 2, max_digits = 30, examples = ["0", "0.0", "0.00", "1", "1.34", "354.34"])
+]

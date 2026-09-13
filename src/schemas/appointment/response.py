@@ -1,7 +1,7 @@
 from pydantic import ConfigDict
 from datetime import datetime
 from src.repository.appointment.appointment_model import AppointmentCancelledReason, AppointmentStatus
-from src.schemas.base import BaseResponseSchema
+from src.schemas.base import BaseResponseSchema, MoneyRequired, MoneyResponse
 
 class ClientNestedResponseSchema(BaseResponseSchema):
     firstname: str
@@ -27,9 +27,9 @@ class AppointmentServicesResponseSchema(BaseResponseSchema):
     service: ServiceNestedResponseSchema | None = None
     material_id: int | None = None
     quantity: int
-    base_price: int
-    final_price: int
-    discount_amount: int
+    base_price: MoneyResponse
+    final_price: MoneyResponse
+    discount_amount: MoneyResponse
     promotion_id: int | None = None
     price_changed_reason: str | None = None
     notes: str | None = None
@@ -46,7 +46,7 @@ class AppointmentResponseSchema(BaseResponseSchema):
     end_time_est: datetime
     status: AppointmentStatus
     paid: bool = False
-    total_price: int = 0
+    total_price: MoneyResponse
     records: list[AppointmentRecordsResponseSchema] | None = None
     notes: str | None = None
     archived: bool
