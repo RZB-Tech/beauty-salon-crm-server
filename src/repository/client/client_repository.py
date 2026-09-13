@@ -11,11 +11,11 @@ class ClientRepository(BaseRepository[Client]):
         await self.db.flush()
         await self.db.refresh(client)
         return client
-        
-    async def get_by_ids(self, ids: list[int]) -> list[Client]:
-        result = await self.db.execute(
-            select(Client).where(Client.id.in_(ids))
-        )
+
+    async def get_by_ids(self, ids: list[int], lock: bool = False) -> list[Client]:
+        stmt = select(Client).where(Client.id.in_(ids))
+        if lock: stmt = stmt.order_by(Client.id).with_for_update()
+        result = await self.db.execute(stmt)
         return result.scalars().all()
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[Client], int]:

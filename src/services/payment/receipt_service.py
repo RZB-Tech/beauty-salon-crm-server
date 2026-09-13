@@ -1,3 +1,4 @@
+from decimal import Decimal
 import math
 from datetime import datetime, timedelta, timezone
 from sqlalchemy import select
@@ -15,7 +16,7 @@ from src.exceptions.material_exceptions import MaterialAmountInsufficient, Mater
 from src.exceptions.receipt_exceptions import ReceiptHasNotClient, ReceiptIsCancelled, ReceiptIsPaid, ReceiptNotFound, ReceiptWithEmptyAppointmentRecords
 from src.repository.appointment.appointment_model import AppointmentServices, AppointmentStatus
 from src.repository.client.client_model import Client
-from src.repository.giftCard.giftCard_model import GiftCardStatus
+from src.repository.giftCard.giftCard_model import GiftCard, GiftCardStatus
 from src.repository.promotion.promotion_model import PromotionType
 from src.repository.receipt.receipt_model import Receipt, ReceiptItem, ReceiptStatus, ReceiptType
 from src.repository.payroll.payroll_model import Payroll, PayrollStatus, PayrollType
@@ -26,7 +27,7 @@ from src.schemas.base import RequestAllObject
 from src.schemas.payment.create import ReceiptCreateSchema, ReceiptPaymentCreateSchema
 from src.schemas.tenant.base import TenantPreferencesSchema
 from src.services.system.tenantPreferences_service import TenantPreferencesService
-from src.core.utils.common import as_utc, check_branch_belong_to_tenant
+from src.core.utils.common import as_utc, check_branch_belong_to_tenant, truncate_decimal
 
 class ReceiptService():
     def __init__(self, uow: UnitOfWork):
@@ -51,6 +52,8 @@ class ReceiptService():
             client_id = data.client_id
         )
 
+        zero = truncate_decimal(Decimal())
+
         if data.receipt_type == ReceiptType.APPOINTMENT:
             appointment = await self.uow.appointments.get(data.appointment_id)
             if appointment is None: raise AppointmentNotFound(data.appointment_id)
@@ -60,8 +63,8 @@ class ReceiptService():
             if len(appointment.records) == 0: raise ReceiptWithEmptyAppointmentRecords(data.appointment_id)
 
             newReceipt.appointment_id = appointment.id
-            runningSubTotal = 0
-            runningTotal = 0 
+            runningSubTotal = zero
+            runningTotal = zero
 
             for record in appointment.records:
                 for service in record.services:
@@ -79,8 +82,8 @@ class ReceiptService():
             newReceipt.subtotal_amount = runningSubTotal
             newReceipt.total_amount = runningTotal
         else:
-            runningSubTotal = 0
-            runningTotal = 0
+            runningSubTotal = zero
+            runningTotal = zero
 
             material_ids = list({item.material_id for item in data.receipt_items})
             materials_by_id = {
@@ -92,15 +95,15 @@ class ReceiptService():
                 if material is None: raise MaterialNotFound(item_data.material_id)
                 if material.archived: raise ObjectIsArchived(material.id, "materials")
                 if material.quantity < item_data.quantity: raise MaterialAmountInsufficient(material.id, material.name, item_data.quantity, material.quantity)
-                finalPrice: int = material.sell_price
+                finalPrice = material.sell_price
 
                 hasPromotion = await self.uow.promotions.get_by_object(item_data.material_id, "material")
                 if hasPromotion is not None:
-                    if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT and hasPromotion.discount_value:
+                    if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT:
                         discount = material.sell_price - hasPromotion.discount_value
-                        finalPrice = discount if discount >= 0 else 0
-                    elif hasPromotion.promo_type == PromotionType.PERCENTAGE and hasPromotion.discount_value:
-                        discount = material.sell_price * (hasPromotion.discount_value / 100)
+                        finalPrice = discount if discount >= zero else zero
+                    elif hasPromotion.promo_type == PromotionType.PERCENTAGE:
+                        discount = material.sell_price * truncate_decimal(hasPromotion.discount_value / 100)
                         finalPrice = material.sell_price - discount
                 
                 newQuantity = material.quantity - item_data.quantity
@@ -143,8 +146,8 @@ class ReceiptService():
                 error = error_msg
             )
     
-    async def make_payment(self, data: ReceiptPaymentCreateSchema) -> Receipt:        
-        stmt = await self.uow.db.execute(select(Receipt)
+    async def make_payment(self, data: ReceiptPaymentCreateSchema) -> Receipt:       
+        query = (select(Receipt)
             .where(Receipt.id == data.receipt_id)
             .options(
                 selectinload(Receipt.transactions),
@@ -153,6 +156,9 @@ class ReceiptService():
                     .selectinload(ReceiptItem.appointment_service)
                     .selectinload(AppointmentServices.appointment_record)
             ))
+        query = query.with_for_update()
+
+        stmt = await self.uow.db.execute(query)
         
         # get receipt info
         receipt = stmt.scalar_one_or_none()
@@ -162,20 +168,22 @@ class ReceiptService():
         if receipt.remaining_amount == 0: raise ReceiptIsPaid(data.receipt_id)
 
         client: Client | None = None
-        
+        zero = truncate_decimal(Decimal())
+
         # create temp deposit adjustment to substract payment sum in case if payment method is deposit
-        depositAdjustment = 0
+        depositAdjustment = zero
         if data.method == TransactionMethod.DEPOSIT:
             if receipt.client_id is None: raise ReceiptHasNotClient(data.receipt_id)
-            client = await self.uow.clients.get(receipt.client_id)
-            if client is None: raise ClientNotFound(receipt.client_id)
+            client = await self.uow.clients.get(receipt.client_id, lock = True)
+            if not client: raise ClientNotFound(receipt.client_id)
 
             depositAdjustment -= data.amount
             if data.amount > client.deposit:
                 raise DepositNotEnough(client.id, client.firstname, data.amount, client.deposit)
 
+        giftCard: GiftCard | None = None
         if data.method == TransactionMethod.GIFT_CARD:
-            giftCard = await self.uow.giftCards.get(data.giftCard_id)
+            giftCard = await self.uow.giftCards.get(data.giftCard_id, lock = True)
             if giftCard is None: raise GiftCardNotFound(data.giftCard_id)
             if giftCard.status != GiftCardStatus.ACTIVE: raise GiftCardUnusable(data.giftCard_id, giftCard.status)
             if giftCard.client_id is not None and giftCard.client_id != receipt.client_id: 
@@ -195,13 +203,15 @@ class ReceiptService():
             # if payment method not gift_card - consider overpayment to add client's deposit
                 if client is None and receipt.client_id is not None:
                     if receipt.client_id is None: raise ReceiptHasNotClient(data.receipt_id)
-                    client = await self.uow.clients.get(receipt.client_id)
-                    if client is None: raise ClientNotFound(receipt.client_id)
+                    rows = await self.uow.clients.get_by_ids([receipt.client_id], lock = True)
+                    if not rows: raise ClientNotFound(receipt.client_id)
+                    client = rows[0]
+
                 receipt.change_amount = overpayment
                 receipt.change_to_deposit = data.add_change_to_deposit
                 depositAdjustment += overpayment
 
-                await self.uow.transactions.create(Transaction(
+                newTransaction = await self.uow.transactions.create(Transaction(
                     receipt_id = receipt.id,
                     amount = overpayment,
                     type = (TransactionType.EXPENSE
@@ -213,9 +223,12 @@ class ReceiptService():
                                 else TransactionCategory.DEPOSIT_FULLFILLMENT),
                     auto_generated = True
                 ))
+                receipt.transactions.append(newTransaction)
+
+
 
             # create new transcation for income from receipt payment
-            await self.uow.transactions.create(Transaction(
+            newTransaction = await self.uow.transactions.create(Transaction(
                 receipt_id = receipt.id,
                 giftCard_id = data.giftCard_id,
                 amount = applied_amount,
@@ -227,12 +240,13 @@ class ReceiptService():
                 category = TransactionCategory.RECEIPT,
                 auto_generated = True
             ))
+            receipt.transactions.append(newTransaction)
 
             # add commission to employees
             if receipt.receipt_type == ReceiptType.APPOINTMENT:
                 receipt.appointment.paid = True 
                 for item in receipt.items:
-                    if not item.appointment_service_id:
+                    if item.appointment_service_id is None:
                         continue
                         
                     appointment_service = item.appointment_service
@@ -242,9 +256,9 @@ class ReceiptService():
                     employee = await self.uow.employees.get(employee_id)
                     if employee is None: raise EmployeeNotFound(employee_id)
                     
-                    if employee and employee.percent_from_services > 0:
-                        commission_earned = int(item.total_price * (employee.percent_from_services / 100))
-                        if commission_earned > 0:
+                    if employee and employee.percent_from_services > zero:
+                        commission_earned = truncate_decimal(Decimal(item.total_price * (employee.percent_from_services / 100)))
+                        if commission_earned > zero:
                             payroll_record = Payroll(
                                 employee_id = employee.id,
                                 appointment_id = appointment_record.appointment_id,
@@ -256,13 +270,10 @@ class ReceiptService():
 
             receipt.status = ReceiptStatus.PAID
         else:
-            receipt.change_amount = 0
-            receipt.change_to_deposit = False
-
             if data.method == TransactionMethod.GIFT_CARD:
                 giftCard.remain_amount -= data.amount
 
-            await self.uow.transactions.create(Transaction(
+            newTransaction = await self.uow.transactions.create(Transaction(
                 receipt_id = receipt.id,
                 giftCard_id = data.giftCard_id,
                 amount = data.amount,
@@ -274,34 +285,37 @@ class ReceiptService():
                 auto_generated = True
             ))
 
+            receipt.transactions.append(newTransaction)
+
         # substract payment sum from client's deposit
-        if depositAdjustment != 0 and client is not None:
+        if depositAdjustment != zero and client is not None:
             final_deposit_balance = client.deposit + depositAdjustment
             await self.uow.clients.update(client.id, deposit = final_deposit_balance)
 
-        return await self.uow.receipts.get(receipt.id)
+        return receipt
 
     async def cancel(self, id: int) -> Receipt:
-        receipt = await self.uow.receipts.get(id)
+        receipt = await self.uow.receipts.get(id, lock = True)
         if receipt is None: raise ReceiptNotFound(id)
         if receipt.status == ReceiptStatus.CANCELLED:
             raise ReceiptIsCancelled(id)
 
         await self.ensure_receipt_payments_can_be_cancelled(receipt)
-        
-        deposit_to_refund = 0
+        zero = truncate_decimal(Decimal())
+
+        deposit_to_refund = zero
         for transaction in receipt.transactions: 
             if transaction.method == TransactionMethod.DEPOSIT: 
                 deposit_to_refund += transaction.amount
 
-        if receipt.change_to_deposit and receipt.change_amount > 0:
+        if receipt.change_to_deposit and receipt.change_amount > zero:
             deposit_to_refund -= receipt.change_amount
 
-        if deposit_to_refund != 0:
+        if deposit_to_refund != zero:
             client_id = (
                 receipt.appointment.client_id if receipt.receipt_type == ReceiptType.APPOINTMENT
                 else receipt.client_id)
-            client = await self.uow.clients.get(client_id)
+            client = await self.uow.clients.get(client_id, lock = True)
             if client is None: raise ClientNotFound(client_id)
             if client:
                 new_deposit_balance = client.deposit + deposit_to_refund
@@ -309,17 +323,18 @@ class ReceiptService():
 
         # cancel payments and payrolls
         if receipt.receipt_type == ReceiptType.APPOINTMENT:
-            stmt = await self.uow.db.execute(
-                select(Payroll)
+            query = (select(Payroll)
                 .where( 
                     Payroll.appointment_id == receipt.appointment_id,
                     Payroll.type == PayrollType.COMMISSION
-                )
-            )
+                ))
+            query = query.with_for_update()
+            stmt = await self.uow.db.execute(query)
             payrolls = stmt.scalars().all()
+
             # cancel payrolls
-            payoutsToCancel: set = {}
-            for payroll in payrolls:
+            payoutsToCancel: set[int] = set()
+            for payroll in payrolls or []:
                 payroll.status = PayrollStatus.CANCELLED
                 if payroll.payout_id is not None: payoutsToCancel.add(payroll.payout_id)
 
@@ -345,17 +360,26 @@ class ReceiptService():
         receipt.status = ReceiptStatus.CANCELLED
         if receipt.appointment: receipt.appointment.paid = False
 
-        receipt.change_amount = 0
+        receipt.change_amount = zero
         receipt.change_to_deposit = False
+
+        giftcard_ids = list({t.giftCard_id for t in receipt.transactions if t.giftCard_id is not None})
+
+        giftcards_by_id = {}
+        if giftcard_ids:
+            locked_giftcards = await self.uow.giftCards.get_by_ids(giftcard_ids, lock=True)
+            giftcards_by_id = {g.id: g for g in locked_giftcards}
 
         for transaction in receipt.transactions: 
             if transaction.giftCard_id is not None:
-                giftCard = await self.uow.giftCards.get(transaction.giftCard_id)
-                if giftCard is not None: await self.uow.giftCards.update(
-                    giftCard.id, remain_amount = min(giftCard.initial_amount, transaction.amount + giftCard.remain_amount))
+                giftCard = giftcards_by_id.get(transaction.giftCard_id)
+                if giftCard is not None:
+                    new_amount = min(giftCard.initial_amount, transaction.amount + giftCard.remain_amount)
+                    await self.uow.giftCards.update(giftCard.id, remain_amount=new_amount)
+            
             transaction.cancelled = True
             
-        return await self.uow.receipts.get(id)
+        return receipt
 
     async def ensure_receipt_payments_can_be_cancelled(self, receipt: Receipt) -> None:
         if not receipt.transactions:
@@ -410,6 +434,8 @@ class ReceiptService():
             branchID = data.branch_id
         else: branchID = get_current_tenant_id()
 
+        zero = truncate_decimal(Decimal())
+
         data.branch_id = branchID
         row = await self.uow.receipts.get_analytics(data)
         return ReceiptAnalyticsResponse(
@@ -417,7 +443,7 @@ class ReceiptService():
             paid = row.paid or 0,
             unpaid = row.unpaid or 0,
             cancelled = row.cancelled or 0,
-            average_receipt_sum = row.average or 0,
-            total_paid_sum = row.total_paid_sum or 0
+            average_receipt_sum = row.average or zero,
+            total_paid_sum = row.total_paid_sum or zero
         )
         

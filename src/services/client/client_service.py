@@ -1,9 +1,12 @@
 from collections import defaultdict
+from decimal import Decimal
 import math
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
+from src.core.utils.common import truncate_decimal
 from src.exceptions.base import BaseAppException
 from src.exceptions.client_exceptions import ClientIsArchived, ClientNotFound, DepositCannotBeNegative, DepositOperationHasToBeIn
+from src.exceptions.general_exceptions import CannotUpdate
 from src.repository.client.client_model import Client
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.client.create import ClientCreateSchema
@@ -55,15 +58,17 @@ class ClientService():
         return await self.uow.clients.delete(id)
     
     async def updateDeposit(self, data: ClientDepositUpdateSchema) -> Client:
-        client = await self.uow.clients.get(data.id)
+        client = await self.uow.clients.get_by_ids([data.id], lock = True)
         if not client: raise ClientNotFound(data.id)
 
         if data.operation not in DepositOperation: raise DepositOperationHasToBeIn()
 
-        newDeposit = client.deposit + (data.operation * data.amount)
-        if newDeposit < 0: raise DepositCannotBeNegative()
+        newDeposit = client[0].deposit + (data.operation * data.amount)
+        if newDeposit < Decimal(0): raise DepositCannotBeNegative()
         
-        return await self.uow.clients.update(client.id, deposit = newDeposit)
+        result = await self.uow.clients.update(client[0].id, deposit = newDeposit)
+        if result is None: raise CannotUpdate(data.id, "clients")
+        return result
     
     @require_exists("clients")
     async def get_appointments(self, data: PaginationSchema, id: int) -> dict:
@@ -83,11 +88,11 @@ class ClientService():
     async def get_finance_report(self, data: ClientFinanceReportRequest) -> dict[str, dict]:
         transactions = await self.uow.transactions.get_by_client(data)
         grouped = defaultdict(lambda: {
-            "income": 0,
-            "net": 0,
+            "income": truncate_decimal(Decimal(0)),
+            "net": truncate_decimal(Decimal(0)),
             "transactions": []
         })
-        total = 0
+        total = truncate_decimal(Decimal(0))
 
         for transaction in transactions:
             key = transaction.created_at.strftime("%Y-%m")

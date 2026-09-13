@@ -11,7 +11,7 @@ class EmployeeCreateSchema(BaseModel):
     active: bool = True
     specialization_id: int | None = None
     services_ids: list[int] = Field(default_factory = list)
-    salary_fixed: Decimal | None = Field(default = 0, ge = 0, le = 100,
+    salary_fixed: Decimal | None = Field(default = 0, ge = 0,
                                          decimal_places = 2, max_digits = 30) 
     percent_from_services: Decimal | None = Field(default = 0, ge = 0, le = 100,
                                          decimal_places = 2, max_digits = 5)

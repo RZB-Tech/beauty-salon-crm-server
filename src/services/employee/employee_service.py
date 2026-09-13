@@ -1,3 +1,4 @@
+from decimal import Decimal
 from io import BytesIO
 import json
 import math
@@ -162,9 +163,9 @@ class EmployeeService():
                 emp["birth_date"],
                 "Yes" if emp["active"] else "No",
                 emp["specialization"],
-                emp["salary_fixed"],
-                emp["percent_from_services"],
-                emp["percent_from_sales"],
+                Decimal(emp["salary_fixed"]),
+                Decimal(emp["percent_from_services"]),
+                Decimal(emp["percent_from_sales"]),
                 ", ".join(emp["services"]),
                 emp["notes"],
             ])
@@ -218,9 +219,9 @@ class EmployeeService():
                     if e.specialization
                     else None
                 ),
-                "salary_fixed": e.salary_fixed,
-                "percent_from_services": e.percent_from_services,
-                "percent_from_sales": e.percent_from_sales,
+                "salary_fixed": f"{e.salary_fixed}",
+                "percent_from_services": f"{e.percent_from_services}",
+                "percent_from_sales": f"{e.percent_from_sales}",
                 "services": [s.name for s in e.services],
                 "notes": e.notes,
             }

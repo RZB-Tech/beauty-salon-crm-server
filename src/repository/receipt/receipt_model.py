@@ -179,7 +179,7 @@ class Receipt(BaseFields):
     
     @property
     def remaining_amount(self) -> Decimal:
-        return max(0, self.total_amount - self.paid_amount)
+        return max(Decimal(), self.total_amount - self.paid_amount)
 
     @property
     def discount_amount(self) -> Decimal:

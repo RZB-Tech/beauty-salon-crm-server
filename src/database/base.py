@@ -131,11 +131,11 @@ class BaseRepository(Generic[T]):
     def db(self) -> AsyncSession:
         return get_repository_db()
 
-    async def get(self, id: int) -> T | None:
+    async def get(self, id: int, lock: bool = False) -> T | None:
         """returns None if object with provided ID does not exists"""
-        result = await self.db.execute(
-            select(self.model).where(self.model.id == id)
-        )
+        stmt = select(self.model).where(self.model.id == id)
+        if lock: stmt = stmt.with_for_update()
+        result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
     
     async def update(self, id: int, **fields: Any) -> T | None:

@@ -2,7 +2,7 @@ import math
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.employee_exceptions import EmployeeDoesNotHavePayrolls
-from src.exceptions.general_exceptions import ObjectIsArchived
+from src.exceptions.general_exceptions import CannotUpdate, ObjectIsArchived
 from src.exceptions.payout_exception import PayoutIsCancelled, PayoutNotFound
 from src.exceptions.payroll_exceptions import PayrollIsCancelled, PayrollIsPaid, PayrollNotAttachedToEmployee, PayrollOneOrMoreNotFound
 from src.repository.payroll.payroll_model import Payout, PayrollStatus
@@ -94,5 +94,7 @@ class PayoutService():
             await self.uow.payrolls.update(payroll.id, 
                                            status = PayrollStatus.PENDING, payout_id = None)
         
-        return await self.uow.payouts.update(id, cancelled = True)
+        result = await self.uow.payouts.update(id, cancelled = True)
+        if result is None: raise CannotUpdate(id, "payouts")
+        return result
         
