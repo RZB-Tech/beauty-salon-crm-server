@@ -6,8 +6,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: salon
-    ports:
-      - "5460:5432"
     volumes:
       - postgres_data_salon_test:/var/lib/postgresql
     healthcheck:
@@ -20,8 +18,6 @@ services:
     image: redis:7-alpine
     container_name: redis-salon-test
     restart: unless-stopped
-    ports:
-      - "6400:6379"
     volumes:
       - redis_data_test:/data
     command: redis-server --appendonly yes
