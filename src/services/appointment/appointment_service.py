@@ -1,8 +1,9 @@
+from decimal import Decimal
 import math
 from src.core.decorators.requireID import require_exists
 from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
-from src.core.utils.common import check_branch_belong_to_tenant
+from src.core.utils.common import check_branch_belong_to_tenant, truncate_decimal
 from src.exceptions.appointment_exceptions import AppointmentCancelled, AppointmentHasActiveReceipts, AppointmentIsPaid, AppointmentNotFound, ClientAppointmentConflict, EmployeeAppointmentConflict
 from src.exceptions.employee_exceptions import EmployeeDoesNotProvideService, EmployeeDoesNotWork, EmployeeInactive, EmployeeIsArchived, EmployeeNotFound
 from src.exceptions.general_exceptions import CannotUpdate, ObjectIsArchived, PriceChangedReasonEmpty
@@ -36,6 +37,7 @@ class AppointmentService():
             if missing: raise EmployeeNotFound(next(iter(missing)))
 
         price_info: list[list[dict]] = []
+        zero = truncate_decimal(Decimal())
 
         for record in (data.records or []):
             employee = await self.uow.employees.get(record.employee_id)
@@ -54,7 +56,11 @@ class AppointmentService():
             employeeAllowedServices = {i.id for i in employee.services}
             record_price_info: list[dict] = []
             for service in record.services:
-                info = {"base_price": 0, "final_price": 0, "promotion_id": None}
+                info = {
+                    "base_price": zero, 
+                    "final_price": zero, 
+                    "promotion_id": None
+                }
 
                 if service.service_id:
                     serviceObj = await self.uow.services.get(service.service_id)
@@ -72,9 +78,9 @@ class AppointmentService():
                         info["promotion_id"] = hasPromotion.id
                         if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT and hasPromotion.discount_value:
                             discount = info["base_price"] - hasPromotion.discount_value
-                            info["final_price"] = discount if discount >= 0 else 0
+                            info["final_price"] = discount if discount >= zero else zero
                         elif hasPromotion.promo_type == PromotionType.PERCENTAGE and hasPromotion.discount_value:
-                            discount = info["base_price"] * (hasPromotion.discount_value / 100)
+                            discount = truncate_decimal(info["base_price"] * (hasPromotion.discount_value / 100))
                             info["final_price"] = info["base_price"] - discount
 
                 if service.material_id is not None:
@@ -94,9 +100,9 @@ class AppointmentService():
                         info["promotion_id"] = hasPromotion.id
                         if hasPromotion.promo_type == PromotionType.FIXED_AMOUNT and hasPromotion.discount_value:
                             discount = info["base_price"] - hasPromotion.discount_value
-                            info["final_price"] = discount if discount >= 0 else 0
+                            info["final_price"] = discount if discount >= zero else zero
                         elif hasPromotion.promo_type == PromotionType.PERCENTAGE and hasPromotion.discount_value:
-                            discount = info["base_price"] * (hasPromotion.discount_value / 100)
+                            discount = truncate_decimal(info["base_price"] * (hasPromotion.discount_value / 100))
                             info["final_price"] = info["base_price"] - discount
 
                 record_price_info.append(info)

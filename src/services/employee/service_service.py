@@ -79,7 +79,7 @@ class ServiceService():
         required_columns = {
             "service_category",
             "service",
-            "price"
+            "price",
             "estimated_time"
         }
 

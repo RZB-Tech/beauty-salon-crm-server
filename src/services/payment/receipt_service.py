@@ -103,7 +103,7 @@ class ReceiptService():
                         discount = material.sell_price - hasPromotion.discount_value
                         finalPrice = discount if discount >= zero else zero
                     elif hasPromotion.promo_type == PromotionType.PERCENTAGE:
-                        discount = material.sell_price * truncate_decimal(hasPromotion.discount_value / 100)
+                        discount = truncate_decimal(material.sell_price * (hasPromotion.discount_value / 100))
                         finalPrice = material.sell_price - discount
                 
                 newQuantity = material.quantity - item_data.quantity
