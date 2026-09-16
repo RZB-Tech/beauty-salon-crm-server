@@ -31,7 +31,7 @@ services:
       postgres-salon:
         condition: service_healthy
     ports:
-      - "8000:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./src:/app/src
       - app_secrets:/app/secrets
