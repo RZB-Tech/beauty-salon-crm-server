@@ -3,7 +3,6 @@ import logging
 from contextlib import asynccontextmanager
 
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-import redis.asyncio as aioredis  # ✅ fixed import
 
 from src.core.celery.celeryApp import celery_app
 from src.core.config import settings
@@ -15,7 +14,11 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def celery_transaction_scope():
-    engine = create_async_engine(settings.DATABASE_URL, echo=False)
+    engine = create_async_engine(
+        settings.DATABASE_URL,
+        echo=False,
+        connect_args={"statement_cache_size": 0},
+    )
     session_factory = async_sessionmaker(
         bind=engine,
         class_=AsyncSession,
