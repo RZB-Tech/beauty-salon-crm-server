@@ -1,5 +1,8 @@
-a = 5
-if a == 6: print(1)
-else: print(2)
+RATES = {"USD": 1, "EUR": 2, "ADAFD": None}
 
-print(3)
+target = "USD"
+
+for k, v in RATES.items():
+    if k == target: print("ok")
+    else: print("err")
+
