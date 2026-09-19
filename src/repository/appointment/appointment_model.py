@@ -67,7 +67,7 @@ class AppointmentServices(BaseFields):
 
     @property
     def discount_amount(self) -> Decimal:
-        return (self.final_price - self.base_price) * self.quantity
+        return (self.base_price - self.final_price) * self.quantity
 
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "fk_appointment_services_tenant"),

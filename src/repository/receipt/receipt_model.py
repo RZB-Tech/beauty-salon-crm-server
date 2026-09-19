@@ -98,8 +98,8 @@ class ReceiptItem(BaseFields):
 
     @property
     def discount_amount(self) -> Decimal:
-        return self.final_price - self.base_price
-    
+        return self.base_price - self.final_price
+
     @property
     def total_price(self) -> Decimal:
         return self.final_price * self.quantity
@@ -183,6 +183,6 @@ class Receipt(BaseFields):
 
     @property
     def discount_amount(self) -> Decimal:
-        return self.total_amount - self.subtotal_amount
+        return self.subtotal_amount - self.total_amount
     
     ALLOWED_FILTERS = {"total_amount", "receipt_type", "status", "archived"}

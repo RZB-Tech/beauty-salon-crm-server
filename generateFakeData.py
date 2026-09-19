@@ -197,7 +197,7 @@ async def seed_employees(count: int = 10) -> None:
                 ),
                 active=random.choice([True, True, True, False]),
                 salary_fixed=Decimal(random.randint(
-                    3_000_000.00,
+                    3_000_000,
                     15_000_000,
                 )),
                 percent_from_services=Decimal(random.randint(5, 30)),
