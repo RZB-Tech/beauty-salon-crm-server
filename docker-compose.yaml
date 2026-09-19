@@ -1,24 +1,24 @@
 services:
-  postgres-salon-test:
+  postgres-salon:
     image: postgres:18
-    container_name: postgres-salon-test
+    container_name: postgres-salon
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
     volumes:
-      - postgres_data_salon_test:/var/lib/postgresql
+      - postgres_data_salon:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  pgbouncer-salon-test:
+  pgbouncer-salon:
     image: edoburu/pgbouncer:latest
-    container_name: pgbouncer-salon-test
+    container_name: pgbouncer-salon
     environment:
-      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres-salon-test:5432/${DB_NAME}
+      DATABASE_URL: postgres://${DB_USER}:${DB_PASSWORD}@postgres-salon:5432/${DB_NAME}
       LISTEN_PORT: 6432
       POOL_MODE: transaction
       AUTH_TYPE: scram-sha-256
@@ -26,75 +26,75 @@ services:
       MAX_CLIENT_CONN: 1000
       DEFAULT_POOL_SIZE: 20
     depends_on:
-      postgres-salon-test:
+      postgres-salon:
         condition: service_healthy
     ports:
-      - "127.0.0.1:6433:6432"
+      - "127.0.0.1:6432:6432"
 
-  redis-salon-test:
+  redis-salon:
     image: redis:7-alpine
-    container_name: redis-salon-test
+    container_name: redis-salon
     restart: unless-stopped
     volumes:
-      - redis_data_test:/data
-    command: redis-server --appendonly yes
+      - redis_data:/data
+    command: redis-server --maxmemory 512mb --maxmemory-policy volatile-lru
 
   app:
     build: .
-    container_name: salonBackendTest
+    container_name: salonBackend
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@pgbouncer-salon-test:6432/${DB_NAME}
-      DB_HOST: pgbouncer-salon-test
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@pgbouncer-salon:6432/${DB_NAME}
+      DB_HOST: pgbouncer-salon
       DB_PORT: 6432
     depends_on:
-      postgres-salon-test:
+      postgres-salon:
         condition: service_healthy
-      pgbouncer-salon-test:
+      pgbouncer-salon:
         condition: service_started
     ports:
-      - "127.0.0.1:8101:8000"
+      - "127.0.0.1:8000:8000"
     volumes:
       - ./src:/app/src
-      - app_secrets_test:/app/secrets
+      - app_secrets:/app/secrets
 
-  celery-worker-test:
+  celery-worker:
     build: .
-    container_name: salonCeleryWorkerTest
+    container_name: salonCeleryWorker
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@pgbouncer-salon-test:6432/${DB_NAME}
-      DB_HOST: pgbouncer-salon-test
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@pgbouncer-salon:6432/${DB_NAME}
+      DB_HOST: pgbouncer-salon
       DB_PORT: 6432
     depends_on:
-      postgres-salon-test:
+      postgres-salon:
         condition: service_healthy
-      pgbouncer-salon-test:
+      pgbouncer-salon:
         condition: service_started
-      redis-salon-test:
+      redis-salon:
         condition: service_started
     command: >
       uv run celery -A src.core.celery.celeryApp.celery_app worker --loglevel=info
     volumes:
       - ./src:/app/src
 
-  celery-beat-test:
+  celery-beat:
     build: .
-    container_name: salonCeleryBeatTest
+    container_name: salonCeleryBeat
     env_file:
       - .env
     environment:
-      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@pgbouncer-salon-test:6432/${DB_NAME}
-      DB_HOST: pgbouncer-salon-test
+      DATABASE_URL: postgresql+asyncpg://${DB_USER}:${DB_PASSWORD}@pgbouncer-salon:6432/${DB_NAME}
+      DB_HOST: pgbouncer-salon
       DB_PORT: 6432
     depends_on:
-      postgres-salon-test:
+      postgres-salon:
         condition: service_healthy
-      pgbouncer-salon-test:
+      pgbouncer-salon:
         condition: service_started
-      redis-salon-test:
+      redis-salon:
         condition: service_started
     command: >
       uv run celery -A src.core.celery.celeryApp.celery_app beat --loglevel=info
@@ -102,6 +102,6 @@ services:
       - ./src:/app/src
 
 volumes:
-  postgres_data_salon_test:
-  redis_data_test:
-  app_secrets_test:
+  postgres_data_salon:
+  redis_data:
+  app_secrets:
