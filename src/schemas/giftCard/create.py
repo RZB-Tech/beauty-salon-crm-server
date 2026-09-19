@@ -4,10 +4,11 @@ from typing import Self
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from src.repository.transaction.transaction_model import TransactionMethod
+from src.schemas.base import MoneyRequired
 
 class GiftCardCreateSchema(BaseModel):
     client_id: int | None = Field(None, ge = 1)
-    initial_amount: int = Field(ge = 1)
+    initial_amount: MoneyRequired
     issue_date: datetime
     expiration_date: datetime | None = None
     payment_method: TransactionMethod

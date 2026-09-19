@@ -1,3 +1,4 @@
+from decimal import ROUND_DOWN, Decimal
 import math
 from fastapi import UploadFile
 from sqlalchemy import select
@@ -30,7 +31,7 @@ class ServiceService():
     async def update(self, data: ServiceUpdateSchema) -> Service:
         service = await self.uow.services.get_with_employees(data.id)
         if service is None: raise ServiceNotFound(data.id)
-
+        
         if data.category_id:
             checkCategory = await self.uow.serviceCategory.get(data.category_id)
             if checkCategory is None: raise ServiceCategoryNotFound(data.category_id)
@@ -78,7 +79,8 @@ class ServiceService():
         required_columns = {
             "service_category",
             "service",
-            "price"
+            "price",
+            "estimated_time"
         }
 
         if not required_columns.issubset(df.columns):
@@ -156,7 +158,8 @@ class ServiceService():
             estm = row["estimated_time"]
             service = Service(
                 name=service_name,
-                price=0 if pd.isna(price) else int(price),
+                price=(Decimal("1.00") if pd.isna(price) 
+                       else Decimal(str(price)).quantize(Decimal("0.01"), rounding = ROUND_DOWN)),
                 estimated_time = 0 if pd.isna(estm) else int(estm),
                 category_id=category.id,
                 created_by_actor_id = actor_id,

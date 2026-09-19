@@ -1,7 +1,7 @@
+from decimal import Decimal
 import math
 from typing import Literal
 
-from src.core.decorators.requireID import require_exists
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.general_exceptions import CannotUpdate, ObjectIsArchived
 from src.exceptions.material_exceptions import MaterialNotFound
@@ -53,10 +53,10 @@ class PromotionService():
         effective_promo_type = data.promo_type if data.promo_type is not None else promotion.promo_type
 
         if effective_promo_type == PromotionType.PERCENTAGE and data.discount_value is None:
-            if promotion.discount_value > 100 or promotion.discount_value < 0:
+            if promotion.discount_value > Decimal(100) or promotion.discount_value < Decimal(0):
                 raise PromotionDiscountPercentageExceed(promotion.discount_value)
         if effective_promo_type == PromotionType.PERCENTAGE and data.discount_value is not None and (
-            data.discount_value > 100 or data.discount_value < 0
+            data.discount_value > Decimal(100) or data.discount_value < Decimal(0)
         ):
             raise PromotionDiscountPercentageExceed(data.discount_value)
 

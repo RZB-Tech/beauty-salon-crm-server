@@ -1,10 +1,12 @@
 from __future__ import annotations
+from decimal import Decimal
 from enum import StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
     ForeignKeyConstraint,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint
@@ -43,7 +45,7 @@ class TransactionMethod(StrEnum):
 class Transaction(BaseFields):
     __tablename__ = "transactions"
 
-    amount: Mapped[int] = mapped_column(Integer)
+    amount: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2))
     type: Mapped[str] = mapped_column(String(50))
     method: Mapped[str] = mapped_column(String(50))
     category: Mapped[str] = mapped_column(String(50))

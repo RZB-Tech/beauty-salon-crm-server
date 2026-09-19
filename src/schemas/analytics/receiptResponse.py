@@ -1,9 +1,10 @@
 from pydantic import BaseModel
+from src.schemas.base import MoneyResponse
 
 class ReceiptAnalyticsResponse(BaseModel):
-    amount: int
-    paid: int
-    unpaid: int
+    amount: MoneyResponse
+    paid: MoneyResponse
+    unpaid: MoneyResponse
     cancelled: int
-    average_receipt_sum: float
-    total_paid_sum: int
+    average_receipt_sum: MoneyResponse
+    total_paid_sum: MoneyResponse

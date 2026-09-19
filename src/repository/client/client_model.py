@@ -1,6 +1,8 @@
 from __future__ import annotations
+from decimal import Decimal
 from enum import StrEnum
 from sqlalchemy import (
+    Numeric,
     String,
     Integer,
     Date,
@@ -26,7 +28,7 @@ class Client(BaseFields):
     birth_date: Mapped[date | None] = mapped_column(Date, nullable = True)
     sex: Mapped[str] = mapped_column(String(50))
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
-    deposit: Mapped[int] = mapped_column(Integer, default = 0)
+    deposit: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default = 0)
 
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_client_tenant"),

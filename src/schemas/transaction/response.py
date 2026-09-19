@@ -1,8 +1,8 @@
 from src.repository.transaction.transaction_model import TransactionCategory, TransactionMethod, TransactionType
-from src.schemas.base import BaseResponseSchema
+from src.schemas.base import BaseResponseSchema, MoneyResponse
 
 class TransactionResponseSchema(BaseResponseSchema):
-    amount: int
+    amount: MoneyResponse
     type: TransactionType
     method: TransactionMethod
     category: TransactionCategory

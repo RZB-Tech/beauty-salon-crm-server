@@ -1,11 +1,12 @@
 from __future__ import annotations
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     Integer,
+    Numeric,
     String,
-    BigInteger,
     UniqueConstraint,
     func,
 )
@@ -48,7 +49,7 @@ class Service(BaseFields):
     __tablename__ = "services"
 
     name: Mapped[str] = mapped_column(String(255))
-    price: Mapped[int] = mapped_column(BigInteger, default=0)
+    price: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default=0)
     estimated_time: Mapped[int] = mapped_column(Integer, default = 0) 
     
     category_id: Mapped[int | None] = mapped_column(Integer, nullable = True)

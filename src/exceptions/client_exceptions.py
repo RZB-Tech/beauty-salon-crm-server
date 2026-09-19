@@ -1,4 +1,6 @@
 # exceptions/employees.py
+from decimal import Decimal
+
 from .base import BaseAppException
 
 class ClientNotFound(BaseAppException):
@@ -54,7 +56,7 @@ class DepositCannotBeNegative(BaseAppException):
 class DepositNotEnough(BaseAppException):
     statusCode = 409
     errorCode = "CLIENT_DOES_NOT_HAVE_ENOUGH_DEPOSIT"
-    def __init__(self, id: int, firstname: str, required: int, has: int):
+    def __init__(self, id: int, firstname: str, required: Decimal, has: Decimal):
         super().__init__(
             detail = f"Client's ({firstname}, ID {id}) deposit does not have enough amount ({required})",
             errorCode = self.errorCode,

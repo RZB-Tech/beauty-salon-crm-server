@@ -2,12 +2,14 @@ from typing import Self
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from datetime import datetime
 
+from src.schemas.base import MoneyOptional
+
 class AppointmentServicesCreateSchema(BaseModel):
     appointment_record_id: int = Field(ge = 1)
     service_id: int | None = Field(default = None, ge = 1)
     material_id: int | None = Field(default = None, ge = 1)
     quantity: int = Field(default = 1, ge = 1)
-    price: int | None = Field(None, ge = 1)
+    price: MoneyOptional
     price_changed_reason: str | None = Field(None, min_length = 5)
     notes: str | None = None
 

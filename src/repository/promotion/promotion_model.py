@@ -1,8 +1,9 @@
 from __future__ import annotations
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from enum import StrEnum
 from datetime import datetime
-from sqlalchemy import ForeignKeyConstraint, Index, Integer, String, DateTime, Numeric, Boolean, Text, UniqueConstraint, text
+from sqlalchemy import CheckConstraint, ForeignKeyConstraint, Index, Integer, String, DateTime, Numeric, Boolean, Text, UniqueConstraint, text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database.base import BaseFields
 
@@ -32,7 +33,7 @@ class Promotion(BaseFields):
         foreign_keys = [material_id]
     )
 
-    discount_value: Mapped[int | None] = mapped_column(Numeric, nullable = True) 
+    discount_value: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2)) 
     
     start_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     end_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
@@ -60,6 +61,7 @@ class Promotion(BaseFields):
             unique=True,
             postgresql_where=text("is_active = true AND archived = false AND material_id IS NOT NULL"),
         ),
+        CheckConstraint("discount_value >= 0", name="ck_promotion_discount_value"),
 
         ForeignKeyConstraint(
             ["service_id", "tenant_id"],

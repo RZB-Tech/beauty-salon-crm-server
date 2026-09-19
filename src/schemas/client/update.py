@@ -1,7 +1,7 @@
 from enum import IntEnum
 
 from src.repository.client.client_model import Sex
-from src.schemas.base import BaseUpdateSchema
+from src.schemas.base import BaseUpdateSchema, MoneyRequired
 from pydantic import BaseModel, ConfigDict, Field
 from datetime import date
 
@@ -23,7 +23,7 @@ class DepositOperation(IntEnum):
 class ClientDepositUpdateSchema(BaseModel):
     id: int = Field(ge = 1)
     operation: DepositOperation
-    amount: int = Field(ge = 1)
+    amount: MoneyRequired
 
     model_config = ConfigDict(json_schema_extra = {
         "example": {

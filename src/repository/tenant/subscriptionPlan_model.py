@@ -1,7 +1,8 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from decimal import Decimal
 from sqlalchemy import (
     Boolean,
+    Numeric,
     String,
     Integer,
     Text
@@ -17,12 +18,12 @@ class SubscriptionPlan(Base):
     name: Mapped[str] = mapped_column(String(255), unique = True)
     description: Mapped[str] = mapped_column(Text, nullable = True)
 
-    price: Mapped[int] = mapped_column(Integer)
+    price: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2))
 
     max_employees: Mapped[int] = mapped_column(Integer)
     max_clients: Mapped[int] = mapped_column(Integer)
     max_services: Mapped[int] = mapped_column(Integer)
     max_materials: Mapped[int] = mapped_column(Integer)
-    max_archive_period: Mapped[int] = mapped_column(Integer) # in months
+    max_archive_period: Mapped[int] = mapped_column(Integer, default = 1) # in months
 
     is_visible: Mapped[bool] = mapped_column(Boolean, default = False)

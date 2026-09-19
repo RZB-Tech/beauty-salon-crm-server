@@ -1,5 +1,6 @@
 from pydantic import BaseModel, ConfigDict, Field
 from src.repository.material.material_model import MeasurementUnit
+from src.schemas.base import MoneyRequired
 
 class MaterialCreateSchema(BaseModel):
     article: str = Field(max_length = 255)
@@ -10,7 +11,7 @@ class MaterialCreateSchema(BaseModel):
 
     measurement_unit: MeasurementUnit = MeasurementUnit.PCS
     volume: int = Field(0, ge = 0)
-    sell_price: int = Field(0, ge = 0)
+    sell_price: MoneyRequired
 
     model_config = ConfigDict(json_schema_extra = {
         "example": {

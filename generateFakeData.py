@@ -1,6 +1,7 @@
 import asyncio
 import subprocess
 import os
+from decimal import Decimal
 from faker import Faker
 import random
 from datetime import time, timedelta, timezone
@@ -195,12 +196,12 @@ async def seed_employees(count: int = 10) -> None:
                     maximum_age=65,
                 ),
                 active=random.choice([True, True, True, False]),
-                salary_fixed=random.randint(
+                salary_fixed=Decimal(random.randint(
                     3_000_000,
                     15_000_000,
-                ),
-                percent_from_services=random.randint(5, 30),
-                percent_from_sales=random.randint(0, 15),
+                )),
+                percent_from_services=Decimal(random.randint(5, 30)),
+                percent_from_sales=Decimal(random.randint(0, 15)),
                 notes=fake.text(max_nb_chars=100),
                 created_by_actor_id = 1,
                 tenant_id = 1
@@ -232,7 +233,7 @@ async def seed_clients(count: int = 100) -> None:
                     Sex.FEMALE,
                 ]),
                 notes=fake.text(max_nb_chars=100),
-                deposit=random.randint(0, 1_000_000),
+                deposit=Decimal(random.randint(0, 1_000_000)),
                 created_by_actor_id = 1,
                 tenant_id = 1
             )
@@ -267,7 +268,7 @@ async def seed_materials(count: int = 100) -> None:
 
     async with SessionLocal() as session:
         for i in range(count):
-            purchase_price = random.randint(10_000, 200_000)
+            purchase_price = Decimal(random.randint(10_000, 200_000))
 
             material = Material(
                 article=f"MAT-{fake.unique.random_int(10000, 99999)}",
@@ -365,7 +366,7 @@ async def seed_services(count: int = 50) -> None:
             service = Service(
                 name=f"{random.choice(service_names)} {fake.unique.word()}",
 
-                price=random.randint(50_000, 1_500_000),
+                price=Decimal(random.randint(50_000, 1_500_000)),
 
                 estimated_time=random.choice([15, 30, 45, 60, 90, 120]),
 
@@ -496,24 +497,24 @@ async def seed_payrolls(count_per_employee: int = 3) -> None:
                 ])
 
                 if payroll_type == PayrollType.BONUS:
-                    amount = random.randint(
+                    amount = Decimal(random.randint(
                         100_000,
                         2_000_000
-                    )
+                    ))
                     note = fake.sentence()
 
                 elif payroll_type == PayrollType.COMMISSION:
-                    amount = random.randint(
+                    amount = Decimal(random.randint(
                         50_000,
                         1_000_000
-                    )
+                    ))
                     note = "Service commission"
 
                 else:
-                    amount = random.randint(
+                    amount = Decimal(random.randint(
                         50_000,
                         500_000
-                    )
+                    ))
                     note = "Penalty"
 
                 payroll = Payroll(

@@ -7,9 +7,16 @@ from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.tenant_exceptions import BranchDoesNotBelongToTenant, TenantNotFound
 from src.repository.tenant.tenant_model import Tenant
+from decimal import Decimal, ROUND_DOWN
+
+def truncate_decimal(value: Decimal) -> Decimal:
+    """
+    Truncate decimal up to 2 digits after dot. Rouding mode = ROUND_DOWN
+    """
+    return value.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
 
 def get_client_ip(request: Request) -> str:
-    # App is only reachable via our nginx proxy, which sets X-Real-IP from $remote_addr — safe to trust without a proxy allowlist.
+    """App is only reachable via our nginx proxy, which sets X-Real-IP from $remote_addr — safe to trust without a proxy allowlist."""
     real_ip = request.headers.get("x-real-ip")
     if real_ip:
         return real_ip.strip()

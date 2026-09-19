@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from src.exceptions.base import BaseAppException
 from src.repository.giftCard.giftCard_model import GiftCardStatus
 
@@ -25,7 +27,7 @@ class GiftCardInsufficientAmount(BaseAppException):
     statusCode = 409
     errorCode = "GIFT_CARD_INSUFFICIENT_AMOUNT"
 
-    def __init__(self, id: int, requested: int, has: int):
+    def __init__(self, id: int, requested: Decimal, has: Decimal):
         super().__init__(
             detail = f"Gift card ID {id} has insufficient amount, requested: {requested} has: {has}",
             id = id,

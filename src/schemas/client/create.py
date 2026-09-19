@@ -1,5 +1,6 @@
 from datetime import date
-from pydantic import BaseModel, ConfigDict
+from decimal import Decimal
+from pydantic import BaseModel, ConfigDict, Field
 from src.repository.client.client_model import Sex
 
 class ClientCreateSchema(BaseModel):
@@ -9,7 +10,8 @@ class ClientCreateSchema(BaseModel):
     phone: str | None = None
     birth_date: date | None = None
     sex: Sex
-    deposit: int = 0
+    deposit: Decimal | None = Field(default = 0, ge = 0,
+                             max_digits = 30, decimal_places = 2)
     notes: str | None = None
 
     model_config = ConfigDict(json_schema_extra = {

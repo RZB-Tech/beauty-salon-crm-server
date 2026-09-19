@@ -1,10 +1,9 @@
 from pydantic import ConfigDict
-
-from src.schemas.base import BaseResponseSchema
+from src.schemas.base import BaseResponseSchema, MoneyRequired
 
 class ServiceResponseSchema(BaseResponseSchema):
     name: str
-    price: int
+    price: MoneyRequired
     category_id: int | None
     estimated_time: int
     

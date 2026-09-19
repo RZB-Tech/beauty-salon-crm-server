@@ -1,10 +1,12 @@
 from pydantic import BaseModel
 from datetime import date
 
+from src.schemas.base import MoneyResponse
+
 class PaymentMethodsAnalyticsDetailsResponse(BaseModel):
-    amount: int
-    profit: int
-    percentage: float
+    amount: MoneyResponse
+    profit: MoneyResponse
+    percentage: MoneyResponse
 
 class PaymentMethodsAnalyticsResponse(BaseModel):
     cash: PaymentMethodsAnalyticsDetailsResponse
@@ -17,12 +19,12 @@ class TransactionAnalyticsResponse(BaseModel):
     by_service: PaymentMethodsAnalyticsDetailsResponse
     by_material: PaymentMethodsAnalyticsDetailsResponse
     by_giftCard: PaymentMethodsAnalyticsDetailsResponse
-    not_fully_paid_receipts_sum: int
-    total_profit: int
+    not_fully_paid_receipts_sum: MoneyResponse
+    total_profit: MoneyResponse
 
 class TransactionByPeriodBaseResponse(BaseModel):
     date: date
-    revenue: int
+    revenue: MoneyResponse
 
 class TransactionByPeriodResponse(BaseModel):
     items: list[TransactionByPeriodBaseResponse]

@@ -1,10 +1,11 @@
 from pydantic import BaseModel, ConfigDict, Field
 
 from src.repository.payroll.payroll_model import PayrollType
+from src.schemas.base import MoneyRequired
 
 class PayrollCreateSchema(BaseModel):
     employee_id: int = Field(ge = 1)
-    amount: int = Field(ge = 1)
+    amount: MoneyRequired
     type: PayrollType
     notes: str | None = None
     appointment_id: int | None = None

@@ -1,4 +1,5 @@
 from datetime import date
+from decimal import Decimal
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 class EmployeeCreateSchema(BaseModel):
@@ -10,9 +11,12 @@ class EmployeeCreateSchema(BaseModel):
     active: bool = True
     specialization_id: int | None = None
     services_ids: list[int] = Field(default_factory = list)
-    salary_fixed: int | None = Field(None, ge = 0)
-    percent_from_services: int | None = Field(None, ge = 0)
-    percent_from_sales: int | None = Field(None, ge = 0)
+    salary_fixed: Decimal | None = Field(default = 0, ge = 0,
+                                         decimal_places = 2, max_digits = 30) 
+    percent_from_services: Decimal | None = Field(default = 0, ge = 0, le = 100,
+                                         decimal_places = 2, max_digits = 5)
+    percent_from_sales: Decimal | None = Field(default = 0, ge = 0, le = 100,
+                                         decimal_places = 2, max_digits = 5)
 
     @field_validator("birth_date")
     @classmethod

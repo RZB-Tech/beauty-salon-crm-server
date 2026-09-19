@@ -27,17 +27,17 @@ class ReceiptRepository(BaseRepository[Receipt]):
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
     
-    async def get(self, id: int) -> Receipt | None:
-        result = await self.db.execute(
-            select(Receipt)
-            .where(Receipt.id == id)
-            .options(
-                selectinload(Receipt.items),
-                selectinload(Receipt.transactions),
-                selectinload(Receipt.appointment)
-            )
-            .execution_options(populate_existing=True)
-        )
+    async def get(self, id: int, lock: bool = False) -> Receipt | None:
+        query = (select(Receipt)
+                    .where(Receipt.id == id)
+                    .options(
+                        selectinload(Receipt.items),
+                        selectinload(Receipt.transactions),
+                        selectinload(Receipt.appointment)
+                    )
+                    .execution_options(populate_existing=True))
+        if lock: query = query.with_for_update()
+        result = await self.db.execute(query)
         return result.scalar_one_or_none()
     
     async def get_all(self, data: RequestAllObject) -> tuple[list[Receipt], int]:

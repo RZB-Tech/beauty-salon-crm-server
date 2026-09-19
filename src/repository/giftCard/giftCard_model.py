@@ -1,8 +1,10 @@
 from __future__ import annotations
+from decimal import Decimal
 from typing import TYPE_CHECKING
 from datetime import datetime
 from enum import StrEnum
-from sqlalchemy import CheckConstraint, DateTime, ForeignKeyConstraint, Index, Integer, String, Text, UniqueConstraint, func, text
+from sqlalchemy import (CheckConstraint, DateTime, ForeignKeyConstraint, Index, 
+                        Integer, Numeric, String, Text, UniqueConstraint, func)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from src.database.base import BaseFields
 
@@ -30,8 +32,8 @@ class GiftCard(BaseFields):
         foreign_keys = [receipt_id]
     )
 
-    initial_amount: Mapped[int] = mapped_column(Integer)
-    remain_amount: Mapped[int] = mapped_column(Integer)
+    initial_amount: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2))
+    remain_amount: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2))
 
     status: Mapped[str] = mapped_column(String(50), default = GiftCardStatus.ACTIVE)
     issue_date: Mapped[datetime] = mapped_column(DateTime(timezone=True))

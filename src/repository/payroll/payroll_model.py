@@ -1,4 +1,5 @@
 from __future__ import annotations
+from decimal import Decimal
 from enum import StrEnum
 from typing import TYPE_CHECKING
 from sqlalchemy import (
@@ -7,6 +8,7 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
     Integer,
+    Numeric,
     String,
     Text,
     UniqueConstraint
@@ -49,14 +51,14 @@ class Payout(BaseFields):
         primaryjoin = "and_(Payout.id == Transaction.payout_id, Payout.tenant_id == Transaction.tenant_id)",
         foreign_keys = "[Transaction.payout_id]")
 
-    amount: Mapped[int | None] = mapped_column(Integer, nullable = True)
+    amount: Mapped[Decimal | None] = mapped_column(Numeric(precision = 30, scale = 2), nullable = True)
     type: Mapped[str] = mapped_column(String(50))
     method: Mapped[str] = mapped_column(String(50))
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
     cancelled: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
     @property
-    def total_amount(self) -> int:
+    def total_amount(self) -> Decimal:
         if not self.payrolls: return 0
         total = 0
         for payroll in self.payrolls:
@@ -96,7 +98,7 @@ class Payroll(BaseFields):
         foreign_keys = [payout_id])
     appointment_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
 
-    amount: Mapped[int] = mapped_column(Integer, default = 0)
+    amount: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default = 0)
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
     auto_generated: Mapped[bool] = mapped_column(Boolean, default = False, server_default = "false")
 
@@ -135,7 +137,7 @@ class Payroll(BaseFields):
 
     @validates("amount")
     def validate_amount(self, key, value):
-        if value <= 0: raise ValueError("Сумма не может быть меньше 1")
+        if value <= 0: raise ValueError("Payroll amount cannot be less than 1")
         return value
     
     ALLOWED_FILTERS = {"amount", "employee_id", "amount", "type", "status", "auto_generated", "archived"}

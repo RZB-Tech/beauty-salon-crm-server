@@ -1,7 +1,9 @@
 from __future__ import annotations
+from decimal import Decimal
 from sqlalchemy import (
     ForeignKeyConstraint,
     Index,
+    Numeric,
     String,
     Integer,Text,
     UniqueConstraint,
@@ -31,7 +33,7 @@ class Material(BaseFields):
 
     measurement_unit: Mapped[str] = mapped_column(default = MeasurementUnit.PCS)
     volume: Mapped[int] = mapped_column(Integer, default = 0)
-    sell_price: Mapped[int] = mapped_column(Integer, default = 0)
+    sell_price: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default = 0)
 
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_material_tenant"),

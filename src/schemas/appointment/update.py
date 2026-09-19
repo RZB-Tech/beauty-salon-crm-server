@@ -1,6 +1,6 @@
 from typing import Self
 from src.repository.appointment.appointment_model import AppointmentCancelledReason, AppointmentStatus
-from src.schemas.base import BaseUpdateSchema
+from src.schemas.base import BaseUpdateSchema, MoneyOptional
 from pydantic import ConfigDict, Field, model_validator
 
 class AppointmentUpdateSchema(BaseUpdateSchema):
@@ -27,7 +27,7 @@ class AppointmentServiceUpdateSchema(BaseUpdateSchema):
     service_id: int | None = Field(None, ge = 1)
     material_id: int | None = Field(None, ge = 1)
     quantity: int | None = Field(None, ge = 1)
-    price: int | None = Field(None, ge = 1)
+    price: MoneyOptional
     price_changed_reason: str | None = Field(None, min_length = 5)
     notes: str | None = None
     archived: bool | None = None

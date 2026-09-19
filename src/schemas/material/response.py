@@ -1,5 +1,5 @@
 from src.repository.material.material_model import MeasurementUnit
-from src.schemas.base import BaseResponseSchema
+from src.schemas.base import BaseResponseSchema, MoneyRequired, MoneyResponse
 
 class MaterialResponseSchema(BaseResponseSchema):
     article: str
@@ -11,4 +11,4 @@ class MaterialResponseSchema(BaseResponseSchema):
     measurement_unit: MeasurementUnit
     volume: int
 
-    sell_price: int
+    sell_price: MoneyRequired

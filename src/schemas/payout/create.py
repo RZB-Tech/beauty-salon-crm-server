@@ -4,10 +4,12 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 from src.repository.payroll.payroll_model import PayoutMethod, PayoutType
 from datetime import date
 
+from src.schemas.base import MoneyOptional
+
 class PayoutCreateSchema(BaseModel):
     employee_id: int = Field(..., ge = 1)
     type: PayoutType | None = PayoutType.OTHER
-    amount: int | None = Field(None, ge = 1)
+    amount: MoneyOptional
     method: PayoutMethod | None = PayoutMethod.CASH
     notes: str | None = None
     payrolls: list[Annotated[int, Field(ge = 1)]] | None = Field(None, min_length = 1)
