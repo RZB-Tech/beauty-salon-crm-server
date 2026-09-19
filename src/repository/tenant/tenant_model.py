@@ -92,12 +92,11 @@ class TenantSubscriptions(Base):
     __tablename__ = "tenant_subscriptions"
 
     id: Mapped[int] = mapped_column(primary_key = True, autoincrement = True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete = "cascade"))
-    plan_id: Mapped[int] = mapped_column(ForeignKey("subscription_plans.id"))
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete = "cascade"), unique = True)
+    plan_id: Mapped[int] = mapped_column(ForeignKey("subscription_plans.id", ondelete = "restrict"))
     status: Mapped[str] = mapped_column(String(50))
     amount_paid: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), nullable = True)
     billing_interval: Mapped[int] = mapped_column()
 
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone = True))
     period_end: Mapped[datetime] = mapped_column(DateTime(timezone = True))
-    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default = False)

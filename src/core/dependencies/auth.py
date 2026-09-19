@@ -1,5 +1,5 @@
 from fastapi import Request
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 from src.core.auth.security import decode_token
 from src.core.cache.permission_cache import get_staff_permissions
@@ -10,16 +10,33 @@ from src.database.session import SessionLocal
 from src.exceptions.auth_exceptions import IncorrectCredentials, TenantIsInactive
 from src.exceptions.staff_exceptions import StaffIsInactive
 from src.repository.staff.staff_model import Staff
-from src.repository.tenant.tenant_model import Tenant
+from src.repository.tenant.tenant_model import Tenant, TenantSubscriptions, TenantSubscriptionStatus
+
+_ACTIVE_SUBSCRIPTION_STATUSES = (TenantSubscriptionStatus.ACTIVE, TenantSubscriptionStatus.TRIAL)
 
 async def is_tenant_active(tenant_id: int) -> bool:
-    """Cache-first tenant active-status check; falls back to the database on a cache miss."""
+    """
+    Cache-first tenant active-status check; falls back to the database on a cache miss.
+    A tenant is active only if it hasn't been manually disabled AND it has a
+    subscription that is currently active/trialing and not past its period_end.
+    """
     cached = await get_tenant_active(tenant_id)
     if cached is not None:
         return cached
 
     async with SessionLocal() as session:
-        result = await session.execute(select(Tenant.active).where(Tenant.id == tenant_id))
+        has_valid_subscription = (
+            select(TenantSubscriptions.id)
+            .where(
+                TenantSubscriptions.tenant_id == tenant_id,
+                TenantSubscriptions.status.in_(_ACTIVE_SUBSCRIPTION_STATUSES),
+                TenantSubscriptions.period_end > func.now(),
+            )
+            .exists()
+        )
+        result = await session.execute(
+            select(Tenant.active.is_(True) & has_valid_subscription).where(Tenant.id == tenant_id)
+        )
         active = bool(result.scalar_one_or_none())
 
     await set_tenant_active(tenant_id, active, ttl = settings.REFRESH_TOKEN_EXPIRE_SECONDS)
