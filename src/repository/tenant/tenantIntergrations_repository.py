@@ -9,8 +9,8 @@ class TenantIntegrationsRepository(BaseRepository[TenantIntegration]):
         await self.db.refresh(preferences)
         return preferences
 
-    async def get_by_tenant_id(self, tenant_id: int) -> TenantIntegration | None:
-        result = await self.db.execute(
-            select(TenantIntegration).where(TenantIntegration.tenant_id == tenant_id)
-        )
-        return result.scalar_one_or_none()
+    # async def get_by_tenant_id(self, tenant_id: int) -> TenantIntegration | None:
+    #     result = await self.db.execute(
+    #         select(TenantIntegration).where(TenantIntegration.tenant_id == tenant_id)
+    #     )
+    #     return result.scalar_one_or_none()

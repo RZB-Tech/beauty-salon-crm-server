@@ -1,9 +1,7 @@
 from decimal import Decimal
-
 from sqlalchemy import func, select
-
 from src.database.base import BaseRepository
-from src.repository.tenant.tenant_model import TenantPayments
+from src.repository.tenant.payments.tenantPayments_model import TenantPayments
 
 class TenantPaymentsRepository(BaseRepository[TenantPayments]):
     async def create(self, payment: TenantPayments) -> TenantPayments:

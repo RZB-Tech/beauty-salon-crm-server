@@ -28,12 +28,18 @@ from src.routes.payment.promotion_router import router as promotionR
 from src.routes.payment.giftCard_router import router as giftCardR
 from src.schemas.base import FilterFieldSchema, FilterTables
 from src.routes.system.analytics_router import router as analyticsR
+from src.routes.system.subscriptionPlan_router import router as subscriptionPlanR
 
 open_router = APIRouter(prefix = "/api/v1")
 open_router.include_router(
     authR, 
     prefix="/auth", 
     tags=["auth"]
+)
+open_router.include_router(
+    subscriptionPlanR, 
+    prefix="/subscription-plans", 
+    tags=["Subscription plans"]
 )
 
 protected_router = APIRouter(prefix = "/api/v1")

@@ -8,7 +8,7 @@ from wtforms import SelectField
 
 from src.core.cache.tenant_cache import delete_tenant_active
 from src.database.session import SessionLocal
-from src.repository.tenant.subscriptionPlan_model import SubscriptionPlan
+from src.repository.tenant.subscription.subscriptionPlan_model import SubscriptionPlan
 from src.repository.tenant.tenant_model import Tenant, TenantSubscriptions, TenantSubscriptionStatus
 from src.services.system.tenant_service import provision_tenant
 
@@ -74,8 +74,7 @@ class SubscriptionPlanAdmin(ModelView, model = SubscriptionPlan):
     ]
     column_details_list = [
         SubscriptionPlan.id, SubscriptionPlan.name, SubscriptionPlan.description,
-        SubscriptionPlan.price, SubscriptionPlan.max_users, SubscriptionPlan.max_clients,
-        SubscriptionPlan.max_archive_period, SubscriptionPlan.is_visible,
+        SubscriptionPlan.price, SubscriptionPlan.max_users, SubscriptionPlan.max_clients, SubscriptionPlan.is_visible,
     ]
     column_sortable_list = [SubscriptionPlan.id, SubscriptionPlan.name, SubscriptionPlan.price]
     column_searchable_list = [SubscriptionPlan.name]
@@ -83,7 +82,7 @@ class SubscriptionPlanAdmin(ModelView, model = SubscriptionPlan):
     form_columns = [
         SubscriptionPlan.name, SubscriptionPlan.description, SubscriptionPlan.price,
         SubscriptionPlan.max_users, SubscriptionPlan.max_clients,
-        SubscriptionPlan.max_archive_period, SubscriptionPlan.is_visible,
+        SubscriptionPlan.is_visible, SubscriptionPlan.archived
     ]
 
 class TenantSubscriptionAdmin(ModelView, model = TenantSubscriptions):
