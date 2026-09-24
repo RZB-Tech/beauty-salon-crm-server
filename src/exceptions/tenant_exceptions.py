@@ -51,6 +51,16 @@ class TenantInsufficientBalance(BaseAppException):
             has = has
         )
 
+class TenantPaymentNotFound(BaseAppException):
+    statusCode = 404
+    errorCode = "TENANT_PAYMENT_NOT_FOUND"
+    def __init__(self, id: int):
+        super().__init__(
+            detail = f"Payment ID {id} not found",
+            errorCode = self.errorCode,
+            id = id
+        )
+
 class BranchDoesNotBelongToTenant(BaseAppException):
     statusCode = 409
     errorCode = "BRANCH_DOES_NOT_BELONG_TO_TENANT"

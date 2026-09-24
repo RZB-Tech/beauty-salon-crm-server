@@ -22,6 +22,10 @@ CLICK_ERROR_FAILED_TO_UPDATE = -7
 CLICK_ERROR_BAD_REQUEST = -8
 CLICK_ERROR_TRANSACTION_CANCELLED = -9
 
+# Click sends `action` as a form string: "0" on Prepare, "1" on Complete.
+CLICK_ACTION_PREPARE = "0"
+CLICK_ACTION_COMPLETE = "1"
+
 
 def make_prepare_sign(click_trans_id: str, service_id: str, merchant_trans_id: str,
                        amount: str, action: str, sign_time: str) -> str:

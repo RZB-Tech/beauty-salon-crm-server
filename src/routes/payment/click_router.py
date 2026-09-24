@@ -4,7 +4,7 @@ from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import make_service_dependency
 from src.core.permissions import PermissionCode
 from src.schemas.clickPayment.create import ClickCheckoutCreateSchema
-from src.schemas.clickPayment.response import ClickCheckoutResponseSchema
+from src.schemas.clickPayment.response import ClickCheckoutResponseSchema, ClickPaymentStatusSchema
 from src.services.payment.click_service import ClickPaymentService
 
 router = APIRouter()
@@ -24,3 +24,17 @@ async def create_checkout(
     service: ClickPaymentService = Depends(get_click_service),
 ):
     return await service.create_checkout(data)
+
+@router.get(
+    "/{payment_id}",
+    response_model = ClickPaymentStatusSchema,
+    status_code = 200,
+    summary = "Статус платежа Click",
+    description = "Для страницы CLICK_RETURN_URL: сам редирект браузера не подтверждает оплату, поэтому фронтенд опрашивает этот эндпоинт, пока статус не станет completed или cancelled.",
+    dependencies = [Depends(require_permission([PermissionCode.SUBSCRIPTION_PAYMENT_READ]))]
+)
+async def get_payment_status(
+    payment_id: int,
+    service: ClickPaymentService = Depends(get_click_service),
+):
+    return await service.get_payment_status(payment_id)

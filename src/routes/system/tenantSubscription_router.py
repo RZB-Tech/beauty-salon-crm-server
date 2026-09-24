@@ -3,12 +3,23 @@ from src.core.dependencies.permissions import require_permission
 from src.core.dependencies.uow import make_service_dependency
 from src.core.permissions import PermissionCode
 from src.schemas.tenantSubscription.purchase import TenantSubscriptionPurchaseSchema
-from src.schemas.tenantSubscription.response import TenantSubscriptionResponseSchema
+from src.schemas.tenantSubscription.response import TenantBillingStateSchema, TenantSubscriptionResponseSchema
 from src.services.system.tenantSubscription_service import TenantSubscriptionService
 
 router = APIRouter()
 
 get_tenantSubscription_service = make_service_dependency(TenantSubscriptionService)
+
+@router.get(
+    "",
+    response_model = TenantBillingStateSchema,
+    status_code = 200,
+    summary = "Баланс и текущая подписка организации",
+    description = "Доступно и без активной подписки, чтобы фронтенд мог показать баланс и предложить пополнить его или купить тариф.",
+    dependencies = [Depends(require_permission([PermissionCode.SUBSCRIPTION_PAYMENT_READ]))]
+)
+async def get_current(service: TenantSubscriptionService = Depends(get_tenantSubscription_service)):
+    return await service.get_current()
 
 @router.post(
     "/purchase",

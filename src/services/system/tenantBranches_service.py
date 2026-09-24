@@ -3,7 +3,7 @@ import string
 
 from src.core.auth.security import generate_password, hash_password
 from src.core.cache.permission_cache import delete_staff_permissions
-from src.core.cache.tenant_cache import delete_tenant_active
+from src.core.cache.tenant_cache import delete_tenant_active, delete_tenant_admin_active
 from src.core.dependencies.context import cleared_actor_context, get_current_actor_id, get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.core.utils.common import get_current_tenant_or_raise
@@ -299,6 +299,10 @@ class TenantBranchesService:
             # active status is cached (src/core/cache/tenant_cache.py) with a TTL tied to the
             # refresh token lifetime - without this, a deactivated branch would keep serving
             # its already-authenticated staff until the cache entry naturally expires.
+            # Commit first: the request's own commit only runs after the response is sent,
+            # and clearing before it would let a concurrent request re-cache the old value.
+            await self.uow.db.commit()
             await delete_tenant_active(tenant.id)
+            await delete_tenant_admin_active(tenant.id)
 
         return updated

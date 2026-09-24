@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from starlette.requests import Request
 from wtforms import SelectField
 
-from src.core.cache.tenant_cache import delete_tenant_active
+from src.core.cache.tenant_cache import delete_tenant_active, delete_tenant_admin_active
 from src.database.session import SessionLocal
 from src.repository.tenant.subscription.subscriptionPlan_model import SubscriptionPlan
 from src.repository.tenant.tenant_model import Tenant, TenantSubscriptions, TenantSubscriptionStatus
@@ -55,6 +55,7 @@ class TenantAdmin(ModelView, model = Tenant):
 
     async def after_model_change(self, data: dict, model: Tenant, is_created: bool, request: Request) -> None:
         await delete_tenant_active(model.id)
+        await delete_tenant_admin_active(model.id)
 
 class SubscriptionPlanAdmin(ModelView, model = SubscriptionPlan):
     name = "Тарифный план"
@@ -133,6 +134,12 @@ class TenantSubscriptionAdmin(ModelView, model = TenantSubscriptions):
     form_args = {
         "status": {"choices": [(s.value, s.value) for s in TenantSubscriptionStatus]},
     }
+
+    async def after_model_change(self, data: dict, model: TenantSubscriptions, is_created: bool, request: Request) -> None:
+        await delete_tenant_active(model.tenant_id)
+
+    async def after_model_delete(self, model: TenantSubscriptions, request: Request) -> None:
+        await delete_tenant_active(model.tenant_id)
 
 class TenantCreateView(BaseView):
     name = "Создать тенанта"

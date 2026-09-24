@@ -52,6 +52,7 @@ class SubscriptionPlan(Base):
         CheckConstraint("max_users >= 1", "subscripition_plan_max_users"),
         CheckConstraint("max_clients >= 1", "subscripition_plan_max_clients"),
         CheckConstraint("duration_days >= 1", "subscripition_plan_duration_days"),
+        CheckConstraint("price >= 0", "subscripition_plan_price_non_negative"),
     )
 
     def __str__(self) -> str:

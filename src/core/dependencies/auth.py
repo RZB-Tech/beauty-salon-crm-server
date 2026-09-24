@@ -1,5 +1,7 @@
+from datetime import datetime, timezone
+
 from fastapi import Request
-from sqlalchemy import func, select
+from sqlalchemy import select
 
 from src.core.auth.security import decode_token
 from src.core.cache.permission_cache import get_staff_permissions
@@ -42,21 +44,29 @@ async def is_tenant_active(tenant_id: int) -> bool:
         return cached
 
     async with SessionLocal() as session:
-        has_valid_subscription = (
-            select(TenantSubscriptions.id)
-            .where(
-                TenantSubscriptions.tenant_id == tenant_id,
-                TenantSubscriptions.status.in_(_ACTIVE_SUBSCRIPTION_STATUSES),
-                TenantSubscriptions.period_end > func.now(),
-            )
-            .exists()
-        )
         result = await session.execute(
-            select(Tenant.active.is_(True) & has_valid_subscription).where(Tenant.id == tenant_id)
+            select(Tenant.active, TenantSubscriptions.status, TenantSubscriptions.period_end)
+            .outerjoin(TenantSubscriptions, TenantSubscriptions.tenant_id == Tenant.id)
+            .where(Tenant.id == tenant_id)
         )
-        active = bool(result.scalar_one_or_none())
+        row = result.one_or_none()
 
-    await set_tenant_active(tenant_id, active, ttl = settings.REFRESH_TOKEN_EXPIRE_SECONDS)
+    now = datetime.now(timezone.utc)
+    active = (
+        row is not None
+        and row.active is True
+        and row.status in _ACTIVE_SUBSCRIPTION_STATUSES
+        and row.period_end is not None
+        and row.period_end > now
+    )
+
+    ttl = settings.REFRESH_TOKEN_EXPIRE_SECONDS
+    if active:
+        # Never let a cached "active" outlive the subscription itself - this is
+        # what makes expiry exact, even if the Celery expiry task is late or fails.
+        ttl = max(1, min(ttl, int((row.period_end - now).total_seconds())))
+
+    await set_tenant_active(tenant_id, active, ttl = ttl)
     return active
 
 async def is_staff_active(staff_id: int) -> bool | None:

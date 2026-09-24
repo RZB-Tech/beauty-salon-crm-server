@@ -15,3 +15,18 @@ class TenantSubscriptionResponseSchema(BaseModel):
     tenant_balance: MoneyResponse
 
     model_config = ConfigDict(from_attributes = True)
+
+class TenantSubscriptionInfoSchema(BaseModel):
+    id: int
+    plan_id: int
+    status: str
+    amount_paid: MoneyResponse | None
+    started_at: datetime
+    period_end: datetime
+
+    model_config = ConfigDict(from_attributes = True)
+
+class TenantBillingStateSchema(BaseModel):
+    balance: MoneyResponse
+    has_active_subscription: bool
+    subscription: TenantSubscriptionInfoSchema | None

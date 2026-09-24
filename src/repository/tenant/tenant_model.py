@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     ForeignKey,
     ForeignKeyConstraint,
     Integer,
@@ -72,6 +73,10 @@ class Tenant(Base):
     )
     branches: Mapped[list["Tenant"]] = relationship(
         "Tenant", back_populates = "parent"
+    )
+
+    __table_args__ = (
+        CheckConstraint("balance >= 0", "tenant_balance_non_negative"),
     )
 
     def __str__(self) -> str:

@@ -10,25 +10,58 @@ from src.exceptions.tenant_exceptions import TenantInsufficientBalance, TenantNo
 from src.repository.tenant.payments.tenantExpeses_model import TenantExpenseCategory, TenantExpenses
 from src.repository.tenant.tenant_model import TenantSubscriptions, TenantSubscriptionStatus
 from src.schemas.tenantSubscription.purchase import TenantSubscriptionPurchaseSchema
-from src.schemas.tenantSubscription.response import TenantSubscriptionResponseSchema
+from src.schemas.tenantSubscription.response import (
+    TenantBillingStateSchema,
+    TenantSubscriptionInfoSchema,
+    TenantSubscriptionResponseSchema,
+)
 
 
 class TenantSubscriptionService:
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
 
+    async def get_current(self) -> TenantBillingStateSchema:
+        tenantID = get_current_tenant_id()
+        if tenantID is None: raise AuthTenantContextEmpty()
+
+        tenant = await self.uow.tenants.get(id = tenantID)
+        if tenant is None: raise TenantNotFound(tenantID)
+
+        subscription = await self.uow.tenantSubscriptions.get_by_tenant(tenantID)
+        has_active = (
+            subscription is not None
+            and subscription.status in (TenantSubscriptionStatus.ACTIVE, TenantSubscriptionStatus.TRIAL)
+            and subscription.period_end > datetime.now(timezone.utc)
+        )
+
+        return TenantBillingStateSchema(
+            balance = tenant.balance,
+            has_active_subscription = has_active,
+            subscription = TenantSubscriptionInfoSchema.model_validate(subscription) if subscription else None,
+        )
+
     async def purchase(self, data: TenantSubscriptionPurchaseSchema) -> TenantSubscriptionResponseSchema:
         tenantID = get_current_tenant_id()
         if tenantID is None: raise AuthTenantContextEmpty()
 
-        return await self.purchase_for_tenant(tenantID, data.plan_id)
+        result = await self.purchase_for_tenant(tenantID, data.plan_id)
+
+        # Commit, THEN clear the cache. FastAPI's own commit runs only after the
+        # response is sent, so clearing first would let the client's very next
+        # request read the old uncommitted state and re-cache "inactive" for
+        # the full cache TTL.
+        await self.uow.db.commit()
+        await delete_tenant_active(tenantID)
+
+        return result
 
     async def purchase_for_tenant(self, tenant_id: int, plan_id: int) -> TenantSubscriptionResponseSchema:
         """
-        The actual spend-balance-and-activate logic, taking the tenant explicitly
-        rather than from request context - so it's callable both from the
-        authenticated `purchase()` above and from the Celery auto-pay task,
-        which has no request/staff context to read a tenant from.
+        The spend-balance-and-activate logic, taking the tenant explicitly so it
+        is callable from both `purchase()` and the Celery auto-pay task.
+        Does not commit or clear the tenant-active cache: callers must do both,
+        in that order, once their transaction is done.
         """
         plan = await self.uow.subscriptionsPlans.get(plan_id)
         if plan is None: raise SubscriptionPlanNotFound(plan_id)
@@ -77,11 +110,6 @@ class TenantSubscriptionService:
             subscription.amount_paid = plan.price
             subscription.started_at = now
             subscription.period_end = period_end
-
-        # Bust the cached subscription-active flag immediately - otherwise the
-        # tenant stays locked out of the rest of the app for up to the cache's
-        # TTL (REFRESH_TOKEN_EXPIRE_SECONDS) right after having just paid.
-        await delete_tenant_active(tenant.id)
 
         return TenantSubscriptionResponseSchema(
             id = subscription.id,
