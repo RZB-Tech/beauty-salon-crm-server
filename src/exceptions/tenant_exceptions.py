@@ -51,6 +51,29 @@ class TenantInsufficientBalance(BaseAppException):
             has = has
         )
 
+class TenantSubscriptionAlreadyActive(BaseAppException):
+    statusCode = 409
+    errorCode = "TENANT_SUBSCRIPTION_ALREADY_ACTIVE"
+    def __init__(self, tenant_id: int, plan_id: int):
+        super().__init__(
+            detail = f"Tenant ID {tenant_id} already has an active subscription to plan ID {plan_id}",
+            errorCode = self.errorCode,
+            tenant_id = tenant_id,
+            plan_id = plan_id
+        )
+
+class TenantLimitExceeded(BaseAppException):
+    statusCode = 409
+    errorCode = "TENANT_LIMIT_EXCEEDED"
+    def __init__(self, limit_key: str, limit: int, used: int):
+        super().__init__(
+            detail = f"Subscription limit {limit_key} reached: {used} of {limit} used",
+            errorCode = self.errorCode,
+            limit_key = limit_key,
+            limit = limit,
+            used = used
+        )
+
 class TenantPaymentNotFound(BaseAppException):
     statusCode = 404
     errorCode = "TENANT_PAYMENT_NOT_FOUND"

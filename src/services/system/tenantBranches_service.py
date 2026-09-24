@@ -29,6 +29,7 @@ from src.schemas.tenant.response import (
 )
 from src.schemas.tenant.update import UpdateBranchAdminPassword, UpdateBranchAdminSchema, UpdateBranchSchema
 from src.services.system.tenant_service import provision_tenant
+from src.services.system.tenantLimits_service import TenantLimit, ensure_tenant_capacity
 from sqlalchemy import func, select, update
 
 REPORT_COUNT_FIELDS: list[tuple[str, type]] = [
@@ -47,6 +48,12 @@ class TenantBranchesService:
     async def create(self, data: TenantBranchCreateSchema) -> dict:
         tenant = await get_current_tenant_or_raise(self.uow)
         creator_actor_id = get_current_actor_id()
+
+        # A new branch also gets its own admin user, so it needs a slot of each.
+        # The limit lock lives in the request's transaction, which outlasts the
+        # separate provisioning session below, so a concurrent request can only
+        # count after this branch has been committed.
+        await ensure_tenant_capacity(self.uow, tenant.id, {TenantLimit.BRANCHES: 1, TenantLimit.USERS: 1})
 
         # provision_tenant writes rows tagged with the new branch's tenant_id, which the
         # request's tenant-scoped session (self.uow.db) would reject as cross-tenant data
@@ -165,6 +172,8 @@ class TenantBranchesService:
         tenant = await self.uow.tenants.get(id = data.branch_id)
         if tenant is None: raise TenantNotFound(data.branch_id)
         if tenant.parent_id != parentTenant.id: raise BranchDoesNotBelongToTenant(parentTenant.id, data.branch_id)
+
+        await ensure_tenant_capacity(self.uow, parentTenant.id, {TenantLimit.USERS: 1})
 
         async with SessionLocal() as session:
             with cleared_actor_context():

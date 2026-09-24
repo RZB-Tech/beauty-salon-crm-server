@@ -7,7 +7,9 @@ class TenantRepository(BaseRepository[Tenant]):
         result: Result | None
         if id:
             stmt = select(Tenant).where(Tenant.id == id)
-            if lock: stmt = stmt.with_for_update()
+            # populate_existing: see BaseRepository.get - without it a tenant already
+            # loaded earlier in the request keeps its stale balance under the lock.
+            if lock: stmt = stmt.with_for_update().execution_options(populate_existing = True)
             result = await self.db.execute(stmt)
         elif name:
             result = await self.db.execute(

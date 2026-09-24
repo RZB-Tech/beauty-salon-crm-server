@@ -8,7 +8,6 @@ from src.core.celery.session import celery_transaction_scope
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.base import BaseAppException
 from src.repository.tenant.tenant_model import TenantSubscriptionStatus
-from src.schemas.tenant.base import TenantPreferencesSchema
 from src.services.system.tenantSubscription_service import TenantSubscriptionService
 
 logger = logging.getLogger(__name__)
@@ -56,7 +55,9 @@ async def _expire_tenant_subscriptions():
                     skipped_ids.append(tenant_id)
                     continue
 
-                preferences = TenantPreferencesSchema(**tenant.preferences)
+                # Read just this flag rather than validating all preferences: one
+                # bad unrelated value would otherwise fail this tenant every day.
+                auto_pay = (tenant.preferences or {}).get("auto_pay_subscription") is True
                 renewed = False
 
                 # An expired trial is never auto-renewed: the tenant hasn't paid
@@ -64,7 +65,7 @@ async def _expire_tenant_subscriptions():
                 # themselves.
                 if (
                     subscription.status == TenantSubscriptionStatus.ACTIVE
-                    and preferences.auto_pay_subscription
+                    and auto_pay
                 ):
                     try:
                         # Renews the SAME plan the tenant was already on - this

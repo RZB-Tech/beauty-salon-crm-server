@@ -6,7 +6,11 @@ from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.auth_exceptions import AuthTenantContextEmpty
 from src.exceptions.general_exceptions import ObjectIsArchived
 from src.exceptions.subscriptionPlan_exceptions import SubscriptionPlanNotFound
-from src.exceptions.tenant_exceptions import TenantInsufficientBalance, TenantNotFound
+from src.exceptions.tenant_exceptions import (
+    TenantInsufficientBalance,
+    TenantNotFound,
+    TenantSubscriptionAlreadyActive,
+)
 from src.repository.tenant.payments.tenantExpeses_model import TenantExpenseCategory, TenantExpenses
 from src.repository.tenant.tenant_model import TenantSubscriptions, TenantSubscriptionStatus
 from src.schemas.tenantSubscription.purchase import TenantSubscriptionPurchaseSchema
@@ -62,7 +66,10 @@ class TenantSubscriptionService:
         is callable from both `purchase()` and the Celery auto-pay task.
         Does not commit or clear the tenant-active cache: callers must do both,
         in that order, once their transaction is done.
+        Raises every domain error before changing anything.
         """
+        # Hidden plans (is_visible = False) are deliberately purchasable: they're
+        # only kept out of the public plan listing, not blocked here.
         plan = await self.uow.subscriptionsPlans.get(plan_id)
         if plan is None: raise SubscriptionPlanNotFound(plan_id)
         if plan.archived: raise ObjectIsArchived(plan_id, "subscription_plans")
@@ -73,6 +80,22 @@ class TenantSubscriptionService:
         # check against a stale balance and overspend it.
         tenant = await self.uow.tenants.get(id = tenant_id, lock = True)
         if tenant is None: raise TenantNotFound(tenant_id)
+
+        # Lock the subscription too (tenant first, then subscription - the order
+        # used everywhere), so the check below can't race another purchase.
+        subscription = await self.uow.tenantSubscriptions.get_by_tenant(tenant_id, lock = True)
+        now = datetime.now(timezone.utc)
+
+        # Buying a plan the tenant is already paying for would reset its period
+        # and charge again - this is what stops a double click from charging twice.
+        # A trial of the same plan can still be converted to a paid subscription.
+        if (
+            subscription is not None
+            and subscription.status == TenantSubscriptionStatus.ACTIVE
+            and subscription.plan_id == plan.id
+            and subscription.period_end > now
+        ):
+            raise TenantSubscriptionAlreadyActive(tenant_id, plan.id)
 
         if tenant.balance < plan.price:
             raise TenantInsufficientBalance(tenant_id, plan.price, tenant.balance)
@@ -88,13 +111,11 @@ class TenantSubscriptionService:
             expense_metadata = {"plan_id": plan.id},
         ))
 
-        now = datetime.now(timezone.utc)
         period_end = now + timedelta(days = plan.duration_days)
 
         # Buying always resets the period to now + duration, even if the
-        # tenant still has time left on a current subscription - renewing
-        # early does not carry the remainder over.
-        subscription = await self.uow.tenantSubscriptions.get_by_tenant(tenant_id, lock = True)
+        # tenant still has time left on a current subscription (e.g. switching
+        # plans) - the remainder is not carried over.
         if subscription is None:
             subscription = await self.uow.tenantSubscriptions.create(TenantSubscriptions(
                 tenant_id = tenant.id,

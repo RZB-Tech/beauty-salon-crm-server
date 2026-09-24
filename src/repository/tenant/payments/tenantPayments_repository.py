@@ -25,7 +25,7 @@ class TenantPaymentsRepository(BaseRepository[TenantPayments]):
             TenantPayments.gateway == gateway,
             TenantPayments.gateway_transaction_id == gateway_transaction_id,
         )
-        if lock: stmt = stmt.with_for_update()
+        if lock: stmt = stmt.with_for_update().execution_options(populate_existing = True)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 

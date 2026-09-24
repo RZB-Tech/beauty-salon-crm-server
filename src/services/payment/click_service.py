@@ -199,8 +199,12 @@ class ClickPaymentService:
         if not _amount_matches(amount, payment.amount):
             return resp(payment.id, CLICK_ERROR_AMOUNT, "Incorrect amount")
 
+        # Same click_trans_id and merchant_prepare_id as a payment we already
+        # credited: this is Click retrying a Complete whose response it never
+        # received. Answer success again - an error here could make Click
+        # cancel and refund a payment we've already credited.
         if payment.status == TenantPaymentStatus.COMPLETED:
-            return resp(payment.id, CLICK_ERROR_ALREADY_PAID, "Already paid")
+            return resp(payment.id, CLICK_ERROR_SUCCESS, "Success")
 
         if payment.status == TenantPaymentStatus.CANCELLED:
             return resp(payment.id, CLICK_ERROR_TRANSACTION_CANCELLED, "Transaction cancelled")

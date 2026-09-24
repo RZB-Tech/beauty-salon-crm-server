@@ -9,9 +9,12 @@ class TenantAddonsRepository(BaseRepository[TenantAddon]):
         await self.db.refresh(addon)
         return addon
 
-    async def get_effective_limit(self, limit_key: str) -> int:
+    async def get_effective_limit(self, tenant_id: int, limit_key: str) -> int:
+        """Extra capacity from this tenant's unexpired addons for `limit_key`."""
+        # TenantAddon isn't TenantMixin, so nothing filters it by tenant automatically.
         result = await self.db.execute(
             select(func.coalesce(func.sum(TenantAddon.amount), 0)).where(
+                TenantAddon.tenant_id == tenant_id,
                 TenantAddon.limit_key == limit_key,
                 or_(TenantAddon.expires_at.is_(None), TenantAddon.expires_at > func.now()),
             )

@@ -13,7 +13,7 @@ class TenantSubscriptionsRepository(BaseRepository[TenantSubscriptions]):
 
     async def get_by_tenant(self, tenant_id: int, lock: bool = False) -> TenantSubscriptions | None:
         stmt = select(TenantSubscriptions).where(TenantSubscriptions.tenant_id == tenant_id)
-        if lock: stmt = stmt.with_for_update()
+        if lock: stmt = stmt.with_for_update().execution_options(populate_existing = True)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 

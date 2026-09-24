@@ -17,12 +17,15 @@ from src.schemas.base import RequestAllObject
 from src.schemas.staff.create import StaffCreateAPISchema
 from src.core.auth.security import hash_password
 from src.schemas.staff.request import StaffPermissionsUpdateSchema, StaffRequestSchema, StaffRolesAssignSchema
+from src.services.system.tenantLimits_service import TenantLimit, ensure_tenant_capacity
 
 class StaffService():
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
 
     async def create(self, data: StaffCreateAPISchema) -> Staff:
+        await ensure_tenant_capacity(self.uow, get_current_tenant_id(), {TenantLimit.USERS: 1})
+
         checkLogin = await self.uow.staffs.get(login = data.login.lower())
         if checkLogin: raise BaseAppException(
             detail = "Login already in use",
