@@ -1,4 +1,5 @@
 from decimal import Decimal
+from enum import StrEnum
 from sqlalchemy import (
     ForeignKey,
     Numeric,
@@ -12,6 +13,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
 from src.database.base import Base
 
+class TenantPaymentStatus(StrEnum):
+    PENDING = "pending"
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    CANCELLED = "cancelled"
+
 class TenantPayments(Base):
     __tablename__ = "tenant_payments"
 
@@ -19,6 +26,9 @@ class TenantPayments(Base):
     tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete = "set null"), nullable = True)
     tenant_snapshot: Mapped[dict] = mapped_column(JSONB)
     amount: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2))
+    status: Mapped[str] = mapped_column(
+        String(255), default = TenantPaymentStatus.PENDING, server_default = TenantPaymentStatus.PENDING
+    )
     gateway: Mapped[str | None] = mapped_column(String(255), nullable = True)
     gateway_transaction_id: Mapped[str | None] = mapped_column(String(255), nullable = True)
     gateway_metadata: Mapped[dict] = mapped_column(JSONB, default = dict)

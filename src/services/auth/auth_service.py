@@ -14,7 +14,7 @@ from src.core.cache.login_attempts_cache import (
     reset_failed_account_login,
     reset_failed_ip_login,
 )
-from src.core.dependencies.auth import is_tenant_active
+from src.core.dependencies.auth import is_tenant_admin_active
 from src.core.dependencies.context import get_current_staff_id
 from src.core.dependencies.uow import UnitOfWork
 from src.core.permissions import compute_effective_permissions
@@ -72,7 +72,7 @@ class AuthService():
 
         if not staff.active: raise StaffIsInactive()
         
-        if not await is_tenant_active(staff.tenant_id): raise TenantIsInactive()
+        if not await is_tenant_admin_active(staff.tenant_id): raise TenantIsInactive()
 
         employee: Employee | None = None
         if staff.employee_id:
@@ -159,7 +159,7 @@ class AuthService():
         if not user: raise StaffNotFound()
         if not user.active: raise StaffIsInactive()
 
-        if not await is_tenant_active(user.tenant_id): raise TenantIsInactive()
+        if not await is_tenant_admin_active(user.tenant_id): raise TenantIsInactive()
 
         accessTokenPayload = {
             "sub": user.login,

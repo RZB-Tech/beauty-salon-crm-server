@@ -68,19 +68,20 @@ class SubscriptionPlanAdmin(ModelView, model = SubscriptionPlan):
     can_view_details = True
 
     column_list = [
-        SubscriptionPlan.id, SubscriptionPlan.name, SubscriptionPlan.price,
+        SubscriptionPlan.id, SubscriptionPlan.name, SubscriptionPlan.price, SubscriptionPlan.duration_days,
         SubscriptionPlan.max_branches, SubscriptionPlan.max_users, SubscriptionPlan.max_clients,
         SubscriptionPlan.is_visible,
     ]
     column_details_list = [
         SubscriptionPlan.id, SubscriptionPlan.name, SubscriptionPlan.description,
-        SubscriptionPlan.price, SubscriptionPlan.max_users, SubscriptionPlan.max_clients, SubscriptionPlan.is_visible,
+        SubscriptionPlan.price, SubscriptionPlan.duration_days,
+        SubscriptionPlan.max_users, SubscriptionPlan.max_clients, SubscriptionPlan.is_visible,
     ]
     column_sortable_list = [SubscriptionPlan.id, SubscriptionPlan.name, SubscriptionPlan.price]
     column_searchable_list = [SubscriptionPlan.name]
 
     form_columns = [
-        SubscriptionPlan.name, SubscriptionPlan.description, SubscriptionPlan.price,
+        SubscriptionPlan.name, SubscriptionPlan.description, SubscriptionPlan.price, SubscriptionPlan.duration_days,
         SubscriptionPlan.max_users, SubscriptionPlan.max_clients,
         SubscriptionPlan.is_visible, SubscriptionPlan.archived
     ]

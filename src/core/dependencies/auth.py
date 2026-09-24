@@ -3,7 +3,12 @@ from sqlalchemy import func, select
 
 from src.core.auth.security import decode_token
 from src.core.cache.permission_cache import get_staff_permissions
-from src.core.cache.tenant_cache import get_tenant_active, set_tenant_active
+from src.core.cache.tenant_cache import (
+    get_tenant_active,
+    set_tenant_active,
+    get_tenant_admin_active,
+    set_tenant_admin_active,
+)
 from src.core.config import settings
 from src.core.dependencies.context import set_current_staff_id
 from src.database.session import SessionLocal
@@ -13,6 +18,18 @@ from src.repository.staff.staff_model import Staff
 from src.repository.tenant.tenant_model import Tenant, TenantSubscriptions, TenantSubscriptionStatus
 
 _ACTIVE_SUBSCRIPTION_STATUSES = (TenantSubscriptionStatus.ACTIVE, TenantSubscriptionStatus.TRIAL)
+
+async def is_tenant_admin_active(tenant_id: int) -> bool:
+    cached = await get_tenant_admin_active(tenant_id)
+    if cached is not None:
+        return cached
+
+    async with SessionLocal() as session:
+        result = await session.execute(select(Tenant.active).where(Tenant.id == tenant_id))
+        active = bool(result.scalar_one_or_none())
+
+    await set_tenant_admin_active(tenant_id, active, ttl = settings.REFRESH_TOKEN_EXPIRE_SECONDS)
+    return active
 
 async def is_tenant_active(tenant_id: int) -> bool:
     """
@@ -71,7 +88,7 @@ async def get_current_staff(request: Request) -> dict:
 
     if login is None or id is None or tenant_id is None: raise IncorrectCredentials()
 
-    if not await is_tenant_active(tenant_id):
+    if not await is_tenant_admin_active(tenant_id):
         raise TenantIsInactive()
 
     active = await is_staff_active(id)

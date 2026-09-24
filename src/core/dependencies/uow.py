@@ -24,6 +24,7 @@ from src.repository.tenant.payments.tenantExpenses_repository import TenantExpen
 from src.repository.tenant.tenantIntergrations_repository import TenantIntegrationsRepository
 from src.repository.tenant.payments.tenantPayments_repository import TenantPaymentsRepository
 from src.repository.tenant.tenant_repository import TenantRepository
+from src.repository.tenant.tenantSubscriptions_repository import TenantSubscriptionsRepository
 from src.repository.transaction.transaction_repository import TransactionRepository
 from src.repository.notification.notification_repository import NotificationRepository
 from src.repository.promotion.promotion_repository import PromotionRepository
@@ -65,6 +66,7 @@ class UnitOfWork:
         self.tenantIntegrations = TenantIntegrationsRepository()
         self.tenantPayments = TenantPaymentsRepository()
         self.subscriptionsPlans = SubcriptionPlanRepository()
+        self.tenantSubscriptions = TenantSubscriptionsRepository()
         self.tenantExpenses = TenantExpensesRepository()
         self.tenantAddons = TenantAddonsRepository()
     @property

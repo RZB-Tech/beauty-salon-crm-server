@@ -5,7 +5,10 @@ celery_app = Celery(
     "notifications",
     broker = settings.REDIS_BROKER,
     backend = settings.REDIS_BACKEND,
-    include = ["src.core.celery.tasks.notification_task"],
+    include = [
+        "src.core.celery.tasks.notification_task",
+        "src.core.celery.tasks.tenantSubscription_task",
+    ],
 )
 
 celery_app.conf.update(
@@ -15,6 +18,10 @@ celery_app.conf.update(
         "poll-notifications-every-minute": {
             "task": "poll_and_deliver_notification",
             "schedule": 60.0,  # seconds
+        },
+        "expire-tenant-subscriptions-every-24-hours": {
+            "task": "expire_tenant_subscriptions",
+            "schedule": 86400.0,  # seconds
         },
     },
 )

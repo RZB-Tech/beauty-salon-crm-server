@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from .base import BaseAppException
 
 class TenantNotFound(BaseAppException):
@@ -35,6 +37,18 @@ class TenantOnlyForParent(BaseAppException):
         super().__init__(
             detail = "This action is only available to the parent organization",
             errorCode = self.errorCode
+        )
+
+class TenantInsufficientBalance(BaseAppException):
+    statusCode = 409
+    errorCode = "TENANT_INSUFFICIENT_BALANCE"
+    def __init__(self, tenant_id: int, required: Decimal, has: Decimal):
+        super().__init__(
+            detail = f"Tenant ID {tenant_id} has insufficient balance, required: {required} has: {has}",
+            errorCode = self.errorCode,
+            tenant_id = tenant_id,
+            required = required,
+            has = has
         )
 
 class BranchDoesNotBelongToTenant(BaseAppException):

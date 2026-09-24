@@ -30,6 +30,7 @@ class SubscriptionPlan(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable = True)
 
     price: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2))
+    duration_days: Mapped[int] = mapped_column(Integer)
 
     max_branches: Mapped[int] = mapped_column(Integer, nullable = True, default = 1)
     max_users: Mapped[int] = mapped_column(Integer, nullable = True, default = 3)
@@ -49,7 +50,8 @@ class SubscriptionPlan(Base):
     __table_args__ = (
         CheckConstraint("max_branches >= 1", "subscripition_plan_max_branches"),
         CheckConstraint("max_users >= 1", "subscripition_plan_max_users"),
-        CheckConstraint("max_clients >= 1", "subscripition_plan_max_clients")
+        CheckConstraint("max_clients >= 1", "subscripition_plan_max_clients"),
+        CheckConstraint("duration_days >= 1", "subscripition_plan_duration_days"),
     )
 
     def __str__(self) -> str:

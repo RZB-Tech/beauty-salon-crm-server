@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from src.core.dependencies.auth import get_current_staff
+from src.core.dependencies.permissions import require_active_subscription
 from src.repository.registry import MODEL_REGISTRY, get_filter_schema
 from src.routes.employee.employee_router import router as employeeR
 from src.routes.employee.service_router import router as serviceR
@@ -29,23 +30,57 @@ from src.routes.payment.giftCard_router import router as giftCardR
 from src.schemas.base import FilterFieldSchema, FilterTables
 from src.routes.system.analytics_router import router as analyticsR
 from src.routes.system.subscriptionPlan_router import router as subscriptionPlanR
+from src.routes.payment.click_router import router as clickPaymentR
+from src.routes.payment.clickWebhook_router import router as clickWebhookR
+from src.routes.system.tenantSubscription_router import router as tenantSubscriptionR
 
 open_router = APIRouter(prefix = "/api/v1")
 open_router.include_router(
-    authR, 
-    prefix="/auth", 
+    authR,
+    prefix="/auth",
     tags=["auth"]
 )
 open_router.include_router(
-    subscriptionPlanR, 
-    prefix="/subscription-plans", 
+    subscriptionPlanR,
+    prefix="/subscription-plans",
     tags=["Subscription plans"]
 )
+open_router.include_router(
+    clickWebhookR,
+    prefix = "/payment/click",
+    tags = ["Click webhook"]
+)
+
+
+# Authenticated but deliberately NOT subscription-gated: a tenant with no
+# (or an expired) subscription must still be able to top up their balance
+# and buy one - that's the only way out of the lockout `protected_router`
+# enforces above. Never mount anything else here.
+billing_router = APIRouter(prefix = "/api/v1")
+
+billing_router.dependencies.extend([
+    Depends(get_current_staff)
+])
+
+billing_router.include_router(
+    clickPaymentR,
+    prefix = "/payment/click",
+    tags = ["Click payment"]
+)
+
+billing_router.include_router(
+    tenantSubscriptionR,
+    prefix = "/tenant-subscription",
+    tags = ["Tenant subscription"]
+)
+
+# protected routers require tenant to has active subscriptions  
 
 protected_router = APIRouter(prefix = "/api/v1")
 
 protected_router.dependencies.extend([
-    Depends(get_current_staff)
+    Depends(get_current_staff),
+    Depends(require_active_subscription),
 ])
 
 @protected_router.get(

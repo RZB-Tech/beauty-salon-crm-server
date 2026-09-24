@@ -8,3 +8,4 @@ class TenantPreferencesSchema(BaseModel):
     # currency: str = "UZS"
     enable_telegram_booking: bool = False
     cancel_payment_due: int | None = Field(1, ge = 0) # hours
+    auto_pay_subscription: bool = False

@@ -1,7 +1,7 @@
 from decimal import Decimal
 from sqlalchemy import func, select
 from src.database.base import BaseRepository
-from src.repository.tenant.payments.tenantPayments_model import TenantPayments
+from src.repository.tenant.payments.tenantPayments_model import TenantPayments, TenantPaymentStatus
 
 class TenantPaymentsRepository(BaseRepository[TenantPayments]):
     async def create(self, payment: TenantPayments) -> TenantPayments:
@@ -18,19 +18,24 @@ class TenantPaymentsRepository(BaseRepository[TenantPayments]):
         )
         return list(result.scalars().all())
 
-    async def get_by_gateway_transaction(self, gateway: str, gateway_transaction_id: str) -> TenantPayments | None:
-        result = await self.db.execute(
-            select(TenantPayments).where(
-                TenantPayments.gateway == gateway,
-                TenantPayments.gateway_transaction_id == gateway_transaction_id,
-            )
+    async def get_by_gateway_transaction(
+        self, gateway: str, gateway_transaction_id: str, lock: bool = False
+    ) -> TenantPayments | None:
+        stmt = select(TenantPayments).where(
+            TenantPayments.gateway == gateway,
+            TenantPayments.gateway_transaction_id == gateway_transaction_id,
         )
+        if lock: stmt = stmt.with_for_update()
+        result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
 
     async def get_total_paid(self, tenant_id: int) -> Decimal:
+        """Sum of actually-received money only - PENDING/PROCESSING attempts and
+        CANCELLED ones must never count towards this, or revenue gets overstated."""
         result = await self.db.execute(
             select(func.coalesce(func.sum(TenantPayments.amount), 0)).where(
-                TenantPayments.tenant_id == tenant_id
+                TenantPayments.tenant_id == tenant_id,
+                TenantPayments.status == TenantPaymentStatus.COMPLETED,
             )
         )
         return result.scalar_one()

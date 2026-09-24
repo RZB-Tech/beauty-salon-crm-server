@@ -1,23 +1,19 @@
-from typing import ClassVar, Literal
-
+from typing import ClassVar
 from pydantic import BaseModel, ConfigDict, Field
-
 from src.repository.staff.staff_model import StaffType
 from src.schemas.base import BaseUpdateSchema
 
 
-class TenantPreferencesUpdateSchema(BaseModel):
-    theme: Literal["light", "dark"] | None = None
-    # timezone: str | None = None
-    # currency: str | None = None
+class TenantPreferencesUpdateSchema(BaseUpdateSchema):
     enable_telegram_booking: bool | None = None
     cancel_payment_due: int | None = Field(None, ge = 0) # hours
+    auto_pay_subscription: bool | None = None
 
     model_config = ConfigDict(json_schema_extra = {
         "example": {
-            "theme": "dark",
-            "currency": "UZS",
-            "cancel_payment_due": 24
+            "enable_telegram_booking": False,
+            "cancel_payment_due": 24,
+            "auto_pay_subscription": True
         }
     })
 

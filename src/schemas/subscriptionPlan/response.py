@@ -10,6 +10,7 @@ class SubscriptionPlanResponseSchema(BaseModel):
     name: str
     description: str | None
     price: MoneyResponse
+    duration_days: int
     max_branches: int
     max_users: int
     max_clients: int

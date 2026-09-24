@@ -34,6 +34,15 @@ class Settings(BaseSettings):
     ERROR_ALERTS_BOT_TOKEN: str | None = None
     ERROR_ALERTS_CHAT_ID: str | None = None
 
+    CLICK_SERVICE_ID: int
+    CLICK_MERCHANT_ID: int
+    CLICK_MERCHANT_USER_ID: int
+    CLICK_SECRET_KEY: str
+    CLICK_RETURN_URL: str
+
+    CLICK_API_BASE_URL: str = "https://api.click.uz/v2/merchant"
+    CLICK_CHECKOUT_URL: str = "https://my.click.uz/services/pay"
+
     @property
     def PRIVATE_KEY(self) -> str:
         with open(self.PRIVATE_KEY_PATH, 'r') as f: return f.read()
