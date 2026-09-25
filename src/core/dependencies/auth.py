@@ -54,13 +54,14 @@ async def is_tenant_active(tenant_id: int) -> bool:
     A tenant is active only if it hasn't been manually disabled AND it has a
     subscription that is currently active/trialing and not past its period_end.
 
-    Branches have no subscription of their own: a branch is active if it isn't
-    disabled itself and its parent is active. Nothing is cached under the branch's
-    own key, so clearing the parent's key is enough to update every branch.
+    Every tenant - parent or branch - has its own subscription, so a branch is
+    judged on its own row like any other tenant; the parent's subscription
+    doesn't matter. The one thing inherited is the platform switch: a branch
+    is blocked while its parent is disabled (Tenant.active) in SQLAdmin.
     """
     parent_id = await _get_parent_id(tenant_id)
-    if parent_id is not None:
-        return await is_tenant_admin_active(tenant_id) and await is_tenant_active(parent_id)
+    if parent_id is not None and not await is_tenant_admin_active(parent_id):
+        return False
 
     cached = await get_tenant_active(tenant_id)
     if cached is not None:

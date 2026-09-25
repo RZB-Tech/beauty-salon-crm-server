@@ -91,3 +91,13 @@ class BranchDoesNotBelongToTenant(BaseAppException):
         super().__init__(
             detail = f"Branch ID {branchID} does not belong to the organization ID {parentID}"
         )
+
+class ClickCheckoutAmountInUse(BaseAppException):
+    statusCode = 409
+    errorCode = "CLICK_CHECKOUT_AMOUNT_IN_USE"
+    def __init__(self, amount: Decimal):
+        super().__init__(
+            detail = f"Another organization is paying {amount} via Click right now - choose a slightly different amount",
+            errorCode = self.errorCode,
+            amount = amount
+        )

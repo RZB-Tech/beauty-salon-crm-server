@@ -20,11 +20,13 @@ celery_app.conf.update(
             "task": "poll_and_deliver_notification",
             "schedule": 60.0,  # seconds
         },
-        # A fixed time of day, not an 86400s interval: an interval restarts
-        # counting whenever celery-beat restarts.
-        "expire-tenant-subscriptions-daily": {
+        # Access ends exactly at period_end (see is_tenant_active), so this has
+        # to run often: auto-pay tenants are locked out from period_end until
+        # the next run renews them. The task only selects already-expired rows
+        # and re-checks each under lock, so frequent runs are cheap and safe.
+        "expire-tenant-subscriptions": {
             "task": "expire_tenant_subscriptions",
-            "schedule": crontab(hour = 0, minute = 5),  # 00:05 UTC
+            "schedule": crontab(minute = "*/10"),
         },
     },
 )

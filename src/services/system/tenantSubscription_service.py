@@ -5,20 +5,30 @@ from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.auth_exceptions import AuthTenantContextEmpty
 from src.exceptions.general_exceptions import ObjectIsArchived
-from src.exceptions.subscriptionPlan_exceptions import SubscriptionPlanNotFound
+from src.exceptions.subscriptionPlan_exceptions import AddonProductNotFound, SubscriptionPlanNotFound
 from src.exceptions.tenant_exceptions import (
     TenantInsufficientBalance,
     TenantNotFound,
     TenantSubscriptionAlreadyActive,
 )
 from src.repository.tenant.payments.tenantExpeses_model import TenantExpenseCategory, TenantExpenses
+from src.repository.tenant.subscription.subscriptionPlan_model import TenantAddon
 from src.repository.tenant.tenant_model import TenantSubscriptions, TenantSubscriptionStatus
+from src.schemas.tenantSubscription.addon import (
+    AddonProductResponseSchema,
+    AddonPurchaseResponseSchema,
+    AddonPurchaseSchema,
+    TenantAddonResponseSchema,
+)
 from src.schemas.tenantSubscription.purchase import TenantSubscriptionPurchaseSchema
 from src.schemas.tenantSubscription.response import (
     TenantBillingStateSchema,
+    TenantLimitsSchema,
+    TenantLimitUsageSchema,
     TenantSubscriptionInfoSchema,
     TenantSubscriptionResponseSchema,
 )
+from src.services.system.tenantLimits_service import get_limits_usage
 
 
 class TenantSubscriptionService:
@@ -43,6 +53,26 @@ class TenantSubscriptionService:
             balance = tenant.balance,
             has_active_subscription = has_active,
             subscription = TenantSubscriptionInfoSchema.model_validate(subscription) if subscription else None,
+        )
+
+    async def get_limits(self) -> TenantLimitsSchema:
+        tenantID = get_current_tenant_id()
+        if tenantID is None: raise AuthTenantContextEmpty()
+
+        plan_id, usages = await get_limits_usage(self.uow, tenantID)
+        return TenantLimitsSchema(
+            plan_id = plan_id,
+            limits = [
+                TenantLimitUsageSchema(
+                    limit_key = u.limit.value,
+                    plan = u.plan,
+                    addons = u.addons,
+                    allowed = u.allowed,
+                    used = u.used,
+                    remaining = None if u.allowed is None else max(0, u.allowed - u.used),
+                )
+                for u in usages
+            ],
         )
 
     async def purchase(self, data: TenantSubscriptionPurchaseSchema) -> TenantSubscriptionResponseSchema:
@@ -140,5 +170,71 @@ class TenantSubscriptionService:
             amount_paid = subscription.amount_paid,
             started_at = subscription.started_at,
             period_end = subscription.period_end,
+            tenant_balance = tenant.balance,
+        )
+
+    async def get_addon_products(self) -> list[AddonProductResponseSchema]:
+        products = await self.uow.addonProducts.get_all_available()
+        return [AddonProductResponseSchema.model_validate(p) for p in products]
+
+    async def get_addons(self) -> list[TenantAddonResponseSchema]:
+        tenantID = get_current_tenant_id()
+        if tenantID is None: raise AuthTenantContextEmpty()
+
+        addons = await self.uow.tenantAddons.get_by_tenant(tenantID)
+        return [TenantAddonResponseSchema.model_validate(a) for a in addons]
+
+    async def purchase_addon(self, data: AddonPurchaseSchema) -> AddonPurchaseResponseSchema:
+        """
+        Spends the product's price from the balance, records the expense and
+        grants the addon - all in one transaction. The addon belongs to the
+        buying tenant only; a parent's addons don't reach its branches.
+        Buying the same product again is allowed: addons stack.
+        """
+        tenantID = get_current_tenant_id()
+        if tenantID is None: raise AuthTenantContextEmpty()
+
+        product = await self.uow.addonProducts.get(data.product_id)
+        if product is None or product.archived: raise AddonProductNotFound(data.product_id)
+
+        # Same reason as purchase_for_tenant: check and deduct against a locked balance.
+        tenant = await self.uow.tenants.get(id = tenantID, lock = True)
+        if tenant is None: raise TenantNotFound(tenantID)
+
+        if tenant.balance < product.price:
+            raise TenantInsufficientBalance(tenantID, product.price, tenant.balance)
+
+        tenant.balance = tenant.balance - product.price
+
+        expense = await self.uow.tenantExpenses.create(TenantExpenses(
+            tenant_id = tenant.id,
+            tenant_snapshot = {"id": tenant.id, "name": tenant.name, "TIN": tenant.TIN},
+            amount = product.price,
+            category = TenantExpenseCategory.FEATURE_PURCHASE,
+            description = f"Addon: {product.name}",
+            expense_metadata = {
+                "addon_product_id": product.id,
+                "limit_key": product.limit_key,
+                "amount": product.amount,
+            },
+        ))
+
+        # limit_key/amount are copied, not read through product_id, so a later
+        # edit of the product never changes what was bought here. Never expires.
+        addon = await self.uow.tenantAddons.create(TenantAddon(
+            tenant_id = tenant.id,
+            limit_key = product.limit_key,
+            amount = product.amount,
+            product_id = product.id,
+            expense_id = expense.id,
+            expires_at = None,
+        ))
+
+        # Commit before answering, like purchase(): FastAPI's own commit runs
+        # only after the response is sent.
+        await self.uow.db.commit()
+
+        return AddonPurchaseResponseSchema(
+            addon = TenantAddonResponseSchema.model_validate(addon),
             tenant_balance = tenant.balance,
         )

@@ -30,3 +30,15 @@ class TenantBillingStateSchema(BaseModel):
     balance: MoneyResponse
     has_active_subscription: bool
     subscription: TenantSubscriptionInfoSchema | None
+
+class TenantLimitUsageSchema(BaseModel):
+    limit_key: str
+    plan: int | None
+    addons: int
+    allowed: int | None
+    used: int
+    remaining: int | None
+
+class TenantLimitsSchema(BaseModel):
+    plan_id: int | None
+    limits: list[TenantLimitUsageSchema]

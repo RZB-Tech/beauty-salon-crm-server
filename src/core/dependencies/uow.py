@@ -18,6 +18,7 @@ from src.repository.staff.staff_repository import StaffRepository
 from src.repository.payroll.payroll_repository import PayrollRepository
 from src.repository.payroll.payout_repository import PayoutRepository
 from src.repository.receipt.receipt_repository import ReceiptRepository
+from src.repository.tenant.subscription.addonProduct_repository import AddonProductRepository
 from src.repository.tenant.subscription.subscriptionPlan_repository import SubcriptionPlanRepository
 from src.repository.tenant.tenantAddons_repository import TenantAddonsRepository
 from src.repository.tenant.payments.tenantExpenses_repository import TenantExpensesRepository
@@ -69,6 +70,7 @@ class UnitOfWork:
         self.tenantSubscriptions = TenantSubscriptionsRepository()
         self.tenantExpenses = TenantExpensesRepository()
         self.tenantAddons = TenantAddonsRepository()
+        self.addonProducts = AddonProductRepository()
     @property
     def db(self):
         return get_repository_db()

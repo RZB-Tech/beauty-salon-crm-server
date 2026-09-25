@@ -49,11 +49,9 @@ class TenantBranchesService:
         tenant = await get_current_tenant_or_raise(self.uow)
         creator_actor_id = get_current_actor_id()
 
-        # A new branch also gets its own admin user, so it needs a slot of each.
-        # The limit lock lives in the request's transaction, which outlasts the
-        # separate provisioning session below, so a concurrent request can only
-        # count after this branch has been committed.
-        await ensure_tenant_capacity(self.uow, tenant.id, {TenantLimit.BRANCHES: 1, TenantLimit.USERS: 1})
+        # No limit check: branches are unlimited, and the new branch's first
+        # admin belongs to the branch, which has its own (not yet bought)
+        # subscription. That admin is how the branch logs in to pay for one.
 
         # provision_tenant writes rows tagged with the new branch's tenant_id, which the
         # request's tenant-scoped session (self.uow.db) would reject as cross-tenant data
@@ -173,7 +171,11 @@ class TenantBranchesService:
         if tenant is None: raise TenantNotFound(data.branch_id)
         if tenant.parent_id != parentTenant.id: raise BranchDoesNotBelongToTenant(parentTenant.id, data.branch_id)
 
-        await ensure_tenant_capacity(self.uow, parentTenant.id, {TenantLimit.USERS: 1})
+        # The admin is the branch's user, so it counts against the branch's own
+        # subscription, not the parent's. The limit lock lives in the request's
+        # transaction, which outlasts the separate session below, so a concurrent
+        # request can only count after this admin has been committed.
+        await ensure_tenant_capacity(self.uow, tenant.id, {TenantLimit.USERS: 1})
 
         async with SessionLocal() as session:
             with cleared_actor_context():

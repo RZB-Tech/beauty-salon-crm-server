@@ -11,7 +11,7 @@ from src.repository.material.material_model import Material
 from src.repository.payroll.payroll_model import Payroll, Payout
 from src.repository.receipt.receipt_model import Receipt
 from src.repository.tenant.tenant_model import Tenant, TenantSubscriptions, TenantIntegration
-from src.repository.tenant.subscription.subscriptionPlan_model import TenantAddon, SubscriptionPlan
+from src.repository.tenant.subscription.subscriptionPlan_model import AddonProduct, TenantAddon, SubscriptionPlan
 from src.repository.tenant.payments.tenantExpeses_model import TenantExpenses
 from src.repository.tenant.payments.tenantPayments_model import TenantPayments
 from src.repository.platform.platformUser_model import PlatformUser

@@ -21,7 +21,7 @@ class SubcriptionPlanRepository(BaseRepository[SubscriptionPlan]):
     async def get_all(self) -> list[SubscriptionPlan]:
         stmt = (
             select(SubscriptionPlan)
-            .where(SubscriptionPlan.is_visible.is_(True))
+            .where(SubscriptionPlan.is_visible.is_(True), SubscriptionPlan.archived.is_(False))
             .order_by(SubscriptionPlan.price.asc())
             .execution_options(skip_tenant_filter = True)
         )

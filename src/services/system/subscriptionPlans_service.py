@@ -8,9 +8,9 @@ class SubscriptionPlanService:
 
     async def get(self, id: int) -> SubscriptionPlan:
         plan = await self.uow.subscriptionsPlans.get(id)
-        # Hidden plans are never listed publicly, same as get_all - answer
-        # "not found" so they can't be discovered by id either.
-        if plan is None or not plan.is_visible: raise SubscriptionPlanNotFound(id)
+        # Hidden and archived plans are never listed publicly, same as get_all -
+        # answer "not found" so they can't be discovered by id either.
+        if plan is None or not plan.is_visible or plan.archived: raise SubscriptionPlanNotFound(id)
         return plan
 
     async def get_all(self) -> list[SubscriptionPlan]:

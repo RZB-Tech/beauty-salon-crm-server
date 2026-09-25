@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from src.core.dependencies.auth import get_current_staff
-from src.core.dependencies.permissions import require_active_subscription, require_parent_tenant
+from src.core.dependencies.permissions import require_active_subscription
 from src.repository.registry import MODEL_REGISTRY, get_filter_schema
 from src.routes.employee.employee_router import router as employeeR
 from src.routes.employee.service_router import router as serviceR
@@ -56,13 +56,12 @@ open_router.include_router(
 # (or an expired) subscription must still be able to top up their balance
 # and buy one - that's the only way out of the lockout `protected_router`
 # enforces above. Never mount anything else here.
-# Parent tenants only: branches share their parent's subscription and can't
-# pay, buy subscriptions or addons themselves.
+# Open to every tenant, parent or branch: each has its own balance,
+# subscription and addons, and pays for them itself.
 billing_router = APIRouter(prefix = "/api/v1")
 
 billing_router.dependencies.extend([
     Depends(get_current_staff),
-    Depends(require_parent_tenant),
 ])
 
 billing_router.include_router(

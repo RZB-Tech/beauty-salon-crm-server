@@ -3,6 +3,8 @@ from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlencode
 
+from sqlalchemy import func, select
+
 from src.core.config import settings
 from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
@@ -22,7 +24,7 @@ from src.core.utils.click import (
     make_prepare_sign,
 )
 from src.exceptions.auth_exceptions import AuthTenantContextEmpty
-from src.exceptions.tenant_exceptions import TenantNotFound, TenantPaymentNotFound
+from src.exceptions.tenant_exceptions import ClickCheckoutAmountInUse, TenantNotFound, TenantPaymentNotFound
 from src.repository.tenant.payments.tenantPayments_model import TenantPayments, TenantPaymentStatus
 from src.schemas.clickPayment.create import ClickCheckoutCreateSchema
 from src.schemas.clickPayment.response import ClickCheckoutResponseSchema, ClickPaymentStatusSchema
@@ -32,6 +34,11 @@ GATEWAY = "Click"
 # How far back a Prepare that arrives without merchant_trans_id may be matched
 # to a pending payment by amount (see ClickPaymentService._match_by_amount).
 UNLABELED_PREPARE_WINDOW = timedelta(minutes = 30)
+
+# Serializes checkout creation so two organizations can't both open a Click
+# checkout for the same amount at the same moment. Single-bigint advisory key:
+# a separate key space from the (int, int) locks in tenantLimits_service.
+CHECKOUT_LOCK_KEY = 7_345_001
 
 logger = logging.getLogger(__name__)
 
@@ -58,6 +65,22 @@ class ClickPaymentService:
 
         tenant = await self.uow.tenants.get(id = tenantID)
         if tenant is None: raise TenantNotFound(tenantID)
+
+        # Click sends Prepare without merchant_trans_id, so it's matched to a
+        # checkout by amount (see _match_by_amount) - keep every pending amount
+        # within the matching window owned by a single organization. Held until
+        # this transaction commits.
+        await self.uow.db.execute(select(func.pg_advisory_xact_lock(CHECKOUT_LOCK_KEY)))
+        since = datetime.now(timezone.utc) - UNLABELED_PREPARE_WINDOW
+        pending = await self.uow.tenantPayments.get_recent_pending_by_amount(GATEWAY, data.amount, since)
+
+        if any(p.tenant_id != tenant.id for p in pending):
+            raise ClickCheckoutAmountInUse(data.amount)
+
+        # The same organization retrying: retire its unpaid attempts so only the
+        # new checkout stays pending, and its matching window starts now.
+        for p in pending:
+            p.status = TenantPaymentStatus.CANCELLED
 
         payment = await self.uow.tenantPayments.create(TenantPayments(
             tenant_id = tenant.id,
@@ -172,11 +195,16 @@ class ClickPaymentService:
         """
         Click sometimes sends Prepare with an empty merchant_trans_id even though
         the pay link carried transaction_param. The signature has already been
-        verified, so the request is genuinely from Click - fall back to the only
-        pending Click payment with this exact amount from the last
-        UNLABELED_PREPARE_WINDOW. With none or several candidates there's no
-        telling whose payment it is, so give up rather than risk crediting the
-        wrong tenant.
+        verified, so the request is genuinely from Click - fall back to the
+        pending Click payments with this exact amount from the last
+        UNLABELED_PREPARE_WINDOW. Only if they all belong to one organization
+        (create_checkout keeps it that way) is the newest one used; otherwise
+        there's no telling whose payment it is, so give up.
+
+        Not airtight: a payment that didn't start from this checkout (an old
+        link paid again, or the Click app) is indistinguishable from it and
+        would be credited to its organization. Only a merchant_trans_id from
+        Click fixes that.
         """
         try:
             expected = Decimal(amount)
@@ -184,18 +212,24 @@ class ClickPaymentService:
             return None
 
         since = datetime.now(timezone.utc) - UNLABELED_PREPARE_WINDOW
-        payment_id = await self.uow.tenantPayments.get_sole_pending_id_by_amount(GATEWAY, expected, since)
+        candidates = await self.uow.tenantPayments.get_recent_pending_by_amount(GATEWAY, expected, since)
+        owners = {p.tenant_id for p in candidates}
 
-        if payment_id is None:
+        # Several candidates are fine only if they all belong to one organization -
+        # then whichever is picked, the money goes to the right tenant.
+        if not candidates or len(owners) != 1 or None in owners:
             logger.warning(
-                "Click prepare without merchant_trans_id: no single pending payment of %s in the last %s "
-                "(click_trans_id=%s)", amount, UNLABELED_PREPARE_WINDOW, click_trans_id,
+                "Click prepare without merchant_trans_id: can't attribute %s - pending payments in the last %s: %s "
+                "(click_trans_id=%s)",
+                amount, UNLABELED_PREPARE_WINDOW, [(p.id, p.tenant_id) for p in candidates], click_trans_id,
             )
-        else:
-            logger.warning(
-                "Click prepare without merchant_trans_id: matched pending payment %s by amount %s "
-                "(click_trans_id=%s)", payment_id, amount, click_trans_id,
-            )
+            return None
+
+        payment_id = candidates[0].id
+        logger.warning(
+            "Click prepare without merchant_trans_id: matched pending payment %s (tenant %s) by amount %s "
+            "(click_trans_id=%s)", payment_id, candidates[0].tenant_id, amount, click_trans_id,
+        )
         return payment_id
 
     async def complete(

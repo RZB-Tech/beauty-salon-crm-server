@@ -11,9 +11,9 @@ class SubscriptionPlanResponseSchema(BaseModel):
     description: str | None
     price: MoneyResponse
     duration_days: int
-    max_branches: int
-    max_users: int
-    max_clients: int
+    # None = unlimited
+    max_users: int | None
+    max_clients: int | None
     is_visible: bool
 
     created_at: datetime
