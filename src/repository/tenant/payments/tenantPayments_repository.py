@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from sqlalchemy import func, select
 from src.database.base import BaseRepository
@@ -28,6 +29,25 @@ class TenantPaymentsRepository(BaseRepository[TenantPayments]):
         if lock: stmt = stmt.with_for_update().execution_options(populate_existing = True)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
+
+    async def get_sole_pending_id_by_amount(self, gateway: str, amount: Decimal, since: datetime) -> int | None:
+        """
+        Id of the only PENDING payment for `gateway` with exactly `amount`,
+        created after `since` - None if there are none or several, since then
+        there's no telling whose payment it is.
+        """
+        result = await self.db.execute(
+            select(TenantPayments.id)
+            .where(
+                TenantPayments.gateway == gateway,
+                TenantPayments.status == TenantPaymentStatus.PENDING,
+                TenantPayments.amount == amount,
+                TenantPayments.created_at > since,
+            )
+            .limit(2)
+        )
+        ids = result.scalars().all()
+        return ids[0] if len(ids) == 1 else None
 
     async def get_total_paid(self, tenant_id: int) -> Decimal:
         """Sum of actually-received money only - PENDING/PROCESSING attempts and

@@ -1,3 +1,5 @@
+import logging
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from urllib.parse import urlencode
 
@@ -26,6 +28,12 @@ from src.schemas.clickPayment.create import ClickCheckoutCreateSchema
 from src.schemas.clickPayment.response import ClickCheckoutResponseSchema, ClickPaymentStatusSchema
 
 GATEWAY = "Click"
+
+# How far back a Prepare that arrives without merchant_trans_id may be matched
+# to a pending payment by amount (see ClickPaymentService._match_by_amount).
+UNLABELED_PREPARE_WINDOW = timedelta(minutes = 30)
+
+logger = logging.getLogger(__name__)
 
 def _safe_int(value: str) -> int | None:
     try:
@@ -59,13 +67,15 @@ class ClickPaymentService:
             gateway = GATEWAY,
         ))
 
-        checkout_url = settings.CLICK_CHECKOUT_URL + "?" + urlencode({
+        params = {
             "service_id": settings.CLICK_SERVICE_ID,
             "merchant_id": settings.CLICK_MERCHANT_ID,
             "amount": str(payment.amount),
             "transaction_param": payment.id,
-            "return_url": settings.CLICK_RETURN_URL,
-        })
+        }
+        if settings.CLICK_RETURN_URL:
+            params["return_url"] = settings.CLICK_RETURN_URL
+        checkout_url = settings.CLICK_CHECKOUT_URL + "?" + urlencode(params)
 
         return ClickCheckoutResponseSchema(
             transaction_id = payment.id,
@@ -124,6 +134,8 @@ class ClickPaymentService:
             return resp(0, CLICK_ERROR_BAD_REQUEST, "Invalid click_trans_id")
 
         payment_id = _safe_int(merchant_trans_id)
+        if payment_id is None and not merchant_trans_id.strip():
+            payment_id = await self._match_by_amount(amount, click_trans_id)
         if payment_id is None:
             return resp(0, CLICK_ERROR_ORDER_NOT_FOUND, "Order not found")
 
@@ -155,6 +167,36 @@ class ClickPaymentService:
         await self.uow.db.commit()
 
         return resp(payment.id, CLICK_ERROR_SUCCESS, "Success")
+
+    async def _match_by_amount(self, amount: str, click_trans_id: str) -> int | None:
+        """
+        Click sometimes sends Prepare with an empty merchant_trans_id even though
+        the pay link carried transaction_param. The signature has already been
+        verified, so the request is genuinely from Click - fall back to the only
+        pending Click payment with this exact amount from the last
+        UNLABELED_PREPARE_WINDOW. With none or several candidates there's no
+        telling whose payment it is, so give up rather than risk crediting the
+        wrong tenant.
+        """
+        try:
+            expected = Decimal(amount)
+        except InvalidOperation:
+            return None
+
+        since = datetime.now(timezone.utc) - UNLABELED_PREPARE_WINDOW
+        payment_id = await self.uow.tenantPayments.get_sole_pending_id_by_amount(GATEWAY, expected, since)
+
+        if payment_id is None:
+            logger.warning(
+                "Click prepare without merchant_trans_id: no single pending payment of %s in the last %s "
+                "(click_trans_id=%s)", amount, UNLABELED_PREPARE_WINDOW, click_trans_id,
+            )
+        else:
+            logger.warning(
+                "Click prepare without merchant_trans_id: matched pending payment %s by amount %s "
+                "(click_trans_id=%s)", payment_id, amount, click_trans_id,
+            )
+        return payment_id
 
     async def complete(
         self,
