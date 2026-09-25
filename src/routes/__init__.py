@@ -14,6 +14,8 @@ from src.routes.appointment.appointment_router import router as appointmentR
 from src.routes.payment.payroll_router import router as PayrollR
 from src.routes.appointment.appointmentRecords_router import router as appointmentRecordsR
 from src.routes.appointment.appointmentServices_router import router as appointmentServicesR
+from src.routes.appointment.appointmentRequest_router import router as appointmentRequestR
+from src.routes.miniApp.miniApp_router import router as miniAppR
 from src.routes.system.auditLogs_router import router as auditLogsR
 from src.routes.payment.receipt_router import router as ReceiptR
 from src.routes.payment.transaction_router import router as TransactionR
@@ -78,6 +80,14 @@ billing_router.include_router(
 
 # protected routers require tenant to has active subscriptions  
 
+# Telegram mini app: authenticated per endpoint by Telegram initData, not staff cookies
+miniApp_router = APIRouter(prefix = "/api/v1")
+miniApp_router.include_router(
+    miniAppR,
+    prefix = "/mini-app",
+    tags = ["Mini app (Telegram)"]
+)
+
 protected_router = APIRouter(prefix = "/api/v1")
 
 protected_router.dependencies.extend([
@@ -118,6 +128,12 @@ protected_router.include_router(
     appointmentServicesR, 
     prefix="/appointments-services", 
     tags=["appointments-services"]
+)
+
+protected_router.include_router(
+    appointmentRequestR,
+    prefix="/appointment-requests",
+    tags=["appointment-requests"]
 )
 
 protected_router.include_router(

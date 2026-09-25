@@ -24,6 +24,10 @@ class PermissionCode(IntEnum):
     APPOINTMENT_SERVICES_UPDATE = 2022
     APPOINTMENT_SERVICES_DELETE = 2023
     APPOINTMENT_SERVICES_MANAGE = 2999
+    APPOINTMENT_REQUESTS_READ = 2031
+    APPOINTMENT_REQUESTS_CONFIRM = 2032
+    APPOINTMENT_REQUESTS_DECLINE = 2033
+    APPOINTMENT_REQUESTS_MANAGE = 2039
 
     CLIENT_CREATE = 3001
     CLIENT_UPDATE = 3002
@@ -156,6 +160,10 @@ PERMISSIONS: dict[int, dict[str, str]] = {
     PermissionCode.APPOINTMENT_SERVICES_UPDATE: {"resource": "service in record", "name": "Update service in record"},
     PermissionCode.APPOINTMENT_SERVICES_DELETE: {"resource": "service in record", "name": "Remove service from record"},
     PermissionCode.APPOINTMENT_SERVICES_MANAGE: {"resource": "service in record", "name": "Full access to services in record"},
+    PermissionCode.APPOINTMENT_REQUESTS_READ: {"resource": "appointment request", "name": "View appointment requests (Telegram)"},
+    PermissionCode.APPOINTMENT_REQUESTS_CONFIRM: {"resource": "appointment request", "name": "Confirm appointment request"},
+    PermissionCode.APPOINTMENT_REQUESTS_DECLINE: {"resource": "appointment request", "name": "Decline appointment request"},
+    PermissionCode.APPOINTMENT_REQUESTS_MANAGE: {"resource": "appointment request", "name": "Full access to appointment requests"},
 
     PermissionCode.CLIENT_CREATE: {"resource": "client", "name": "Create client"},
     PermissionCode.CLIENT_UPDATE: {"resource": "client", "name": "Update client"},
@@ -262,6 +270,13 @@ def compute_effective_permissions(staff: "Staff") -> list[int]:
     for role in staff.roles:
         effective.update(role.permissions or [])
     return sorted(effective)
+
+def has_permission(permissions: set[int], code: int) -> bool:
+    """Direct grant, or the *_MANAGE code of the code's own domain (see PERMISSION_DOMAIN_MANAGE)."""
+    if code in permissions:
+        return True
+    manage_code = PERMISSION_DOMAIN_MANAGE.get(PermissionCode(code))
+    return manage_code is not None and manage_code in permissions
 
 def _build_domain_manage_map() -> dict[PermissionCode, PermissionCode]:
     """Maps each non-MANAGE code to the *_MANAGE code of its domain, matched by longest

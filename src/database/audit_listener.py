@@ -1,6 +1,6 @@
 from sqlalchemy import event, inspect
 from sqlalchemy.orm import Session, RelationshipProperty
-from src.core.dependencies.context import get_current_actor_id, get_current_staff_id
+from src.core.dependencies.context import get_current_actor_id
 from src.database.base import BaseFields
 from src.repository.audit.auditLog_model import AuditLogs
 from enum import Enum
@@ -17,7 +17,6 @@ def register_audit_listener():
     @event.listens_for(Session, "before_flush")
     def receive_before_flush(session, flush_context, instances):
         actor_id = get_current_actor_id()
-        staff_id = get_current_staff_id()
 
         for obj in session.new:
             if isinstance(obj, BaseFields) and obj.created_by_actor_id is None:
@@ -42,7 +41,7 @@ def register_audit_listener():
                         field_name=attr.key,
                         old_value=_unwrap(history.deleted[0]) if history.deleted else None,
                         new_value=_unwrap(history.added[0]) if history.added else None,
-                        changed_by=staff_id,
+                        changed_by=actor_id,
                     ))
 
         for obj in session.deleted:
@@ -55,7 +54,7 @@ def register_audit_listener():
                 field_name=None,
                 old_value=None,
                 new_value=None,
-                changed_by=staff_id,
+                changed_by=actor_id,
             ))
         
         for audit in audits:

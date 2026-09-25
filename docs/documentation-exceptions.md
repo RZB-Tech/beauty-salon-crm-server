@@ -27,6 +27,7 @@
 - [Service (услуги)](#service-услуги)
 - [Material (материалы/склад)](#material-материалы-склад)
 - [Appointment (запись/визит)](#appointment-запись-визит)
+- [AppointmentRequest (заявки на запись из Telegram)](#appointmentrequest-заявки-на-запись-из-telegram)
 - [Receipt (чек/оплата)](#receipt-чек-оплата)
 - [Transaction (транзакция)](#transaction-транзакция)
 - [Payroll (расчёт зарплаты)](#payroll-расчёт-зарплаты)
@@ -56,6 +57,8 @@
 | `ADMIN_PREVILIGES_REQUIRED`    | 403        | Действие доступно только пользователям с типом "администратор".                                                                          |
 | `NOT_ENOUGH_PERMISSIONS`       | 403        | У пользователя недостаточно прав для выполнения действия. В метаданных передаётся `required_permissions` — какие права требовались.      |
 | `PERMISSION_NOT_FOUND`         | 404        | Указанное разрешение (permission) с кодом `code` не найдено в системе.                                                                   |
+| `TELEGRAM_AUTH_INVALID`        | 401        | Мини-приложение: заголовок `Authorization: tma <initData>` отсутствует, подпись не совпадает или `initData` устарел. Также — невалидная подпись `response` в `POST /mini-app/me/contact`. |
+| `TELEGRAM_MINIAPP_NOT_CONFIGURED` | 503     | На сервере не задан `TELEGRAM_MINIAPP_BOT_TOKEN`.                                                                                        |
 
 ---
 
@@ -229,6 +232,30 @@ Staff — учётная запись сотрудника с доступом �
 | `APPOINTMENT_RECORD_NOT_FOUND`                           | 404        | Запись-строка визита (конкретная услуга/позиция внутри записи) не найдена.                     |
 | `APPOINTMENT_SERVICE_NOT_FOUND`                          | 404        | Услуга, привязанная к строке записи (record), не найдена.                                      |
 | `APPOINTMENT_SERVICE_HAS_TO_CONTAIN_SERVICE_OR_MATERIAL` | 400        | Строка записи должна содержать либо услугу, либо материал — оба поля пустые.                   |
+
+## AppointmentRequest (заявки на запись из Telegram)
+
+Файл: `src/exceptions/appointmentRequest_exceptions.py`
+
+| errorCode                                  | statusCode | Смысл / когда возникает                                                                                          |
+| ------------------------------------------ | ---------- | ---------------------------------------------------------------------------------------------------------------- |
+| `APPOINTMENT_REQUEST_NOT_FOUND`            | 404        | Заявка не найдена (в мини-приложении — также чужая заявка).                                                      |
+| `APPOINTMENT_REQUEST_NOT_PENDING`          | 409        | Подтвердить/отклонить можно только заявку в статусе `pending`. В метаданных — текущий `status`.                  |
+| `APPOINTMENT_REQUEST_EXPIRED`              | 409        | Истекло время на подтверждение (`expires_at`) — заявка будет отменена автоматически.                             |
+| `APPOINTMENT_REQUEST_SERVICE_DELETED`      | 409        | Услуга заявки удалена — подтвердить нельзя.                                                                      |
+| `APPOINTMENT_REQUEST_CANNOT_BE_CANCELLED`  | 409        | Клиент может отменить только заявку в статусе `pending` или `confirmed`.                                         |
+| `APPOINTMENT_IS_FINISHED`                  | 409        | Посещение по подтвержденной заявке уже завершено — отменить нельзя.                                              |
+| `TOO_MANY_PENDING_APPOINTMENT_REQUESTS`    | 429        | У клиента уже `limit` ожидающих заявок в этой организации (`MINIAPP_MAX_PENDING_REQUESTS_PER_TENANT`).           |
+| `CLIENT_APPOINTMENT_REQUEST_TIME_CONFLICT` | 409        | У клиента уже есть активная заявка/запись на это время (в любой организации).                                    |
+| `BOOKING_SLOT_UNAVAILABLE`                 | 409        | На это время нет свободного сотрудника, оказывающего услугу.                                                     |
+| `BOOKING_TIME_IN_PAST`                     | 400        | Запрошенное время уже прошло.                                                                                    |
+| `SERVICE_NOT_BOOKABLE`                     | 409        | У услуги не задана длительность (`estimated_time`) — онлайн-запись невозможна.                                   |
+| `TENANT_BOOKING_UNAVAILABLE`               | 404        | Организация не найдена, неактивна или выключила запись через Telegram (`enable_telegram_booking`).               |
+| `PROFILE_INCOMPLETE`                       | 409        | Профиль клиента не заполнен; в метаданных `missing` — список полей (`firstname`, `sex`, `contact_phone`).        |
+| `TELEGRAM_CONTACT_NOT_OWNED`               | 403        | Переданный контакт принадлежит другому пользователю Telegram.                                                    |
+| `CONTACT_PHONE_ALREADY_USED`               | 409        | Номер уже привязан к другому аккаунту Telegram.                                                                  |
+| `CLIENT_LINKED_TO_ANOTHER_TELEGRAM_CLIENT` | 409        | При подтверждении выбран `client_id`, уже привязанный к другому Telegram-клиенту.                                |
+| `TELEGRAM_CLIENT_ALREADY_LINKED`           | 409        | Telegram-клиент уже привязан к другому клиенту организации (`client_id` в метаданных).                           |
 
 ## Receipt (чек/оплата)
 

@@ -66,6 +66,7 @@ class BaseUpdateSchema(BaseModel):
     
 class FilterTables(Enum):
     appointments = "appointments"
+    appointment_requests = "appointment_requests"
     clients = "clients"
     employees = "employees"
     employee_absences = "employee_absences"

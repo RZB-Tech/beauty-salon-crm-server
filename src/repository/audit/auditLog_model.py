@@ -17,6 +17,7 @@ class AuditLogs(Base):
     field_name: Mapped[str | None] = mapped_column(String, nullable = True)         
     old_value: Mapped[str | None] = mapped_column(String, nullable=True)          
     new_value: Mapped[str | None] = mapped_column(String, nullable=True)    
+    # Actor (staff, telegram, ...) - not staff id, so changes made via the Telegram mini app are attributed too
     changed_by: Mapped[int] = mapped_column(Integer)
     changed_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now())
 
@@ -24,8 +25,8 @@ class AuditLogs(Base):
         Index("idx_audit_logs_tenant_date", "tenant_id", "changed_at"),
         ForeignKeyConstraint(
             ["changed_by", "tenant_id"],
-            ["staffs.id", "staffs.tenant_id"],
+            ["actors.id", "actors.tenant_id"],
             ondelete = "CASCADE",
-            name = "fk_audit_logs_staff"
+            name = "fk_audit_logs_actor"
         )
     )

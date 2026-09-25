@@ -59,7 +59,7 @@ src/schemas/<domain>/{create,update,response}.py  Pydantic request/response sche
 src/exceptions/<domain>_exceptions.py      BaseAppException subclasses for this domain
 ```
 
-`src/routes/__init__.py` assembles every router into two top-level routers mounted in `src/app.py`: `open_router` (just `/auth/*`) and `protected_router` (everything else, gated by `Depends(get_current_staff)` at the router level).
+`src/routes/__init__.py` assembles every router into three top-level routers mounted in `src/app.py`: `open_router` (just `/auth/*`), `miniApp_router` (`/mini-app/*`, see Telegram mini app below) and `protected_router` (everything else, gated by `Depends(get_current_staff)` at the router level).
 
 ### Unit of Work / repositories
 
@@ -96,11 +96,17 @@ Parent-only report data (`GET /report`, `/report/{id}`) is aggregate-only (`GROU
 - `is_tenant_admin_active` (the tenant's own `Tenant.active` flag) and `has_active_subscription` (the tenant's own subscription) are cache-fronted too, so neither hits Postgres on every request. `get_current_staff` raises `TenantIsInactive` for a disabled tenant; `require_active_subscription` raises `TenantSubscriptionInactive` for one without an active subscription. Branches are independent: a parent's flag or subscription never affects them.
 - `require_parent_tenant` (same file) is orthogonal to `require_permission` — it checks tenant hierarchy (`Tenant.parent_id is None`), not staff permissions, so `StaffType.ADMIN`'s bypass above doesn't accidentally grant a branch's own admin access to parent-only routes. See Tenant branches below.
 
+### Telegram mini app (client-facing booking)
+
+Clients of *our* Telegram mini app (not tenants' own bots) are platform-level `GlobalClient`s (`global_clients`, plain `Base`, no `tenant_id`) that request appointments at any tenant. `/mini-app/*` routes authenticate every request with `Authorization: tma <initData>` validated against `TELEGRAM_MINIAPP_BOT_TOKEN` (`src/core/auth/telegram.py`, `src/core/dependencies/miniApp.py`) — no staff JWT, so no tenant/actor context is set by auth. `MiniAppService` therefore wraps every tenant-scoped read/write in `tenant_context(tenant_id, actor_id)` (`src/core/dependencies/context.py`) acting as that tenant's `ActorType.TELEGRAM` actor (created lazily); flush inside the block, since the tenant filter and audit listener read the context at flush time. Cross-tenant "my requests" reads use `skip_tenant_filter` and are always scoped by `global_client_id`.
+
+A client only creates an `AppointmentRequest` (tenant-scoped); staff confirm it via `/appointment-requests/confirm`, which calls the regular `AppointmentService.create(..., created_via=TELEGRAM)` and links/creates the tenant's `Client` via `Client.global_client_id`. Pending requests past `expires_at` are cancelled by the `cancel_past_due_appointment_requests` Celery beat task. Full rules: `docs-business-logic.md`.
+
 ### Auditing
 
 `BaseFields` (base class for nearly every tenant-scoped model) carries `created_at`/`updated_at`/`archived`/`created_by_actor_id`, plus SQLAlchemy `@validates` that make `created_by_actor_id` and `created_at` immutable after the row exists. `Actor` (`src/database/base.py`) is an indirection layer over "who did this" — a `Staff`, or a system/api/telegram/instagram actor — so `created_by` can be rendered without assuming a human staff member exists.
 
-`register_audit_listener()` (`src/database/audit_listener.py`, wired in `app.py`'s lifespan) hooks `before_flush` globally: it stamps `created_by_actor_id` on new `BaseFields` rows from the current actor context, and diffs every dirty column on every dirty `BaseFields` instance into `AuditLogs` rows (old/new value, per field, per flush) — this is automatic and requires no per-service opt-in. Unlike the tenant filter above, this listener is registered on the SQLAlchemy `Session` **class** itself, not one instance — it fires on every session in the process for the app's whole lifetime, including ad-hoc `SessionLocal()` instances outside the request's own `transaction_scope()`. Code that opens such a session to write rows for a *different* tenant (see Tenant branches above) must wrap the write in `cleared_actor_context()`, or this listener stamps the caller's own actor onto the new row — which then fails the `(actor_id, tenant_id)` composite FK since that actor belongs to a different tenant.
+`register_audit_listener()` (`src/database/audit_listener.py`, wired in `app.py`'s lifespan) hooks `before_flush` globally: it stamps `created_by_actor_id` on new `BaseFields` rows from the current actor context, and diffs every dirty column on every dirty `BaseFields` instance into `AuditLogs` rows (old/new value, per field, per flush; `changed_by` is the current **actor** id, not staff id, so Telegram-made changes are attributed too) — this is automatic and requires no per-service opt-in. Unlike the tenant filter above, this listener is registered on the SQLAlchemy `Session` **class** itself, not one instance — it fires on every session in the process for the app's whole lifetime, including ad-hoc `SessionLocal()` instances outside the request's own `transaction_scope()`. Code that opens such a session to write rows for a *different* tenant (see Tenant branches above) must wrap the write in `cleared_actor_context()`, or this listener stamps the caller's own actor onto the new row — which then fails the `(actor_id, tenant_id)` composite FK since that actor belongs to a different tenant.
 
 ### Errors
 

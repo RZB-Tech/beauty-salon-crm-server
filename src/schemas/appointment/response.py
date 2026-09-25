@@ -1,6 +1,6 @@
 from pydantic import ConfigDict
 from datetime import datetime
-from src.repository.appointment.appointment_model import AppointmentCancelledReason, AppointmentStatus
+from src.repository.appointment.appointment_model import AppointmentCancelledReason, AppointmentCreatedVia, AppointmentStatus
 from src.schemas.base import BaseResponseSchema, MoneyRequired, MoneyResponse
 
 class ClientNestedResponseSchema(BaseResponseSchema):
@@ -51,3 +51,4 @@ class AppointmentResponseSchema(BaseResponseSchema):
     notes: str | None = None
     archived: bool
     cancelled_reason: AppointmentCancelledReason | None = None
+    created_via: AppointmentCreatedVia

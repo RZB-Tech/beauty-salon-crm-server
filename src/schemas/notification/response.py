@@ -12,3 +12,5 @@ class NotificationResponseSchema(BaseResponseSchema):
     notes: str | None = None
     scheduled_at: datetime
     delivered_at: datetime | None = None
+    recipient_staff_id: int | None = None
+    appointment_request_id: int | None = None

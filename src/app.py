@@ -7,7 +7,7 @@ from src.core.admin.setup import init_admin
 from src.core.exceptions import register_exception_handlers
 from src.database.audit_listener import register_audit_listener
 from src.exceptions.base import BaseAppException
-from src.routes import protected_router, open_router, billing_router
+from src.routes import protected_router, open_router, billing_router, miniApp_router
 from src.core.config import settings
 
 @asynccontextmanager
@@ -25,6 +25,8 @@ ALLOWED_ORIGINS = [
     "https://crm.osipovich.uz",
     "https://api.osipovich.uz"
 ]
+if settings.TELEGRAM_MINIAPP_ORIGIN:
+    ALLOWED_ORIGINS.append(settings.TELEGRAM_MINIAPP_ORIGIN)
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,6 +40,7 @@ app.add_middleware(
 register_exception_handlers(app)
 
 app.include_router(open_router)
+app.include_router(miniApp_router)
 app.include_router(protected_router)
 app.include_router(billing_router)
 

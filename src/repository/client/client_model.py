@@ -2,6 +2,7 @@ from __future__ import annotations
 from decimal import Decimal
 from enum import StrEnum
 from sqlalchemy import (
+    ForeignKey,
     Numeric,
     String,
     Integer,
@@ -30,9 +31,13 @@ class Client(BaseFields):
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
     deposit: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default = 0)
 
+    global_client_id: Mapped[int | None] = mapped_column(
+        ForeignKey("global_clients.id", ondelete = "SET NULL"), nullable = True, index = True)
+
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_client_tenant"),
         UniqueConstraint("firstname", "lastname", "middlename", "birth_date" ,"phone", "tenant_id", name = "uq_client_per_tenant"),
+        UniqueConstraint("global_client_id", "tenant_id", name = "uq_client_global_client_tenant"),
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],

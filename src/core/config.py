@@ -49,6 +49,11 @@ class Settings(BaseSettings):
 
     CLICK_API_BASE_URL: str = "https://api.click.uz/v2/merchant"
     CLICK_CHECKOUT_URL: str = "https://my.click.uz/services/pay"
+    # Telegram mini app (our platform bot, not tenants' own bots from TenantIntegration)
+    TELEGRAM_MINIAPP_BOT_TOKEN: str | None = None
+    TELEGRAM_MINIAPP_ORIGIN: str | None = None # added to CORS allowed origins in production
+    TELEGRAM_INIT_DATA_EXPIRE_SECONDS: int = 86400
+    MINIAPP_MAX_PENDING_REQUESTS_PER_TENANT: int = 3
 
     @property
     def PRIVATE_KEY(self) -> str:

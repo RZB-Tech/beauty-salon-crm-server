@@ -5,6 +5,7 @@ from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
 from src.repository.appointment.appointment_model import Appointment, AppointmentRecords, AppointmentServices
+from src.repository.employee.employee_model import Employee, EmployeeServices
 from src.repository.service.service_model import Service
 from src.schemas.analytics.request import GetReportWithFilters
 from src.schemas.base import RequestAllObject
@@ -80,3 +81,27 @@ class ServiceRepository(BaseRepository[Service]):
 
         result = await self.db.execute(stmt)
         return result.all()
+
+    async def get_bookable(self) -> list[Service]:
+        """Services the current tenant can offer online: not archived, have a duration
+        and at least one active employee providing them."""
+        has_active_employee = (
+            select(EmployeeServices.id)
+            .join(Employee, and_(
+                Employee.id == EmployeeServices.employee_id,
+                Employee.tenant_id == EmployeeServices.tenant_id,
+            ))
+            .where(
+                EmployeeServices.service_id == Service.id,
+                EmployeeServices.tenant_id == Service.tenant_id,
+                Employee.active.is_(True),
+                Employee.archived.is_(False),
+            )
+            .exists()
+        )
+        result = await self.db.execute(
+            select(Service)
+            .where(Service.archived.is_(False), Service.estimated_time > 0, has_active_employee)
+            .order_by(Service.name)
+        )
+        return list(result.scalars().all())

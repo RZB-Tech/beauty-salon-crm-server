@@ -7,6 +7,8 @@ from src.repository.service.service_model import Service, ServiceCategory
 from src.repository.employee.workSchedule_model import WorkSchedule, EmployeeAbsence
 from src.repository.client.client_model import Client
 from src.repository.appointment.appointment_model import Appointment, AppointmentRecords, AppointmentServices
+from src.repository.appointment.appointmentRequest_model import AppointmentRequest
+from src.repository.globalClient.globalClient_model import GlobalClient
 from src.repository.material.material_model import Material
 from src.repository.payroll.payroll_model import Payroll, Payout
 from src.repository.receipt.receipt_model import Receipt

@@ -14,6 +14,7 @@ from src.database.base import BaseFields
 
 class NotificationType(StrEnum):
     REMINDER = "reminder"
+    APPOINTMENT_REQUEST = "appointment request"
     OTHER = "other"
 
 class NotificationStatus(StrEnum):
@@ -36,6 +37,10 @@ class Notification(BaseFields):
 
     notes: Mapped[str | None] = mapped_column(Text, nullable = True)
 
+    # Staff the notification is delivered to; NULL means its creator (see notification_task.py)
+    recipient_staff_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
+    appointment_request_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
+
     __table_args__ = (
         ForeignKeyConstraint(
             ["client_id", "tenant_id"],
@@ -49,6 +54,18 @@ class Notification(BaseFields):
             ondelete = "SET NULL (created_by_actor_id)",
             name = "fk_notifications_created_by_tenant"
         ),
+        ForeignKeyConstraint(
+            ["recipient_staff_id", "tenant_id"],
+            ["staffs.id", "staffs.tenant_id"],
+            ondelete = "CASCADE",
+            name = "fk_notifications_recipient_staff"
+        ),
+        ForeignKeyConstraint(
+            ["appointment_request_id", "tenant_id"],
+            ["appointment_requests.id", "appointment_requests.tenant_id"],
+            ondelete = "SET NULL (appointment_request_id)",
+            name = "fk_notifications_appointment_request"
+        ),
     )
 
-    ALLOWED_FILTERS = {"client_id", "type", "scheduled_at", "delivered_at", "archived", "status"}
+    ALLOWED_FILTERS = {"client_id", "type", "scheduled_at", "delivered_at", "archived", "status", "recipient_staff_id", "appointment_request_id"}

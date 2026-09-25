@@ -32,6 +32,10 @@ class AppointmentCancelledReason(StrEnum):
     INCORRECT_CLIENT = "incorrect client"
     INCORRECT_DATE = "incorrect date"
 
+class AppointmentCreatedVia(StrEnum):
+    MANUAL = "manual"
+    TELEGRAM = "telegram"
+
 class AppointmentServices(BaseFields):
     __tablename__ = "appointment_services"
 
@@ -171,6 +175,8 @@ class Appointment(BaseFields):
     
     status: Mapped[str] = mapped_column(String(50), default = AppointmentStatus.AWAITING)
     cancelled_reason: Mapped[str | None] = mapped_column(String(50), default = None, nullable = True)
+    created_via: Mapped[str] = mapped_column(
+        String(255), default = AppointmentCreatedVia.MANUAL, server_default = AppointmentCreatedVia.MANUAL.value)
 
     @property
     def total_price(self) -> Decimal:
@@ -196,4 +202,4 @@ class Appointment(BaseFields):
         CheckConstraint("start_time_est < end_time_est", name="chk_start_before_end")
     )
 
-    ALLOWED_FILTERS = {"client_id", "start_time_est", "end_time_est", "status", "paid", "archived"}
+    ALLOWED_FILTERS = {"client_id", "start_time_est", "end_time_est", "status", "paid", "created_via", "archived"}

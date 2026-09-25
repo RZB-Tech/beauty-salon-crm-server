@@ -20,6 +20,22 @@ def get_current_actor_id() -> int | None:
     return _current_actor_id.get()
 
 @contextmanager
+def tenant_context(tenant_id: int, actor_id: int | None):
+    """
+    Temporarily acts on behalf of a tenant outside a staff request (the Telegram
+    mini app has no staff token) - the tenant filter and audit listener then
+    scope/stamp rows exactly as for that tenant's own staff. Flush inside the
+    block: a flush that happens after it exits sees no tenant/actor.
+    """
+    tenant_token = _current_tenant_id.set(tenant_id)
+    actor_token = _current_actor_id.set(actor_id)
+    try:
+        yield
+    finally:
+        _current_actor_id.reset(actor_token)
+        _current_tenant_id.reset(tenant_token)
+
+@contextmanager
 def cleared_actor_context():
     """
     Temporarily clears the current actor context.

@@ -4,15 +4,17 @@ from sqlalchemy import Row, and_, case, func, select
 from sqlalchemy.orm import selectinload
 from src.core.utils.model_filter import apply_dynamic_filters
 from src.database.base import BaseRepository
-from src.repository.appointment.appointment_model import Appointment, AppointmentCancelledReason, AppointmentRecords, AppointmentServices, AppointmentStatus
+from src.repository.appointment.appointment_model import Appointment, AppointmentCancelledReason, AppointmentCreatedVia, AppointmentRecords, AppointmentServices, AppointmentStatus
 from src.schemas.analytics.request import GetReportWithFilters
 from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.appointment.create import AppointmentCreateSchema
 
 class AppointmentRepository(BaseRepository[Appointment]):
-    async def create(self, appointment: AppointmentCreateSchema, price_info: list[list[dict]]) -> Appointment:
+    async def create(self, appointment: AppointmentCreateSchema, price_info: list[list[dict]],
+                     created_via: AppointmentCreatedVia = AppointmentCreatedVia.MANUAL) -> Appointment:
         db_appointment = Appointment(
             client_id=appointment.client_id,
+            created_via=created_via,
             start_time_est=appointment.start_time_est,
             end_time_est=appointment.end_time_est,
             notes=appointment.notes,

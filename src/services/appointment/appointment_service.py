@@ -9,7 +9,7 @@ from src.exceptions.employee_exceptions import EmployeeDoesNotProvideService, Em
 from src.exceptions.general_exceptions import CannotUpdate, ObjectIsArchived, PriceChangedReasonEmpty
 from src.exceptions.material_exceptions import MaterialAmountInsufficient, MaterialArchived, MaterialNotFound
 from src.exceptions.service_exceptions import ServiceIsArchived, ServiceNotFound
-from src.repository.appointment.appointment_model import Appointment, AppointmentCancelledReason, AppointmentStatus
+from src.repository.appointment.appointment_model import Appointment, AppointmentCancelledReason, AppointmentCreatedVia, AppointmentStatus
 from src.repository.promotion.promotion_model import PromotionType
 from src.repository.receipt.receipt_model import Receipt
 from src.schemas.analytics.appointmentResponse import ApppointmentAnalyticsResponse
@@ -23,7 +23,8 @@ class AppointmentService():
         self.uow = uow
         
     @require_exists("clients", target_param = "client_id")
-    async def create(self, data: AppointmentCreateSchema) -> Appointment:
+    async def create(self, data: AppointmentCreateSchema,
+                     created_via: AppointmentCreatedVia = AppointmentCreatedVia.MANUAL) -> Appointment:
         existing = await self.uow.appointments.client_has_overlap(
             data.client_id, data.start_time_est, data.end_time_est)
         
@@ -108,7 +109,7 @@ class AppointmentService():
                 record_price_info.append(info)
             price_info.append(record_price_info)
 
-        return await self.uow.appointments.create(data, price_info)
+        return await self.uow.appointments.create(data, price_info, created_via)
     
     async def update(self, data: AppointmentUpdateSchema) -> Appointment:
         checkIfExists = await self.uow.appointments.get(data.id)

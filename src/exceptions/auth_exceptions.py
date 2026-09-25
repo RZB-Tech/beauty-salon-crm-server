@@ -111,3 +111,21 @@ class PermissionNotFound(BaseAppException):
             errorCode = self.errorCode,
             code = code
         )
+
+class TelegramAuthInvalid(BaseAppException):
+    statusCode = 401
+    errorCode = "TELEGRAM_AUTH_INVALID"
+    def __init__(self):
+        super().__init__(
+            detail = "Telegram initData is missing, invalid or expired",
+            errorCode = self.errorCode
+        )
+
+class TelegramMiniAppNotConfigured(BaseAppException):
+    statusCode = 503
+    errorCode = "TELEGRAM_MINIAPP_NOT_CONFIGURED"
+    def __init__(self):
+        super().__init__(
+            detail = "Telegram mini app is not configured on the server",
+            errorCode = self.errorCode
+        )

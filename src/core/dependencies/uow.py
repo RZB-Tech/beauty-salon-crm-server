@@ -3,6 +3,8 @@ from src.database.session import get_repository_db, transaction_scope
 from src.repository.appointment.appointmentRecords_repository import AppointmentRecordsRepository
 from src.repository.appointment.appointment_repository import AppointmentRepository
 from src.repository.appointment.appointmentServices_repository import AppointmentServicesRepository
+from src.repository.appointment.appointmentRequest_repository import AppointmentRequestRepository
+from src.repository.globalClient.globalClient_repository import GlobalClientRepository
 from src.repository.audit.auditLog_repository import AuditLogsRepository
 from src.repository.client.client_repository import ClientRepository
 from src.repository.employee.absence_repository import EmployeeAbsenceRepository
@@ -53,6 +55,8 @@ class UnitOfWork:
         self.appointments = AppointmentRepository()
         self.appointmentRecords = AppointmentRecordsRepository()
         self.appointmentServices = AppointmentServicesRepository()
+        self.appointmentRequests = AppointmentRequestRepository()
+        self.globalClients = GlobalClientRepository()
 
         self.payrolls = PayrollRepository()
         self.payouts = PayoutRepository()

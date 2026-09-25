@@ -113,3 +113,24 @@ class WorkScheduleRepository(BaseRepository[WorkSchedule]):
         )
         result = await self.db.execute(stmt)
         return list(result.scalars().all())
+
+    async def get_day_schedules(self, employee_ids: list[int], day: date) -> list[WorkSchedule]:
+        """Schedules of these employees on this day, excluding employees absent that day."""
+        stmt = (
+            select(WorkSchedule)
+            .outerjoin(
+                EmployeeAbsence,
+                and_(
+                    EmployeeAbsence.employee_id == WorkSchedule.employee_id,
+                    EmployeeAbsence.start_date <= day,
+                    EmployeeAbsence.end_date >= day
+                )
+            )
+            .where(
+                WorkSchedule.employee_id.in_(employee_ids),
+                WorkSchedule.day_of_week == day.isoweekday(),
+                EmployeeAbsence.id.is_(None)
+            )
+        )
+        result = await self.db.execute(stmt)
+        return list(result.scalars().all())

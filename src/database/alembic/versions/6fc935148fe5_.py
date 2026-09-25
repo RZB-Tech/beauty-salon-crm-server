@@ -64,6 +64,23 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('name')
     )
+    op.create_table('global_clients',
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('telegram_user_id', sa.BigInteger(), nullable=False),
+    sa.Column('telegram_username', sa.String(length=255), nullable=True),
+    sa.Column('contact_phone', sa.String(length=50), nullable=True),
+    sa.Column('call_phone', sa.String(length=50), nullable=True),
+    sa.Column('firstname', sa.String(length=255), nullable=False),
+    sa.Column('lastname', sa.String(length=255), nullable=True),
+    sa.Column('middlename', sa.String(length=255), nullable=True),
+    sa.Column('birth_date', sa.Date(), nullable=True),
+    sa.Column('sex', sa.String(length=50), nullable=True),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('contact_phone')
+    )
+    op.create_index(op.f('ix_global_clients_telegram_user_id'), 'global_clients', ['telegram_user_id'], unique=True)
     op.create_table('tenants',
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('name', postgresql.CITEXT(), nullable=False),
@@ -143,6 +160,7 @@ def upgrade() -> None:
     sa.Column('sex', sa.String(length=50), nullable=False),
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('deposit', sa.Numeric(precision=30, scale=2), nullable=False),
+    sa.Column('global_client_id', sa.Integer(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -150,11 +168,14 @@ def upgrade() -> None:
     sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
     sa.Column('tenant_id', sa.Integer(), nullable=False),
     sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_clients_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
+    sa.ForeignKeyConstraint(['global_client_id'], ['global_clients.id'], ondelete='SET NULL'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('firstname', 'lastname', 'middlename', 'birth_date', 'phone', 'tenant_id', name='uq_client_per_tenant'),
+    sa.UniqueConstraint('global_client_id', 'tenant_id', name='uq_client_global_client_tenant'),
     sa.UniqueConstraint('id', 'tenant_id', name='uq_client_tenant')
     )
+    op.create_index(op.f('ix_clients_global_client_id'), 'clients', ['global_client_id'], unique=False)
     op.create_index(op.f('ix_clients_tenant_id'), 'clients', ['tenant_id'], unique=False)
     op.create_table('materials',
     sa.Column('article', sa.String(length=255), nullable=False),
@@ -258,6 +279,7 @@ def upgrade() -> None:
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('cancelled_reason', sa.String(length=50), nullable=True),
+    sa.Column('created_via', sa.String(length=255), server_default='manual', nullable=False),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -299,27 +321,6 @@ def upgrade() -> None:
     sa.UniqueConstraint('phone', 'tenant_id', name='uq_employee_phone')
     )
     op.create_index(op.f('ix_employees_tenant_id'), 'employees', ['tenant_id'], unique=False)
-    op.create_table('notifications',
-    sa.Column('client_id', sa.Integer(), nullable=True),
-    sa.Column('title', sa.String(length=50), nullable=True),
-    sa.Column('body', sa.Text(), nullable=False),
-    sa.Column('type', sa.String(length=50), nullable=False),
-    sa.Column('scheduled_at', sa.DateTime(timezone=True), nullable=False),
-    sa.Column('delivered_at', sa.DateTime(timezone=True), nullable=True),
-    sa.Column('status', sa.String(length=50), nullable=False),
-    sa.Column('notes', sa.Text(), nullable=True),
-    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
-    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
-    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
-    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
-    sa.Column('tenant_id', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['client_id', 'tenant_id'], ['clients.id', 'clients.tenant_id'], name='fk_notifications_client_tenant', ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_notifications_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
-    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
-    sa.PrimaryKeyConstraint('id')
-    )
-    op.create_index(op.f('ix_notifications_tenant_id'), 'notifications', ['tenant_id'], unique=False)
     op.create_table('services',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('price', sa.Numeric(precision=30, scale=2), nullable=False),
@@ -552,7 +553,7 @@ def upgrade() -> None:
     sa.Column('new_value', sa.String(), nullable=True),
     sa.Column('changed_by', sa.Integer(), nullable=False),
     sa.Column('changed_at', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['changed_by', 'tenant_id'], ['staffs.id', 'staffs.tenant_id'], name='fk_audit_logs_staff', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['changed_by', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_audit_logs_actor', ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index('idx_audit_logs_tenant_date', 'audit_logs', ['tenant_id', 'changed_at'], unique=False)
@@ -698,12 +699,74 @@ def upgrade() -> None:
     sa.UniqueConstraint('id', 'tenant_id', name='uq_transaction_tenant')
     )
     op.create_index(op.f('ix_transactions_tenant_id'), 'transactions', ['tenant_id'], unique=False)
+    op.create_table('appointment_requests',
+    sa.Column('global_client_id', sa.Integer(), nullable=False),
+    sa.Column('service_id', sa.Integer(), nullable=True),
+    sa.Column('service_snapshot', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('start_time_est', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('end_time_est', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('comment', sa.Text(), nullable=True),
+    sa.Column('status', sa.String(length=50), nullable=False),
+    sa.Column('cancelled_reason', sa.String(length=50), nullable=True),
+    sa.Column('decline_reason', sa.Text(), nullable=True),
+    sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('decided_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('appointment_id', sa.Integer(), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
+    sa.Column('tenant_id', sa.Integer(), nullable=False),
+    sa.CheckConstraint('start_time_est < end_time_est', name='chk_appointment_request_start_before_end'),
+    sa.ForeignKeyConstraint(['appointment_id', 'tenant_id'], ['appointments.id', 'appointments.tenant_id'], name='fk_appointment_requests_appointment', ondelete='SET NULL (appointment_id)'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_appointment_requests_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
+    sa.ForeignKeyConstraint(['global_client_id'], ['global_clients.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['service_id', 'tenant_id'], ['services.id', 'services.tenant_id'], name='fk_appointment_requests_service', ondelete='SET NULL (service_id)'),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('id', 'tenant_id', name='uq_appointment_request_tenant')
+    )
+    op.create_index(op.f('ix_appointment_requests_global_client_id'), 'appointment_requests', ['global_client_id'], unique=False)
+    op.create_index('ix_appointment_requests_status_expires_at', 'appointment_requests', ['status', 'expires_at'], unique=False)
+    op.create_index(op.f('ix_appointment_requests_tenant_id'), 'appointment_requests', ['tenant_id'], unique=False)
+    op.create_table('notifications',
+    sa.Column('client_id', sa.Integer(), nullable=True),
+    sa.Column('title', sa.String(length=50), nullable=True),
+    sa.Column('body', sa.Text(), nullable=False),
+    sa.Column('type', sa.String(length=50), nullable=False),
+    sa.Column('scheduled_at', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('delivered_at', sa.DateTime(timezone=True), nullable=True),
+    sa.Column('status', sa.String(length=50), nullable=False),
+    sa.Column('notes', sa.Text(), nullable=True),
+    sa.Column('recipient_staff_id', sa.Integer(), nullable=True),
+    sa.Column('appointment_request_id', sa.Integer(), nullable=True),
+    sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
+    sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
+    sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('created_by_actor_id', sa.Integer(), nullable=True),
+    sa.Column('tenant_id', sa.Integer(), nullable=False),
+    sa.ForeignKeyConstraint(['client_id', 'tenant_id'], ['clients.id', 'clients.tenant_id'], name='fk_notifications_client_tenant', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_notifications_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
+    sa.ForeignKeyConstraint(['appointment_request_id', 'tenant_id'], ['appointment_requests.id', 'appointment_requests.tenant_id'], name='fk_notifications_appointment_request', ondelete='SET NULL (appointment_request_id)'),
+    sa.ForeignKeyConstraint(['recipient_staff_id', 'tenant_id'], ['staffs.id', 'staffs.tenant_id'], name='fk_notifications_recipient_staff', ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
+    sa.PrimaryKeyConstraint('id')
+    )
+    op.create_index(op.f('ix_notifications_tenant_id'), 'notifications', ['tenant_id'], unique=False)
     # ### end Alembic commands ###
 
 
 def downgrade() -> None:
     """Downgrade schema."""
     # ### commands auto generated by Alembic - please adjust! ###
+    op.drop_index(op.f('ix_notifications_tenant_id'), table_name='notifications')
+    op.drop_table('notifications')
+    op.drop_index(op.f('ix_appointment_requests_tenant_id'), table_name='appointment_requests')
+    op.drop_index('ix_appointment_requests_status_expires_at', table_name='appointment_requests')
+    op.drop_index(op.f('ix_appointment_requests_global_client_id'), table_name='appointment_requests')
+    op.drop_table('appointment_requests')
     op.drop_index(op.f('ix_transactions_tenant_id'), table_name='transactions')
     op.drop_table('transactions')
     op.drop_index(op.f('ix_receipt_items_tenant_id'), table_name='receipt_items')
@@ -749,8 +812,6 @@ def downgrade() -> None:
     op.drop_index('uq_service_name_lower', table_name='services')
     op.drop_index(op.f('ix_services_tenant_id'), table_name='services')
     op.drop_table('services')
-    op.drop_index(op.f('ix_notifications_tenant_id'), table_name='notifications')
-    op.drop_table('notifications')
     op.drop_index(op.f('ix_employees_tenant_id'), table_name='employees')
     op.drop_table('employees')
     op.drop_index(op.f('ix_appointments_tenant_id'), table_name='appointments')
@@ -770,6 +831,7 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_materials_tenant_id'), table_name='materials')
     op.drop_table('materials')
     op.drop_index(op.f('ix_clients_tenant_id'), table_name='clients')
+    op.drop_index(op.f('ix_clients_global_client_id'), table_name='clients')
     op.drop_table('clients')
     op.drop_table('tenant_subscriptions')
     op.drop_table('tenant_payments')
@@ -781,6 +843,8 @@ def downgrade() -> None:
     op.drop_index(op.f('ix_tenants_created_by_actor_id'), table_name='tenants')
     op.drop_table('tenants')
     op.drop_table('subscription_plans')
+    op.drop_index(op.f('ix_global_clients_telegram_user_id'), table_name='global_clients')
+    op.drop_table('global_clients')
     op.drop_index(op.f('ix_platform_users_login'), table_name='platform_users')
     op.drop_table('platform_users')
     op.drop_table('addon_products')

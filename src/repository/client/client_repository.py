@@ -29,3 +29,18 @@ class ClientRepository(BaseRepository[Client]):
         result = await self.db.execute(stmt)
         items = result.scalars().all()
         return items, total_items 
+
+    async def get_by_global_client(self, global_client_id: int) -> Client | None:
+        result = await self.db.execute(
+            select(Client).where(Client.global_client_id == global_client_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def find_matching_global_client(self, global_client_id: int, phones: list[str]) -> list[Client]:
+        """Tenant clients already linked to the global client, or sharing one of its phones."""
+        condition = Client.global_client_id == global_client_id
+        if phones: condition = condition | Client.phone.in_(phones)
+        result = await self.db.execute(
+            select(Client).where(condition).order_by(Client.id)
+        )
+        return list(result.scalars().all())

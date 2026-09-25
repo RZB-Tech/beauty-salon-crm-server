@@ -31,10 +31,19 @@ async def _poll_and_deliver():
                     "id": notification.id,
                     "title": notification.title,
                     "body": notification.body,
-                    "type": notification.type.value,
+                    "type": str(notification.type), # plain str when loaded via UPDATE ... RETURNING
                     "scheduled_at": notification.scheduled_at.isoformat(),
+                    "appointment_request_id": notification.appointment_request_id,
                 }
-                subscribers = await publish_notification(notification.created_by, payload)
+                # Explicit recipient, otherwise the staff who created it
+                staff_id = notification.recipient_staff_id
+                if staff_id is None and notification.created_by_actor_id is not None:
+                    staff_id = await uow.staffs.get_id_by_actor(notification.created_by_actor_id, notification.tenant_id)
+                if staff_id is None:
+                    logger.warning(f"Notification {notification.id}: no recipient staff, skipping.")
+                    continue
+
+                subscribers = await publish_notification(staff_id, payload)
 
                 if not subscribers:  # catches both 0 and None
                     failed_ids.append(notification.id)

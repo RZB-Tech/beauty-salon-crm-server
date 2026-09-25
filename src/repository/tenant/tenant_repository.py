@@ -23,3 +23,15 @@ class TenantRepository(BaseRepository[Tenant]):
             select(Tenant).where(Tenant.parent_id == parent_id)
         )
         return list(result.scalars().all())
+
+    async def get_all_bookable(self) -> list[Tenant]:
+        """Active tenants that enabled Telegram booking in their preferences."""
+        result = await self.db.execute(
+            select(Tenant)
+            .where(
+                Tenant.active.is_(True),
+                Tenant.preferences["enable_telegram_booking"].as_boolean().is_(True),
+            )
+            .order_by(Tenant.name)
+        )
+        return list(result.scalars().all())

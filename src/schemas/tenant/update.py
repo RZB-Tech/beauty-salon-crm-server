@@ -8,6 +8,8 @@ class TenantPreferencesUpdateSchema(BaseUpdateSchema):
     enable_telegram_booking: bool | None = None
     cancel_payment_due: int | None = Field(None, ge = 0) # hours
     auto_pay_subscription: bool | None = None
+    time_to_confirm_booking: int | None = Field(None, ge = 1) # minutes
+    booking_slot_step: int | None = Field(None, ge = 5, le = 240) # minutes
 
     model_config = ConfigDict(json_schema_extra = {
         "example": {

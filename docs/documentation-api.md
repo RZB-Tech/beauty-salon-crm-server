@@ -29,6 +29,24 @@
 
 ---
 
+## Telegram mini app (/api/v1/mini-app)
+
+Открытые роуты (без cookie сотрудника) для клиентов в нашем Telegram мини-приложении. Каждый запрос должен содержать заголовок `Authorization: tma <initData>` (`window.Telegram.WebApp.initData`); подпись проверяется токеном нашего бота (`TELEGRAM_MINIAPP_BOT_TOKEN`), срок действия — `TELEGRAM_INIT_DATA_EXPIRE_SECONDS`. Без/с невалидным `initData` — 401 `TELEGRAM_AUTH_INVALID`. Клиент (`global_clients`) создается автоматически при первом запросе. Все даты — UTC.
+
+- GET `/me` — профиль клиента -> `src/schemas/globalClient/response.py::GlobalClientResponseSchema` (200). `is_profile_complete` — заполнены ли `firstname`, `sex`, `contact_phone` (обязательны для заявки).
+- PATCH `/me` — обновить профиль (`src/schemas/globalClient/update.py::GlobalClientUpdateSchema`: `firstname`, `lastname`, `middlename`, `birth_date`, `sex`, `call_phone`) -> `GlobalClientResponseSchema` (200).
+- POST `/me/contact` — сохранить номер из Telegram: тело `{"response": "<строка response из колбэка WebApp.requestContact>"}` -> `GlobalClientResponseSchema` (200). Номер (`contact_phone`) можно установить только так; `call_phone` — необязательный номер для звонков, если отличается.
+- GET `/tenants` — организации с включенной записью через Telegram -> `list[MiniAppTenantResponseSchema]` (`id`, `name`) (200).
+- GET `/tenants/{tenant_id}/services` — услуги для онлайн-записи -> `list[MiniAppServiceResponseSchema]` (`id`, `name`, `price`, `estimated_time` — минуты, `category_id`) (200).
+- GET `/tenants/{tenant_id}/services/{service_id}/slots?date=YYYY-MM-DD` — свободные слоты -> `list[BookingSlotSchema]` (`start_time_est`, `end_time_est`) (200).
+- POST `/appointment-requests` — создать заявку (`src/schemas/appointmentRequest/create.py::AppointmentRequestCreateSchema`: `tenant_id`, `service_id`, `start_time_est`, `comment`) -> `MiniAppAppointmentRequestResponseSchema` (201). Время окончания = начало + `estimated_time` услуги.
+- POST `/appointment-requests/get-all` — мои заявки во всех организациях (`PaginationSchema`) -> `PaginatedResponseSchema[MiniAppAppointmentRequestResponseSchema]` (200). Поле `appointment_status` — текущий статус посещения для подтвержденной заявки.
+- PATCH `/appointment-requests/cancel` — отменить заявку (`{"id": 1}`) -> `MiniAppAppointmentRequestResponseSchema` (200).
+
+`MiniAppAppointmentRequestResponseSchema`: `id`, `tenant_id`, `tenant_name`, `service_snapshot` (`service_id`, `name`, `price`, `estimated_time` — услуга на момент заявки), `start_time_est`, `end_time_est`, `comment`, `status` (`pending` / `confirmed` / `declined` / `cancelled`), `cancelled_reason` (`cancelled by client` / `automatically cancelled - past due time`), `decline_reason`, `expires_at`, `decided_at`, `appointment_id`, `appointment_status`, `created_at`.
+
+---
+
 ## Protected endpoints (требуют аутентификацию)
 
 Ниже перечислены роуты, префиксы берутся из `src/routes/__init__.py`.
@@ -58,6 +76,18 @@
   - response: `src/schemas/appointment/response.py::AppointmentResponseSchema`
   - status: 201
 - DELETE `/{id}` — удалить запись (возвращает `AppointmentResponseSchema`, status 200)
+
+### Appointment requests / Заявки на запись из Telegram (/api/v1/appointment-requests)
+
+- POST `/get-all` — paginated, `RequestAllObject` -> `PaginatedResponseSchema[AppointmentRequestResponseSchema]` (200). Ожидающие решения: `{"filters": {"status": "pending"}}`.
+- GET `/{id}` -> `src/schemas/appointmentRequest/response.py::AppointmentRequestResponseSchema` (200)
+- GET `/{id}/matching-clients` -> `list[ClientResponseSchema]` (200) — клиенты организации, уже привязанные к Telegram-клиенту или совпадающие по телефону; для выбора `client_id` при подтверждении.
+- PATCH `/confirm` — `src/schemas/appointmentRequest/update.py::AppointmentRequestConfirmSchema` (`id`, `employee_id`, `client_id` — опционально) -> `AppointmentRequestResponseSchema` (200). Создает посещение с `created_via = telegram`.
+- PATCH `/decline` — `AppointmentRequestDeclineSchema` (`id`, `reason` — опционально, видна клиенту) -> `AppointmentRequestResponseSchema` (200)
+
+`AppointmentRequestResponseSchema` (помимо `BaseResponseSchema`): `global_client` (`id`, `telegram_username`, `contact_phone`, `call_phone`, `firstname`, `lastname`, `middlename`, `birth_date`, `sex`), `service_id`, `service_snapshot`, `start_time_est`, `end_time_est`, `comment`, `status`, `cancelled_reason`, `decline_reason`, `expires_at`, `decided_at`, `appointment_id`.
+
+Права: `APPOINTMENT_REQUESTS_READ` (2031), `APPOINTMENT_REQUESTS_CONFIRM` (2032), `APPOINTMENT_REQUESTS_DECLINE` (2033), `APPOINTMENT_REQUESTS_MANAGE` (2039).
 
 ### Appointment Services (/api/v1/appointments-services)
 
@@ -175,7 +205,8 @@
 
 - POST `` — create (`src/schemas/notification/create.py`) -> `NotificationResponseSchema` (201)
 - POST `/get-all` — paginated (200)
-- GET `/stream` — Server-Sent Events (SSE) stream для текущего staff (подключение к Redis pubsub)
+- GET `/stream` — Server-Sent Events (SSE) stream для текущего staff (подключение к Redis pubsub). Уведомление доставляется `recipient_staff_id`, либо (если не указан) создавшему его сотруднику.
+  - Новая заявка из Telegram создает уведомление с `type = "appointment request"` и `appointment_request_id` каждому активному сотруднику-администратору или сотруднику с правом `APPOINTMENT_REQUESTS_READ`.
 - GET `/{id}` — get (200)
 - DELETE `/{id}` — archive (200)
 - DELETE `/{id}` — delete (204)
@@ -450,6 +481,16 @@
   - `end_time_est`: datetime
   - `status`: enum (awaiting, cancelled, started, finished)
   - `paid`: boolean
+  - `created_via`: enum (manual, telegram)
+  - `archived`: boolean
+
+- `appointment_requests`:
+  - `global_client_id`: number
+  - `service_id`: number
+  - `start_time_est`: datetime
+  - `end_time_est`: datetime
+  - `status`: enum (pending, confirmed, declined, cancelled)
+  - `expires_at`: datetime
   - `archived`: boolean
 
 - `clients`:
@@ -491,7 +532,9 @@
 
 - `notifications`:
   - `client_id`: number
-  - `type`: enum (reminder, other)
+  - `type`: enum (reminder, appointment request, other)
+  - `recipient_staff_id`: number
+  - `appointment_request_id`: number
   - `delivered_at`: datetime
   - `archived`: boolean
 
@@ -540,6 +583,7 @@
   - start_time_est, end_time_est: datetime (микросекунды обрезаются); требуется `start_time_est < end_time_est`.
   - records: опциональный список `AppointmentRecordsCreateOptionalSchema`.
   - notes: str | None
+  - `created_via` не передаётся — посещения, созданные через этот эндпоинт, всегда получают `manual`.
 
 - `AppointmentRecordsCreateSchema` / `AppointmentServicesCreateSchema`
   - AppointmentRecordsCreate: `appointment_id` (>=1), `employee_id` (>=1), `services` — список сервисов.
