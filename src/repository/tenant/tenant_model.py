@@ -3,19 +3,25 @@ from decimal import Decimal
 from typing import TYPE_CHECKING
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     ForeignKey,
     ForeignKeyConstraint,
+    Integer,
     Numeric,
     String,
-    Integer, DateTime,
+    DateTime,
     Text,
-    func
+    func,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB, CITEXT
 from enum import StrEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from datetime import datetime
 from src.database.base import Base, BaseFields
+
+if TYPE_CHECKING:
+    from src.repository.tenant.subscription.subscriptionPlan_model import SubscriptionPlan
 
 class Tenant(Base):
     __tablename__ = "tenants"
@@ -26,6 +32,7 @@ class Tenant(Base):
 
     active: Mapped[bool] = mapped_column(Boolean, default = True, server_default="true")
     preferences: Mapped[dict] = mapped_column(JSONB, default = dict)
+    balance: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), default = 0, server_default = text("0"))
 
     parent_id: Mapped[int | None] = mapped_column(
         ForeignKey("tenants.id", ondelete = "RESTRICT"), nullable = True, index = True
@@ -68,6 +75,13 @@ class Tenant(Base):
         "Tenant", back_populates = "parent"
     )
 
+    __table_args__ = (
+        CheckConstraint("balance >= 0", "tenant_balance_non_negative"),
+    )
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.id})"
+
 class TenantIntegration(BaseFields):
     __tablename__ = "tenant_integrations"
 
@@ -92,12 +106,19 @@ class TenantSubscriptions(Base):
     __tablename__ = "tenant_subscriptions"
 
     id: Mapped[int] = mapped_column(primary_key = True, autoincrement = True)
-    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete = "cascade"))
-    plan_id: Mapped[int] = mapped_column(ForeignKey("subscription_plans.id"))
+    tenant_id: Mapped[int] = mapped_column(ForeignKey("tenants.id", ondelete = "cascade"), unique = True)
+    plan_id: Mapped[int] = mapped_column(ForeignKey("subscription_plans.id", ondelete = "restrict"))
     status: Mapped[str] = mapped_column(String(50))
     amount_paid: Mapped[Decimal] = mapped_column(Numeric(precision = 30, scale = 2), nullable = True)
-    billing_interval: Mapped[int] = mapped_column()
 
     started_at: Mapped[datetime] = mapped_column(DateTime(timezone = True))
     period_end: Mapped[datetime] = mapped_column(DateTime(timezone = True))
-    cancel_at_period_end: Mapped[bool] = mapped_column(Boolean, default = False)
+
+    tenant: Mapped["Tenant"] = relationship(foreign_keys = [tenant_id])
+    plan: Mapped["SubscriptionPlan"] = relationship("SubscriptionPlan", foreign_keys = [plan_id])
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        nullable=False,
+    )

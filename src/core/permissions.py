@@ -119,6 +119,11 @@ class PermissionCode(IntEnum):
     GIFT_CARD_GET = 14003
     GIFT_CARD_MANAGE = 14999
 
+    SUBSCRIPTION_PAYMENT_CREATE = 15001
+    SUBSCRIPTION_PAYMENT_READ = 15002
+    SUBSCRIPTION_PAYMENT_PURCHASE = 15003
+    SUBSCRIPTION_PAYMENT_MANAGE = 15999
+
     ANALYTICS_EMPLOYEE = 20000
     ANALYTICS_SERVICE = 20100
     ANALYTICS_RECEIPT = 20200
@@ -185,6 +190,11 @@ PERMISSIONS: dict[int, dict[str, str]] = {
     PermissionCode.GIFT_CARD_UPDATE: {"resource": "gift_cards", "name": "Update gift card"},
     PermissionCode.GIFT_CARD_GET: {"resource": "gift_cards", "name": "Get gift card"},
     PermissionCode.GIFT_CARD_MANAGE: {"resource": "gift_cards", "name": "Manage gift cards"},
+
+    PermissionCode.SUBSCRIPTION_PAYMENT_CREATE: {"resource": "subscription_payment", "name": "Pay for subscription"},
+    PermissionCode.SUBSCRIPTION_PAYMENT_READ: {"resource": "subscription_payment", "name": "View subscription payments"},
+    PermissionCode.SUBSCRIPTION_PAYMENT_PURCHASE: {"resource": "subscription_payment", "name": "Purchase subscription plan using tenant balance"},
+    PermissionCode.SUBSCRIPTION_PAYMENT_MANAGE: {"resource": "subscription_payment", "name": "Full access to subscription payments"},
 
     PermissionCode.SPECIALIZATION_CREATE: {"resource": "specialization", "name": "Create specialization"},
     PermissionCode.SPECIALIZATION_UPDATE: {"resource": "specialization", "name": "Update specialization"},

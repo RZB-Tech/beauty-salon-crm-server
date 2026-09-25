@@ -1,41 +1,12 @@
 import asyncio
 import logging
-from contextlib import asynccontextmanager
-
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
 
 from src.core.celery.celeryApp import celery_app
-from src.core.config import settings
+from src.core.celery.session import celery_transaction_scope
 from src.core.dependencies.uow import UnitOfWork
 from src.core.utils.sse_publisher import publish_notification
-from src.database.session import db_session_ctx
 
 logger = logging.getLogger(__name__)
-
-@asynccontextmanager
-async def celery_transaction_scope():
-    engine = create_async_engine(
-        settings.DATABASE_URL,
-        echo=False,
-        connect_args={"statement_cache_size": 0},
-    )
-    session_factory = async_sessionmaker(
-        bind=engine,
-        class_=AsyncSession,
-        expire_on_commit=False,
-    )
-    async with session_factory() as session:
-        token = db_session_ctx.set(session)
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
-        finally:
-            db_session_ctx.reset(token)
-            await engine.dispose()
-
 
 @celery_app.task(name="poll_and_deliver_notification")
 def poll_and_deliver():

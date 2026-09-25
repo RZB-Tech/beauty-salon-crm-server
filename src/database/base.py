@@ -134,7 +134,10 @@ class BaseRepository(Generic[T]):
     async def get(self, id: int, lock: bool = False) -> T | None:
         """returns None if object with provided ID does not exists"""
         stmt = select(self.model).where(self.model.id == id)
-        if lock: stmt = stmt.with_for_update()
+        # populate_existing: if this row is already in the session, SQLAlchemy would
+        # otherwise keep the in-memory values from the earlier, unlocked read instead
+        # of the ones just read under the lock.
+        if lock: stmt = stmt.with_for_update().execution_options(populate_existing = True)
         result = await self.db.execute(stmt)
         return result.scalar_one_or_none()
     

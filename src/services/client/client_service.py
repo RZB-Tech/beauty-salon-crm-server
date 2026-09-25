@@ -2,6 +2,7 @@ from collections import defaultdict
 from decimal import Decimal
 import math
 from src.core.decorators.requireID import require_exists
+from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.core.utils.common import truncate_decimal
 from src.exceptions.base import BaseAppException
@@ -12,12 +13,15 @@ from src.schemas.base import PaginationSchema, RequestAllObject
 from src.schemas.client.create import ClientCreateSchema
 from src.schemas.client.request import ClientFinanceReportRequest
 from src.schemas.client.update import ClientDepositUpdateSchema, ClientUpdateSchema, DepositOperation
+from src.services.system.tenantLimits_service import TenantLimit, ensure_tenant_capacity
 
 class ClientService():
     def __init__(self, uow: UnitOfWork):
         self.uow = uow
     
     async def create(self, data: ClientCreateSchema) -> Client:
+        await ensure_tenant_capacity(self.uow, get_current_tenant_id(), {TenantLimit.CLIENTS: 1})
+
         clientData = data.model_dump()
         newObject = Client(**clientData)
         return await self.uow.clients.create(newObject)
