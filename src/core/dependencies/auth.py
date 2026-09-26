@@ -10,8 +10,6 @@ from src.core.cache.tenant_cache import (
     set_tenant_active,
     get_tenant_admin_active,
     set_tenant_admin_active,
-    get_tenant_parent,
-    set_tenant_parent,
 )
 from src.core.config import settings
 from src.core.dependencies.context import set_current_staff_id
@@ -36,49 +34,29 @@ async def is_tenant_admin_active(tenant_id: int) -> bool:
     await set_tenant_admin_active(tenant_id, active, ttl = settings.REFRESH_TOKEN_EXPIRE_SECONDS)
     return active
 
-async def _get_parent_id(tenant_id: int) -> int | None:
-    found, parent_id = await get_tenant_parent(tenant_id)
-    if found:
-        return parent_id
-
-    async with SessionLocal() as session:
-        result = await session.execute(select(Tenant.parent_id).where(Tenant.id == tenant_id))
-        parent_id = result.scalar_one_or_none()
-
-    await set_tenant_parent(tenant_id, parent_id)
-    return parent_id
-
-async def is_tenant_active(tenant_id: int) -> bool:
+async def has_active_subscription(tenant_id: int) -> bool:
     """
-    Cache-first tenant active-status check; falls back to the database on a cache miss.
-    A tenant is active only if it hasn't been manually disabled AND it has a
-    subscription that is currently active/trialing and not past its period_end.
-
-    Every tenant - parent or branch - has its own subscription, so a branch is
-    judged on its own row like any other tenant; the parent's subscription
-    doesn't matter. The one thing inherited is the platform switch: a branch
-    is blocked while its parent is disabled (Tenant.active) in SQLAdmin.
+    Cache-first check of the tenant's own subscription: active/trialing and not
+    past its period_end. Every tenant - parent or branch - is independent: a
+    branch's access depends only on its own subscription and its own
+    Tenant.active, never on its parent's.
+    False -> TENANT_SUBSCRIPTION_INACTIVE. Cached under the tenant_cache
+    "active" key (get/set/delete_tenant_active), which now holds only this.
     """
-    parent_id = await _get_parent_id(tenant_id)
-    if parent_id is not None and not await is_tenant_admin_active(parent_id):
-        return False
-
     cached = await get_tenant_active(tenant_id)
     if cached is not None:
         return cached
 
     async with SessionLocal() as session:
         result = await session.execute(
-            select(Tenant.active, TenantSubscriptions.status, TenantSubscriptions.period_end)
-            .outerjoin(TenantSubscriptions, TenantSubscriptions.tenant_id == Tenant.id)
-            .where(Tenant.id == tenant_id)
+            select(TenantSubscriptions.status, TenantSubscriptions.period_end)
+            .where(TenantSubscriptions.tenant_id == tenant_id)
         )
         row = result.one_or_none()
 
     now = datetime.now(timezone.utc)
     active = (
         row is not None
-        and row.active is True
         and row.status in _ACTIVE_SUBSCRIPTION_STATUSES
         and row.period_end is not None
         and row.period_end > now

@@ -60,12 +60,20 @@ async def _expire_tenant_subscriptions():
                 auto_pay = (tenant.preferences or {}).get("auto_pay_subscription") is True
                 renewed = False
 
+                # A deactivated tenant is never charged: it can't use what it would
+                # pay for. It falls back to past due and buys again once re-enabled.
+                # Only its own flag counts - a branch doesn't depend on its parent.
+                enabled = tenant.active
+                if auto_pay and not enabled:
+                    logger.info(f"Tenant {tenant_id} is deactivated; skipping auto-renewal, marking past due.")
+
                 # An expired trial is never auto-renewed: the tenant hasn't paid
                 # yet, so it always falls back to past due and they buy a plan
                 # themselves.
                 if (
                     subscription.status == TenantSubscriptionStatus.ACTIVE
                     and auto_pay
+                    and enabled
                 ):
                     try:
                         # Renews the SAME plan the tenant was already on - this

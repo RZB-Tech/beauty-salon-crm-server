@@ -56,6 +56,15 @@ class TenantIsInactive(BaseAppException):
             errorCode = self.errorCode
         )
 
+class TenantSubscriptionInactive(BaseAppException):
+    statusCode = 403
+    errorCode = "TENANT_SUBSCRIPTION_INACTIVE"
+    def __init__(self):
+        super().__init__(
+            detail="Organization has no active subscription",
+            errorCode = self.errorCode
+        )
+
 class RefreshTokenMissing(BaseAppException):
     statusCode = 401
     errorCode = "REFRESH_TOKEN_MISSING"

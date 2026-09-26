@@ -2,10 +2,10 @@ from typing import Literal
 from fastapi import Depends
 from src.core.cache.permission_cache import get_staff_permissions, set_staff_permissions
 from src.core.config import settings
-from src.core.dependencies.auth import get_current_staff, is_tenant_active
+from src.core.dependencies.auth import get_current_staff, has_active_subscription
 from src.core.dependencies.uow import UnitOfWork, get_request_uow
 from src.core.permissions import PERMISSION_DOMAIN_MANAGE, PERMISSIONS, PermissionCode, compute_effective_permissions
-from src.exceptions.auth_exceptions import AdminPreviligesRequired, NotEnoughPermissions, TenantIsInactive
+from src.exceptions.auth_exceptions import AdminPreviligesRequired, NotEnoughPermissions, TenantSubscriptionInactive
 from src.exceptions.staff_exceptions import StaffIsInactive, StaffNotFound
 from src.exceptions.tenant_exceptions import TenantNotFound, TenantOnlyForParent
 from src.repository.staff.staff_model import StaffType
@@ -62,14 +62,15 @@ async def require_active_subscription(
     current_staff: dict = Depends(get_current_staff),
 ) -> None:
     """
-    Gates the bulk of the app behind having an active/trialing, non-expired
-    subscription - unlike `get_current_staff`'s own check, which only blocks
-    admin-disabled tenants so a subscription-less tenant can still log in
-    and reach the billing routes (checkout, buy-subscription) that are
-    deliberately mounted without this dependency.
+    Gates the bulk of the app behind the current tenant's own active/trialing,
+    non-expired subscription (a branch's own, never its parent's).
+    `get_current_staff` runs first and already rejects a disabled tenant with
+    TENANT_IS_INACTIVE, so a disabled tenant never reaches this check; a
+    subscription-less one still logs in and reaches the billing routes
+    (checkout, buy-subscription), deliberately mounted without this dependency.
     """
-    if not await is_tenant_active(current_staff["tenant_id"]):
-        raise TenantIsInactive()
+    if not await has_active_subscription(current_staff["tenant_id"]):
+        raise TenantSubscriptionInactive()
 
 async def require_admin(
     current_staff: dict = Depends(get_current_staff),

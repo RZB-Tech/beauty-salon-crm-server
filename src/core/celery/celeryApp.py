@@ -20,7 +20,7 @@ celery_app.conf.update(
             "task": "poll_and_deliver_notification",
             "schedule": 60.0,  # seconds
         },
-        # Access ends exactly at period_end (see is_tenant_active), so this has
+        # Access ends exactly at period_end (see has_active_subscription), so this has
         # to run often: auto-pay tenants are locked out from period_end until
         # the next run renews them. The task only selects already-expired rows
         # and re-checks each under lock, so frequent runs are cheap and safe.

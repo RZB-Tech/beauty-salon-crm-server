@@ -51,25 +51,3 @@ async def delete_tenant_admin_active(tenant_id: int) -> None:
         await get_redis_client().delete(_admin_key(tenant_id))
     except RedisError:
         logger.warning("Redis unavailable, could not clear admin-active cache for tenant %s", tenant_id)
-
-# parent_id is set when a branch is provisioned and never changes afterwards,
-# so it's safe to cache without a TTL. "0" means "no parent".
-def _parent_key(tenant_id: int) -> str:
-    return f"tenant:{tenant_id}:parent"
-
-async def set_tenant_parent(tenant_id: int, parent_id: int | None) -> None:
-    try:
-        await get_redis_client().set(_parent_key(tenant_id), str(parent_id or 0))
-    except RedisError:
-        logger.warning("Redis unavailable, skipping parent cache write for tenant %s", tenant_id)
-
-async def get_tenant_parent(tenant_id: int) -> tuple[bool, int | None]:
-    """Returns (found_in_cache, parent_id)."""
-    try:
-        raw = await get_redis_client().get(_parent_key(tenant_id))
-    except RedisError:
-        logger.warning("Redis unavailable, falling back to database for tenant %s parent", tenant_id)
-        return False, None
-    if raw is None:
-        return False, None
-    return True, (int(raw) or None)
