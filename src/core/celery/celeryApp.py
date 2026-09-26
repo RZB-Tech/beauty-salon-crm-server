@@ -28,9 +28,10 @@ celery_app.conf.update(
         "expire-tenant-subscriptions": {
             "task": "expire_tenant_subscriptions",
             "schedule": crontab(minute = "*/10"),
-        "cancel-past-due-appointment-requests-every-minute": {
-            "task": "cancel_past_due_appointment_requests",
-            "schedule": 60.0,  # seconds
+            "cancel-past-due-appointment-requests-every-minute": {
+                "task": "cancel_past_due_appointment_requests",
+                "schedule": 60.0,  # seconds
+            },
         },
-    },
+    }
 )
