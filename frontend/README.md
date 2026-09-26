@@ -1,15 +1,19 @@
 # Telegram mini app (test client)
 
 Vite + React app for testing the client side of Telegram booking against this backend
-(`/api/v1/mini-app`). For now it covers **registration**:
+(`/api/v1/mini-app`):
 
-1. On open it calls `GET /mini-app/me` with `Authorization: tma <initData>`.
-2. Not registered (`GLOBAL_CLIENT_NOT_REGISTERED`) → registration form: first name, last name,
-   sex (required), middle name, birth date, call phone (optional) and a **"Поделиться номером"**
-   button (`WebApp.requestContact`) for the verified Telegram phone.
-3. Submits `POST /mini-app/me` → shows the saved profile.
+- **Registration** — on open it calls `GET /mini-app/me`; not registered (`GLOBAL_CLIENT_NOT_REGISTERED`)
+  → form: first/last name, sex (required), middle name, birth date, call phone (optional) and
+  **"Поделиться номером"** (`WebApp.requestContact`) for the verified Telegram phone → `POST /mini-app/me`.
+- **Салоны** — salons that accept Telegram booking → a salon's services with quantity steppers, total
+  price and duration, desired start time and comment → `POST /mini-app/appointment-requests`.
+- **Мои заявки** — booking history (20 per page, "Показать еще") with statuses, the salon's decline
+  reason, the appointment's status for confirmed requests, and cancelling (optional reason) for
+  pending/confirmed ones.
+- **Профиль** — the saved profile.
 
-Any API error is shown with its `error_code`, to make testing easier.
+Any API error is shown with its `error_code` (and a plain-language message for booking errors).
 
 ## Backend requirements
 
@@ -97,8 +101,17 @@ In @BotFather: `/mybots` → the bot → **Bot Settings → Menu Button** (or **
 
 ## What to check
 
+A salon shows up in the list only if it's **active**, has **its own active subscription** and
+**"Запись через Telegram" (`enable_telegram_booking`) switched on** in its preferences. A service shows
+up only if it isn't archived, has a **duration** (`estimated_time`) and **at least one active employee**
+providing it.
+
 - First open → registration form, first/last name prefilled from Telegram.
-- "Поделиться номером" → Telegram's own confirmation → ✓ with your number.
-- Submit → profile with `telegram_phone` from Telegram and the typed `call_phone`.
-- Reopen → the profile right away (already registered).
-- Declining Telegram's phone prompt → "Вы не поделились номером", and the form stays disabled until you share it.
+- "Поделиться номером" → Telegram's own confirmation → ✓ with your number. Declining → "Вы не поделились номером".
+- Submit → the "Салоны" tab.
+- Salon → pick services and quantities, a time and a comment → "Отправить заявку" → "Мои заявки" shows it as pending.
+- In the CRM (staff): the "new request" notification → confirm or decline it → the bot messages you,
+  and the request's status changes after "Обновить".
+- Cancel a pending or confirmed request with a reason → it shows "Отменена вами: <reason>".
+- More pending requests than the salon allows (`max_pending_booking_requests`, default 3) → a plain-language limit error.
+- Times are picked and shown in the phone's local time and sent to the API as UTC.

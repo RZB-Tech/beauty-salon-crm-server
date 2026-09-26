@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useState } from 'react'
-import { ApiError, getProfile, register } from './api'
-import { getInitData, getTelegramUser, requestContact } from './telegram'
+import { ApiError, getProfile } from './api'
+import { getInitData } from './telegram'
+import ErrorBox from './components/ErrorBox'
+import Booking from './screens/Booking'
+import Profile from './screens/Profile'
+import RegisterForm from './screens/Register'
+import Requests from './screens/Requests'
+import Salons from './screens/Salons'
 
 export default function App() {
-  // loading | outside-telegram | register | profile | error
+  // loading | outside-telegram | register | main | error
   const [screen, setScreen] = useState('loading')
   const [profile, setProfile] = useState(null)
   const [error, setError] = useState(null)
@@ -16,7 +22,7 @@ export default function App() {
     setScreen('loading')
     try {
       setProfile(await getProfile())
-      setScreen('profile')
+      setScreen('main')
     } catch (e) {
       if (e instanceof ApiError && e.code === 'GLOBAL_CLIENT_NOT_REGISTERED') {
         setScreen('register')
@@ -51,125 +57,51 @@ export default function App() {
   }
 
   if (screen === 'register') {
-    return <RegisterForm onRegistered={(p) => { setProfile(p); setScreen('profile') }} />
+    return <RegisterForm onRegistered={(p) => { setProfile(p); setScreen('main') }} />
   }
 
-  return <Profile profile={profile} onRefresh={load} />
+  return <Main profile={profile} onRefreshProfile={load} />
 }
 
-function RegisterForm({ onRegistered }) {
-  const user = getTelegramUser()
-  const [form, setForm] = useState({
-    firstname: user?.first_name ?? '',
-    lastname: user?.last_name ?? '',
-    middlename: '',
-    birth_date: '',
-    sex: '',
-    call_phone: '',
-  })
-  const [contact, setContact] = useState(null) // { response, phone }
-  const [error, setError] = useState(null)
-  const [busy, setBusy] = useState(false)
+const TABS = [
+  ['salons', 'Салоны'],
+  ['requests', 'Мои заявки'],
+  ['profile', 'Профиль'],
+]
 
-  const set = (field) => (e) => setForm({ ...form, [field]: e.target.value })
+function Main({ profile, onRefreshProfile }) {
+  const [tab, setTab] = useState('salons')
+  const [tenant, setTenant] = useState(null) // salon being booked, within the "salons" tab
+  const [notice, setNotice] = useState(null)
 
-  async function sharePhone() {
-    setError(null)
-    try {
-      setContact(await requestContact())
-    } catch (e) {
-      setError(e)
-    }
+  const openTab = (next) => {
+    setTab(next)
+    setTenant(null)
+    setNotice(null)
+  }
+  const backToSalons = useCallback(() => setTenant(null), [])
+
+  function booked(request) {
+    setNotice(`Заявка в «${request.tenant_name}» отправлена — ждем подтверждения салона.`)
+    setTenant(null)
+    setTab('requests')
   }
 
-  async function submit(e) {
-    e.preventDefault()
-    setError(null)
-    setBusy(true)
-    try {
-      onRegistered(await register({
-        firstname: form.firstname.trim(),
-        lastname: form.lastname.trim(),
-        sex: form.sex,
-        // Optional fields: send null rather than empty strings
-        middlename: form.middlename.trim() || null,
-        birth_date: form.birth_date || null,
-        call_phone: form.call_phone.trim() || null,
-        contact: contact.response,
-      }))
-    } catch (e) {
-      setError(e)
-    } finally {
-      setBusy(false)
-    }
-  }
-
-  const ready = form.firstname.trim() && form.lastname.trim() && form.sex && contact
-
   return (
-    <form className="card" onSubmit={submit}>
-      <h1>Регистрация</h1>
-      <p className="muted">Данные нужны салону, чтобы записать вас. Заполняются один раз.</p>
-
-      <label>Имя *<input value={form.firstname} onChange={set('firstname')} required maxLength={255} /></label>
-      <label>Фамилия *<input value={form.lastname} onChange={set('lastname')} required maxLength={255} /></label>
-      <label>Отчество<input value={form.middlename} onChange={set('middlename')} maxLength={255} /></label>
-      <label>Дата рождения<input type="date" value={form.birth_date} onChange={set('birth_date')} /></label>
-
-      <fieldset>
-        <legend>Пол *</legend>
-        <label className="inline"><input type="radio" name="sex" value="female" checked={form.sex === 'female'} onChange={set('sex')} /> Женский</label>
-        <label className="inline"><input type="radio" name="sex" value="male" checked={form.sex === 'male'} onChange={set('sex')} /> Мужской</label>
-      </fieldset>
-
-      <div className="field">
-        <span>Номер Telegram *</span>
-        {contact
-          ? <p className="ok">✓ {contact.phone ? `+${contact.phone.replace(/^\+/, '')}` : 'Номер получен'}</p>
-          : <button type="button" className="secondary" onClick={sharePhone}>Поделиться номером</button>}
-      </div>
-
-      <label>Номер для звонков<input type="tel" value={form.call_phone} onChange={set('call_phone')} placeholder="Если отличается от номера Telegram" maxLength={50} /></label>
-
-      {error && <ErrorBox error={error} />}
-
-      <button type="submit" disabled={!ready || busy}>{busy ? 'Отправка…' : 'Зарегистрироваться'}</button>
-    </form>
-  )
-}
-
-function Profile({ profile, onRefresh }) {
-  const rows = [
-    ['Имя', `${profile.firstname} ${profile.lastname}${profile.middlename ? ` ${profile.middlename}` : ''}`],
-    ['Пол', profile.sex === 'female' ? 'Женский' : 'Мужской'],
-    ['Дата рождения', profile.birth_date],
-    ['Номер Telegram', profile.telegram_phone],
-    ['Номер для звонков', profile.call_phone],
-    ['Telegram ID', profile.telegram_user_id],
-    ['Username', profile.telegram_username && `@${profile.telegram_username}`],
-    ['Зарегистрирован', new Date(profile.created_at).toLocaleString()],
-  ].filter(([, value]) => value)
-
-  return (
-    <div className="card">
-      <h1>Вы зарегистрированы</h1>
-      <dl>
-        {rows.map(([label, value]) => (
-          <div key={label} className="row"><dt>{label}</dt><dd>{value}</dd></div>
+    <>
+      <nav className="tabs">
+        {TABS.map(([id, label]) => (
+          <button key={id} className={tab === id ? 'active' : ''} onClick={() => openTab(id)}>{label}</button>
         ))}
-      </dl>
-      <button className="secondary" onClick={onRefresh}>Обновить</button>
-    </div>
-  )
-}
+      </nav>
 
-function ErrorBox({ error }) {
-  return (
-    <div className="error">
-      <p>{error.message}</p>
-      {/* Error codes help while testing against the backend */}
-      {error.code && <code>{error.code}{error.status ? ` · ${error.status}` : ''}</code>}
-      {error.metadata?.field && <code>{error.metadata.field}: {error.metadata.message}</code>}
-    </div>
+      {notice && <p className="notice">{notice}</p>}
+
+      {tab === 'salons' && (tenant
+        ? <Booking tenant={tenant} onBack={backToSalons} onBooked={booked} />
+        : <Salons onSelect={setTenant} />)}
+      {tab === 'requests' && <Requests />}
+      {tab === 'profile' && <Profile profile={profile} onRefresh={onRefreshProfile} />}
+    </>
   )
 }

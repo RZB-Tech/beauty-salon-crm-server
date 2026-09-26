@@ -27,3 +27,15 @@ async function request(path, { method = 'GET', body } = {}) {
 
 export const getProfile = () => request('/me')
 export const register = (data) => request('/me', { method: 'POST', body: data })
+
+export const getTenants = () => request('/tenants')
+export const getServices = (tenantId) => request(`/tenants/${tenantId}/services`)
+
+// { tenant_id, services: [{ service_id, quantity }], start_time_est (ISO, UTC), comment }
+export const createRequest = (data) => request('/appointment-requests', { method: 'POST', body: data })
+
+export const getRequests = (page, pageSize = 20) =>
+  request('/appointment-requests/get-all', { method: 'POST', body: { page, pageSize } })
+
+export const cancelRequest = (id, reason) =>
+  request('/appointment-requests/cancel', { method: 'PATCH', body: { id, reason: reason || null } })

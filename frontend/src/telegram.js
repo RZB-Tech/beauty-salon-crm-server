@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 // Thin wrapper over window.Telegram.WebApp (loaded in index.html)
 export const tg = window.Telegram?.WebApp
 
@@ -39,4 +41,20 @@ export function requestContact() {
       reject(new Error(`Не удалось запросить номер: ${e.message}`))
     }
   })
+}
+
+// Telegram's native back button (top-left in the mini app header) while a screen is open.
+// Returns false when it isn't available, so the screen can render its own back link.
+export function useBackButton(onBack) {
+  const button = tg?.isVersionAtLeast?.('6.1') ? tg.BackButton : null
+  useEffect(() => {
+    if (!button || !onBack) return
+    button.onClick(onBack)
+    button.show()
+    return () => {
+      button.offClick(onBack)
+      button.hide()
+    }
+  }, [button, onBack])
+  return Boolean(button)
 }
