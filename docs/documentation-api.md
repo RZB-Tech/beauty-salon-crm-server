@@ -31,19 +31,23 @@
 
 ## Telegram mini app (/api/v1/mini-app)
 
-Открытые роуты (без cookie сотрудника) для клиентов в нашем Telegram мини-приложении. Каждый запрос должен содержать заголовок `Authorization: tma <initData>` (`window.Telegram.WebApp.initData`); подпись проверяется токеном нашего бота (`TELEGRAM_MINIAPP_BOT_TOKEN`), срок действия — `TELEGRAM_INIT_DATA_EXPIRE_SECONDS`. Без/с невалидным `initData` — 401 `TELEGRAM_AUTH_INVALID`. Клиент (`global_clients`) создается автоматически при первом запросе. Все даты — UTC.
+Открытые роуты (без cookie сотрудника) для клиентов в нашем Telegram мини-приложении. Каждый запрос должен содержать заголовок `Authorization: tma <initData>` (`window.Telegram.WebApp.initData`); подпись проверяется токеном нашего бота (`TELEGRAM_MINIAPP_BOT_TOKEN`), срок действия — `TELEGRAM_INIT_DATA_EXPIRE_SECONDS`. Без/с невалидным `initData` — 401 `TELEGRAM_AUTH_INVALID`. Все эндпоинты, кроме `POST /me`, требуют регистрации — иначе 404 `GLOBAL_CLIENT_NOT_REGISTERED` (показать форму регистрации). Все даты — UTC.
 
-- GET `/me` — профиль клиента -> `src/schemas/globalClient/response.py::GlobalClientResponseSchema` (200). `is_profile_complete` — заполнены ли `firstname`, `sex`, `contact_phone` (обязательны для заявки).
-- PATCH `/me` — обновить профиль (`src/schemas/globalClient/update.py::GlobalClientUpdateSchema`: `firstname`, `lastname`, `middlename`, `birth_date`, `sex`, `call_phone`) -> `GlobalClientResponseSchema` (200).
-- POST `/me/contact` — сохранить номер из Telegram: тело `{"response": "<строка response из колбэка WebApp.requestContact>"}` -> `GlobalClientResponseSchema` (200). Номер (`contact_phone`) можно установить только так; `call_phone` — необязательный номер для звонков, если отличается.
-- GET `/tenants` — организации с включенной записью через Telegram -> `list[MiniAppTenantResponseSchema]` (`id`, `name`) (200).
-- GET `/tenants/{tenant_id}/services` — услуги для онлайн-записи -> `list[MiniAppServiceResponseSchema]` (`id`, `name`, `price`, `estimated_time` — минуты, `category_id`) (200).
-- GET `/tenants/{tenant_id}/services/{service_id}/slots?date=YYYY-MM-DD` — свободные слоты -> `list[BookingSlotSchema]` (`start_time_est`, `end_time_est`) (200).
-- POST `/appointment-requests` — создать заявку (`src/schemas/appointmentRequest/create.py::AppointmentRequestCreateSchema`: `tenant_id`, `service_id`, `start_time_est`, `comment`) -> `MiniAppAppointmentRequestResponseSchema` (201). Время окончания = начало + `estimated_time` услуги.
+Чтобы бот мог присылать клиенту сообщения о результате заявки, мини-приложению стоит запросить разрешение `WebApp.requestWriteAccess` (если клиент не запускал бота сам).
+
+- POST `/me` — регистрация (`src/schemas/globalClient/create.py::GlobalClientRegisterSchema`: `firstname`, `lastname`, `sex` — обязательны; `middlename`, `birth_date`, `call_phone` — опционально; `contact` — строка `response` из колбэка `WebApp.requestContact`) -> `src/schemas/globalClient/response.py::GlobalClientResponseSchema` (201). Номер из `contact` сохраняется как `telegram_phone`.
+- GET `/me` — профиль клиента -> `GlobalClientResponseSchema` (200).
+- PATCH `/me` — обновить профиль (`src/schemas/globalClient/update.py::GlobalClientUpdateSchema`: `firstname`, `lastname`, `middlename`, `birth_date`, `sex`, `call_phone`; `firstname`, `lastname`, `sex` очистить нельзя) -> `GlobalClientResponseSchema` (200).
+- POST `/me/contact` — обновить номер из Telegram: тело `{"response": "<строка response из колбэка WebApp.requestContact>"}` -> `GlobalClientResponseSchema` (200). `telegram_phone` меняется только так.
+- GET `/tenants` — организации, в которые можно записаться (активные, с включенной записью через Telegram и собственной активной подпиской) -> `list[MiniAppTenantResponseSchema]` (`id`, `name`) (200).
+- GET `/tenants/{tenant_id}/services` — услуги для онлайн-записи -> `list[MiniAppServiceResponseSchema]` (`id`, `name`, `price`, `estimated_time` — минуты, `category_id`) (200). Сотрудники и их график клиенту не показываются.
+- POST `/appointment-requests` — создать заявку (`src/schemas/appointmentRequest/create.py::AppointmentRequestCreateSchema`: `tenant_id`, `services` — список `{service_id, quantity}` без повторов, `start_time_est` — любое будущее время, `comment`) -> `MiniAppAppointmentRequestResponseSchema` (201). Время окончания — оценка: начало + сумма `estimated_time × quantity`.
 - POST `/appointment-requests/get-all` — мои заявки во всех организациях (`PaginationSchema`) -> `PaginatedResponseSchema[MiniAppAppointmentRequestResponseSchema]` (200). Поле `appointment_status` — текущий статус посещения для подтвержденной заявки.
-- PATCH `/appointment-requests/cancel` — отменить заявку (`{"id": 1}`) -> `MiniAppAppointmentRequestResponseSchema` (200).
+- PATCH `/appointment-requests/cancel` — отменить заявку (`{"id": 1, "reason": "…"}`, `reason` — опционально) -> `MiniAppAppointmentRequestResponseSchema` (200).
 
-`MiniAppAppointmentRequestResponseSchema`: `id`, `tenant_id`, `tenant_name`, `service_snapshot` (`service_id`, `name`, `price`, `estimated_time` — услуга на момент заявки), `start_time_est`, `end_time_est`, `comment`, `status` (`pending` / `confirmed` / `declined` / `cancelled`), `cancelled_reason` (`cancelled by client` / `automatically cancelled - past due time`), `decline_reason`, `expires_at`, `decided_at`, `appointment_id`, `appointment_status`, `created_at`.
+`GlobalClientResponseSchema`: `id`, `telegram_user_id`, `telegram_username`, `telegram_phone`, `call_phone`, `firstname`, `lastname`, `middlename`, `birth_date`, `sex`, `created_at`, `updated_at`.
+
+`MiniAppAppointmentRequestResponseSchema`: `id`, `tenant_id`, `tenant_name`, `services` (список `service_id`, `name`, `price`, `estimated_time`, `quantity` — услуги на момент заявки), `start_time_est`, `end_time_est`, `comment`, `status` (`pending` / `confirmed` / `declined` / `cancelled`), `cancelled_reason` (`cancelled by client` / `automatically: time to make action passed`), `cancel_comment` — причина отмены клиентом, `decline_reason`, `expires_at`, `decided_at`, `appointment_id`, `appointment_status`, `created_at`.
 
 ---
 
@@ -81,11 +85,11 @@
 
 - POST `/get-all` — paginated, `RequestAllObject` -> `PaginatedResponseSchema[AppointmentRequestResponseSchema]` (200). Ожидающие решения: `{"filters": {"status": "pending"}}`.
 - GET `/{id}` -> `src/schemas/appointmentRequest/response.py::AppointmentRequestResponseSchema` (200)
-- GET `/{id}/matching-clients` -> `list[ClientResponseSchema]` (200) — клиенты организации, уже привязанные к Telegram-клиенту или совпадающие по телефону; для выбора `client_id` при подтверждении.
-- PATCH `/confirm` — `src/schemas/appointmentRequest/update.py::AppointmentRequestConfirmSchema` (`id`, `employee_id`, `client_id` — опционально) -> `AppointmentRequestResponseSchema` (200). Создает посещение с `created_via = telegram`.
-- PATCH `/decline` — `AppointmentRequestDeclineSchema` (`id`, `reason` — опционально, видна клиенту) -> `AppointmentRequestResponseSchema` (200)
+- GET `/{id}/matching-clients` -> `list[ClientResponseSchema]` (200) — клиенты организации, уже привязанные к Telegram-клиенту (по `global_client_id` или `telegram_user_id`) или совпадающие по телефону (`telegram_phone`, `call_phone`); для выбора `client_id` при подтверждении.
+- PATCH `/confirm` — `src/schemas/appointmentRequest/update.py::AppointmentRequestConfirmSchema` -> `AppointmentRequestResponseSchema` (200). Поля как при создании посещения (`start_time_est`, `end_time_est`, `records` — сотрудники и услуги, `notes`; предзаполните из `services` и `start_time_est` заявки) плюс `id` заявки и клиент организации: `client_id` (существующий, привязывается к Telegram-клиенту) или, если привязанного клиента нет, новый из профиля Telegram с номером `new_client_phone` (`telegram_phone` или `call_phone`; по умолчанию `call_phone`, затем `telegram_phone`), с учетом лимита клиентов тарифа. Создает посещение с `created_via = telegram`; клиенту приходит сообщение от бота.
+- PATCH `/decline` — `AppointmentRequestDeclineSchema` (`id`, `reason` — обязательно, видна клиенту) -> `AppointmentRequestResponseSchema` (200). Клиенту приходит сообщение от бота с причиной.
 
-`AppointmentRequestResponseSchema` (помимо `BaseResponseSchema`): `global_client` (`id`, `telegram_username`, `contact_phone`, `call_phone`, `firstname`, `lastname`, `middlename`, `birth_date`, `sex`), `service_id`, `service_snapshot`, `start_time_est`, `end_time_est`, `comment`, `status`, `cancelled_reason`, `decline_reason`, `expires_at`, `decided_at`, `appointment_id`.
+`AppointmentRequestResponseSchema` (помимо `BaseResponseSchema`): `global_client` (`id`, `telegram_user_id`, `telegram_username`, `telegram_phone`, `call_phone`, `firstname`, `lastname`, `middlename`, `birth_date`, `sex`), `services`, `start_time_est`, `end_time_est`, `comment`, `status`, `cancelled_reason`, `cancel_comment`, `decline_reason`, `expires_at`, `decided_at`, `appointment_id`.
 
 Права: `APPOINTMENT_REQUESTS_READ` (2031), `APPOINTMENT_REQUESTS_CONFIRM` (2032), `APPOINTMENT_REQUESTS_DECLINE` (2033), `APPOINTMENT_REQUESTS_MANAGE` (2039).
 

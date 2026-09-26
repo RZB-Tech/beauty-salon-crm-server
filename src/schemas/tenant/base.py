@@ -11,4 +11,5 @@ class TenantPreferencesSchema(BaseModel):
     auto_pay_subscription: bool = False
     # Telegram booking: a pending appointment request is auto-cancelled if not confirmed within this time
     time_to_confirm_booking: int = Field(60, ge = 1) # minutes
-    booking_slot_step: int = Field(30, ge = 5, le = 240) # minutes between offered start times
+    # Anti-spam: how many pending requests one Telegram client may have at this tenant at once
+    max_pending_booking_requests: int = Field(3, ge = 1, le = 50)

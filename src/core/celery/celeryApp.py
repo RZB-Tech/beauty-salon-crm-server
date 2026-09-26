@@ -10,6 +10,7 @@ celery_app = Celery(
         "src.core.celery.tasks.notification_task",
         "src.core.celery.tasks.tenantSubscription_task",
         "src.core.celery.tasks.appointmentRequest_task",
+        "src.core.celery.tasks.telegramClient_task",
     ],
 )
 

@@ -1,6 +1,6 @@
-from sqlalchemy import Result, select
+from sqlalchemy import Result, func, select
 from src.database.base import BaseRepository
-from src.repository.tenant.tenant_model import Tenant
+from src.repository.tenant.tenant_model import Tenant, TenantSubscriptions, TenantSubscriptionStatus
 
 class TenantRepository(BaseRepository[Tenant]):
     async def get(self, id: int | None = None, name: str | None = None, lock: bool = False) -> Tenant | None:
@@ -25,13 +25,23 @@ class TenantRepository(BaseRepository[Tenant]):
         return list(result.scalars().all())
 
     async def get_all_bookable(self) -> list[Tenant]:
-        """Active tenants that enabled Telegram booking in their preferences."""
+        """Tenants clients can book at: enabled, with Telegram booking on in their
+        preferences and their OWN active subscription (a branch's own, never its parent's)."""
         result = await self.db.execute(
             select(Tenant)
+            .join(TenantSubscriptions, TenantSubscriptions.tenant_id == Tenant.id)
             .where(
                 Tenant.active.is_(True),
                 Tenant.preferences["enable_telegram_booking"].as_boolean().is_(True),
+                TenantSubscriptions.status.in_((TenantSubscriptionStatus.ACTIVE, TenantSubscriptionStatus.TRIAL)),
+                TenantSubscriptions.period_end > func.now(),
             )
             .order_by(Tenant.name)
         )
         return list(result.scalars().all())
+
+    async def get_names(self, ids: list[int]) -> dict[int, str]:
+        """tenant id -> name."""
+        if not ids: return {}
+        result = await self.db.execute(select(Tenant.id, Tenant.name).where(Tenant.id.in_(ids)))
+        return {row[0]: row[1] for row in result.all()}

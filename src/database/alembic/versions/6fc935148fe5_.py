@@ -68,17 +68,17 @@ def upgrade() -> None:
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('telegram_user_id', sa.BigInteger(), nullable=False),
     sa.Column('telegram_username', sa.String(length=255), nullable=True),
-    sa.Column('contact_phone', sa.String(length=50), nullable=True),
+    sa.Column('telegram_phone', sa.String(length=50), nullable=False),
     sa.Column('call_phone', sa.String(length=50), nullable=True),
     sa.Column('firstname', sa.String(length=255), nullable=False),
-    sa.Column('lastname', sa.String(length=255), nullable=True),
+    sa.Column('lastname', sa.String(length=255), nullable=False),
     sa.Column('middlename', sa.String(length=255), nullable=True),
     sa.Column('birth_date', sa.Date(), nullable=True),
-    sa.Column('sex', sa.String(length=50), nullable=True),
+    sa.Column('sex', sa.String(length=50), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('updated_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('contact_phone')
+    sa.UniqueConstraint('telegram_phone')
     )
     op.create_index(op.f('ix_global_clients_telegram_user_id'), 'global_clients', ['telegram_user_id'], unique=True)
     op.create_table('tenants',
@@ -161,6 +161,7 @@ def upgrade() -> None:
     sa.Column('notes', sa.Text(), nullable=True),
     sa.Column('deposit', sa.Numeric(precision=30, scale=2), nullable=False),
     sa.Column('global_client_id', sa.Integer(), nullable=True),
+    sa.Column('telegram_user_id', sa.BigInteger(), nullable=True),
     sa.Column('id', sa.Integer(), autoincrement=True, nullable=False),
     sa.Column('archived', sa.Boolean(), server_default=sa.text('false'), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
@@ -173,7 +174,8 @@ def upgrade() -> None:
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('firstname', 'lastname', 'middlename', 'birth_date', 'phone', 'tenant_id', name='uq_client_per_tenant'),
     sa.UniqueConstraint('global_client_id', 'tenant_id', name='uq_client_global_client_tenant'),
-    sa.UniqueConstraint('id', 'tenant_id', name='uq_client_tenant')
+    sa.UniqueConstraint('id', 'tenant_id', name='uq_client_tenant'),
+    sa.UniqueConstraint('telegram_user_id', 'tenant_id', name='uq_client_telegram_user_tenant')
     )
     op.create_index(op.f('ix_clients_global_client_id'), 'clients', ['global_client_id'], unique=False)
     op.create_index(op.f('ix_clients_tenant_id'), 'clients', ['tenant_id'], unique=False)
@@ -701,13 +703,13 @@ def upgrade() -> None:
     op.create_index(op.f('ix_transactions_tenant_id'), 'transactions', ['tenant_id'], unique=False)
     op.create_table('appointment_requests',
     sa.Column('global_client_id', sa.Integer(), nullable=False),
-    sa.Column('service_id', sa.Integer(), nullable=True),
-    sa.Column('service_snapshot', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+    sa.Column('services', postgresql.JSONB(astext_type=sa.Text()), nullable=False),
     sa.Column('start_time_est', sa.DateTime(timezone=True), nullable=False),
     sa.Column('end_time_est', sa.DateTime(timezone=True), nullable=False),
     sa.Column('comment', sa.Text(), nullable=True),
     sa.Column('status', sa.String(length=50), nullable=False),
     sa.Column('cancelled_reason', sa.String(length=50), nullable=True),
+    sa.Column('cancel_comment', sa.Text(), nullable=True),
     sa.Column('decline_reason', sa.Text(), nullable=True),
     sa.Column('expires_at', sa.DateTime(timezone=True), nullable=False),
     sa.Column('decided_at', sa.DateTime(timezone=True), nullable=True),
@@ -722,7 +724,6 @@ def upgrade() -> None:
     sa.ForeignKeyConstraint(['appointment_id', 'tenant_id'], ['appointments.id', 'appointments.tenant_id'], name='fk_appointment_requests_appointment', ondelete='SET NULL (appointment_id)'),
     sa.ForeignKeyConstraint(['created_by_actor_id', 'tenant_id'], ['actors.id', 'actors.tenant_id'], name='fk_appointment_requests_created_by_tenant', ondelete='SET NULL (created_by_actor_id)'),
     sa.ForeignKeyConstraint(['global_client_id'], ['global_clients.id'], ondelete='CASCADE'),
-    sa.ForeignKeyConstraint(['service_id', 'tenant_id'], ['services.id', 'services.tenant_id'], name='fk_appointment_requests_service', ondelete='SET NULL (service_id)'),
     sa.ForeignKeyConstraint(['tenant_id'], ['tenants.id'], ondelete='cascade'),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id', 'tenant_id', name='uq_appointment_request_tenant')

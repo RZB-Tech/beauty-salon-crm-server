@@ -1,0 +1,81 @@
+/* Telegram's theme colours (set by telegram-web-app.js), with fallbacks for a plain browser */
+:root {
+  --bg: var(--tg-theme-bg-color, #ffffff);
+  --section-bg: var(--tg-theme-secondary-bg-color, #f1f1f4);
+  --text: var(--tg-theme-text-color, #111111);
+  --hint: var(--tg-theme-hint-color, #8a8a8e);
+  --button: var(--tg-theme-button-color, #2481cc);
+  --button-text: var(--tg-theme-button-text-color, #ffffff);
+  --danger: var(--tg-theme-destructive-text-color, #d93025);
+  --ok: #2e9d4f;
+  color-scheme: light dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  padding: 16px;
+  background: var(--section-bg);
+  color: var(--text);
+  font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+h1 { font-size: 20px; margin: 0 0 8px; }
+.muted { color: var(--hint); margin: 0 0 16px; }
+.center { text-align: center; margin-top: 40vh; }
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 12px;
+}
+
+label, .field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: var(--hint); }
+label.inline { flex-direction: row; align-items: center; gap: 8px; color: var(--text); font-size: 16px; }
+
+input:not([type="radio"]) {
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--hint) 40%, transparent);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+}
+
+fieldset { border: none; margin: 0; padding: 0; display: flex; gap: 16px; flex-wrap: wrap; }
+legend { font-size: 14px; color: var(--hint); margin-bottom: 4px; }
+
+button {
+  padding: 12px;
+  border: none;
+  border-radius: 8px;
+  background: var(--button);
+  color: var(--button-text);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+button.secondary { background: transparent; color: var(--button); border: 1px solid var(--button); }
+button:disabled { opacity: 0.5; cursor: default; }
+
+.ok { color: var(--ok); margin: 0; font-weight: 600; }
+
+.error {
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+.error p { margin: 0; }
+.error code { display: block; margin-top: 4px; font-size: 12px; opacity: 0.8; }
+
+dl { margin: 0; }
+.row { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--section-bg); }
+dt { color: var(--hint); }
+dd { margin: 0; text-align: right; word-break: break-word; }

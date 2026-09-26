@@ -31,16 +31,6 @@ class AppointmentRequestExpired(BaseAppException):
             id = id
         )
 
-class AppointmentRequestServiceMissing(BaseAppException):
-    statusCode = 409
-    errorCode = "APPOINTMENT_REQUEST_SERVICE_DELETED"
-    def __init__(self, id: int):
-        super().__init__(
-            detail = f"Service of appointment request ID {id} no longer exists",
-            errorCode = self.errorCode,
-            id = id
-        )
-
 class AppointmentRequestCannotBeCancelled(BaseAppException):
     statusCode = 409
     errorCode = "APPOINTMENT_REQUEST_CANNOT_BE_CANCELLED"
@@ -65,11 +55,13 @@ class AppointmentIsFinished(BaseAppException):
 class TooManyPendingAppointmentRequests(BaseAppException):
     statusCode = 429
     errorCode = "TOO_MANY_PENDING_APPOINTMENT_REQUESTS"
-    def __init__(self, limit: int):
+    def __init__(self, limit: int, scope: str):
+        """scope: "tenant" - the organization's own limit, "total" - across all organizations."""
         super().__init__(
-            detail = f"No more than {limit} pending appointment requests per organization are allowed",
+            detail = f"No more than {limit} pending appointment requests are allowed ({scope})",
             errorCode = self.errorCode,
-            limit = limit
+            limit = limit,
+            scope = scope
         )
 
 class ClientAppointmentRequestConflict(BaseAppException):
@@ -78,15 +70,6 @@ class ClientAppointmentRequestConflict(BaseAppException):
     def __init__(self):
         super().__init__(
             detail = "Client already has an appointment request on this time",
-            errorCode = self.errorCode
-        )
-
-class BookingSlotUnavailable(BaseAppException):
-    statusCode = 409
-    errorCode = "BOOKING_SLOT_UNAVAILABLE"
-    def __init__(self):
-        super().__init__(
-            detail = "No employee is available for this service at this time",
             errorCode = self.errorCode
         )
 
@@ -118,16 +101,6 @@ class TenantBookingUnavailable(BaseAppException):
             detail = f"Organization {id} not found or does not accept Telegram bookings",
             errorCode = self.errorCode,
             id = id
-        )
-
-class GlobalClientProfileIncomplete(BaseAppException):
-    statusCode = 409
-    errorCode = "PROFILE_INCOMPLETE"
-    def __init__(self, missing: list[str]):
-        super().__init__(
-            detail = f"Fill in the profile before requesting an appointment: {', '.join(missing)}",
-            errorCode = self.errorCode,
-            missing = missing
         )
 
 class ContactNotOwnedByUser(BaseAppException):
@@ -166,4 +139,22 @@ class GlobalClientAlreadyLinked(BaseAppException):
             detail = f"This Telegram client is already linked to client ID {client_id}",
             errorCode = self.errorCode,
             client_id = client_id
+        )
+
+class GlobalClientNotRegistered(BaseAppException):
+    statusCode = 404
+    errorCode = "GLOBAL_CLIENT_NOT_REGISTERED"
+    def __init__(self):
+        super().__init__(
+            detail = "Register in the mini app first",
+            errorCode = self.errorCode
+        )
+
+class GlobalClientAlreadyRegistered(BaseAppException):
+    statusCode = 409
+    errorCode = "GLOBAL_CLIENT_ALREADY_REGISTERED"
+    def __init__(self):
+        super().__init__(
+            detail = "This Telegram account is already registered",
+            errorCode = self.errorCode
         )

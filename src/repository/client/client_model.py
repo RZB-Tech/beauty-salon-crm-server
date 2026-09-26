@@ -2,6 +2,7 @@ from __future__ import annotations
 from decimal import Decimal
 from enum import StrEnum
 from sqlalchemy import (
+    BigInteger,
     ForeignKey,
     Numeric,
     String,
@@ -33,11 +34,15 @@ class Client(BaseFields):
 
     global_client_id: Mapped[int | None] = mapped_column(
         ForeignKey("global_clients.id", ondelete = "SET NULL"), nullable = True, index = True)
+    # Set together with global_client_id when a Telegram booking is confirmed; kept on the
+    # tenant's own row too, so it survives the global profile being deleted
+    telegram_user_id: Mapped[int | None] = mapped_column(BigInteger, nullable = True)
 
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_client_tenant"),
         UniqueConstraint("firstname", "lastname", "middlename", "birth_date" ,"phone", "tenant_id", name = "uq_client_per_tenant"),
         UniqueConstraint("global_client_id", "tenant_id", name = "uq_client_global_client_tenant"),
+        UniqueConstraint("telegram_user_id", "tenant_id", name = "uq_client_telegram_user_tenant"),
         ForeignKeyConstraint(
             ["created_by_actor_id", "tenant_id"],
             ["actors.id", "actors.tenant_id"],

@@ -29,7 +29,7 @@ async def get_all(params: RequestAllObject,
     response_model = AppointmentRequestResponseSchema,
     status_code = status.HTTP_200_OK,
     summary = "Подтвердить заявку на запись",
-    description = "Создает посещение (`created_via = telegram`) на время заявки с выбранным сотрудником (`employee_id`) и переводит заявку в `confirmed`. Клиент организации: `client_id`, если передан (привязывается к Telegram-клиенту); иначе ранее привязанный клиент; иначе создается новый из профиля Telegram. Действуют все проверки создания посещения (график, занятость сотрудника и т.д.).",
+    description = "Создает посещение (`created_via = telegram`) так, как решил сотрудник: время (`start_time_est`, `end_time_est`), сотрудники и услуги (`records`) — предзаполните из `services` и `start_time_est` заявки. Заявка переходит в `confirmed`, клиенту приходит сообщение от бота. Клиент организации: `client_id`, если передан (привязывается к Telegram-клиенту); иначе ранее привязанный клиент; иначе создается новый из профиля Telegram с номером `new_client_phone` (сотрудник выбирает `telegram_phone` или `call_phone`; по умолчанию `call_phone`, затем `telegram_phone`) — с учетом лимита клиентов тарифа. Действуют все проверки создания посещения (график, занятость сотрудника и т.д.).",
     dependencies = [Depends(require_permission([PermissionCode.APPOINTMENT_REQUESTS_CONFIRM]))]
 )
 async def confirm(data: AppointmentRequestConfirmSchema,
@@ -41,7 +41,7 @@ async def confirm(data: AppointmentRequestConfirmSchema,
     response_model = AppointmentRequestResponseSchema,
     status_code = status.HTTP_200_OK,
     summary = "Отклонить заявку на запись",
-    description = "Переводит ожидающую заявку в `declined` с необязательной причиной (`reason`), которую увидит клиент.",
+    description = "Переводит ожидающую заявку в `declined` с обязательной причиной (`reason`) — клиенту приходит сообщение от бота с этой причиной.",
     dependencies = [Depends(require_permission([PermissionCode.APPOINTMENT_REQUESTS_DECLINE]))]
 )
 async def decline(data: AppointmentRequestDeclineSchema,
@@ -64,7 +64,7 @@ async def get(id: int,
     response_model = list[ClientResponseSchema],
     status_code = status.HTTP_200_OK,
     summary = "Подходящие клиенты для заявки",
-    description = "Клиенты организации, уже привязанные к Telegram-клиенту заявки или совпадающие с ним по номеру телефона — чтобы выбрать `client_id` при подтверждении и не создавать дубликат.",
+    description = "Клиенты организации, уже привязанные к Telegram-клиенту заявки (по `global_client_id` или `telegram_user_id`) или совпадающие с ним по номеру телефона (`telegram_phone`, `call_phone`) — чтобы выбрать `client_id` при подтверждении и не создавать дубликат.",
     dependencies = [Depends(require_permission([PermissionCode.APPOINTMENT_REQUESTS_READ, PermissionCode.CLIENT_READ]))]
 )
 async def get_matching_clients(id: int,

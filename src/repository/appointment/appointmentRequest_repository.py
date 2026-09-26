@@ -26,19 +26,6 @@ class AppointmentRequestRepository(BaseRepository[AppointmentRequest]):
         result = await self.db.execute(stmt)
         return result.scalars().all(), total_items
 
-    async def get_pending_between(self, start: datetime, end: datetime) -> list[AppointmentRequest]:
-        """Pending requests of the current tenant overlapping [start, end)."""
-        result = await self.db.execute(
-            select(AppointmentRequest).where(
-                AppointmentRequest.status == AppointmentRequestStatus.PENDING,
-                AppointmentRequest.start_time_est < end,
-                AppointmentRequest.end_time_est > start,
-            )
-        )
-        return list(result.scalars().all())
-
-    # --- Global client (mini app) side: cross-tenant, always scoped by global_client_id ---
-
     async def get_for_global_client(self, global_client_id: int, id: int, lock: bool = False) -> AppointmentRequest | None:
         stmt = (
             select(AppointmentRequest)
@@ -69,17 +56,19 @@ class AppointmentRequestRepository(BaseRepository[AppointmentRequest]):
         )
         return [(row[0], row[1]) for row in result.unique().all()], total_items
 
-    async def count_pending_for_global_client(self, global_client_id: int, tenant_id: int) -> int:
-        return await self.db.scalar(
+    async def count_pending_for_global_client(self, global_client_id: int, tenant_id: int | None = None) -> int:
+        """Pending requests of this client at `tenant_id`, or across all tenants if None."""
+        stmt = (
             select(func.count())
             .select_from(AppointmentRequest)
             .where(
                 AppointmentRequest.global_client_id == global_client_id,
-                AppointmentRequest.tenant_id == tenant_id,
                 AppointmentRequest.status == AppointmentRequestStatus.PENDING,
             )
             .execution_options(skip_tenant_filter = True)
-        ) or 0
+        )
+        if tenant_id is not None: stmt = stmt.where(AppointmentRequest.tenant_id == tenant_id)
+        return await self.db.scalar(stmt) or 0
 
     async def global_client_has_overlap(self, global_client_id: int, start: datetime, end: datetime) -> bool:
         """Active request of this client at any tenant overlapping [start, end) - pending, or
@@ -110,7 +99,9 @@ class AppointmentRequestRepository(BaseRepository[AppointmentRequest]):
 
     # --- Background job: runs without tenant context (Celery session has no tenant filter) ---
 
-    async def cancel_past_due(self, now: datetime) -> int:
+    async def cancel_past_due(self, now: datetime) -> list[tuple[int, int, datetime]]:
+        """Cancels every pending request past its expires_at; returns
+        (tenant_id, global_client_id, start_time_est) of each, to notify the clients."""
         result = await self.db.execute(
             update(AppointmentRequest)
             .where(
@@ -122,6 +113,7 @@ class AppointmentRequestRepository(BaseRepository[AppointmentRequest]):
                 cancelled_reason = AppointmentRequestCancelledReason.PAST_DUE,
                 decided_at = now,
             )
+            .returning(AppointmentRequest.tenant_id, AppointmentRequest.global_client_id, AppointmentRequest.start_time_est)
             .execution_options(synchronize_session = False)
         )
-        return result.rowcount or 0
+        return [(row[0], row[1], row[2]) for row in result.all()]

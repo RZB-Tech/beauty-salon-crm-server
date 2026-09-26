@@ -5,21 +5,23 @@ from src.repository.appointment.appointmentRequest_model import AppointmentReque
 from src.schemas.base import BaseResponseSchema, MoneyResponse
 from src.schemas.globalClient.response import GlobalClientNestedResponseSchema
 
-class ServiceSnapshotSchema(BaseModel):
-    service_id: int | None = None
+class RequestServiceSnapshotSchema(BaseModel):
+    """A requested service as the client saw it when requesting."""
+    service_id: int
     name: str
     price: MoneyResponse
-    estimated_time: int
+    estimated_time: int # minutes, per unit
+    quantity: int
 
 class AppointmentRequestResponseSchema(BaseResponseSchema):
     global_client: GlobalClientNestedResponseSchema
-    service_id: int | None = None
-    service_snapshot: ServiceSnapshotSchema
+    services: list[RequestServiceSnapshotSchema]
     start_time_est: datetime
     end_time_est: datetime
     comment: str | None = None
     status: AppointmentRequestStatus
     cancelled_reason: AppointmentRequestCancelledReason | None = None
+    cancel_comment: str | None = None
     decline_reason: str | None = None
     expires_at: datetime
     decided_at: datetime | None = None
@@ -32,12 +34,13 @@ class MiniAppAppointmentRequestResponseSchema(BaseModel):
     id: int
     tenant_id: int
     tenant_name: str
-    service_snapshot: ServiceSnapshotSchema
+    services: list[RequestServiceSnapshotSchema]
     start_time_est: datetime
     end_time_est: datetime
     comment: str | None = None
     status: AppointmentRequestStatus
     cancelled_reason: AppointmentRequestCancelledReason | None = None
+    cancel_comment: str | None = None
     decline_reason: str | None = None
     expires_at: datetime
     decided_at: datetime | None = None
@@ -59,7 +62,3 @@ class MiniAppServiceResponseSchema(BaseModel):
     category_id: int | None = None
 
     model_config = ConfigDict(from_attributes = True)
-
-class BookingSlotSchema(BaseModel):
-    start_time_est: datetime
-    end_time_est: datetime

@@ -1,3 +1,4 @@
+import json
 import logging
 
 from redis.exceptions import RedisError
@@ -51,3 +52,30 @@ async def delete_tenant_admin_active(tenant_id: int) -> None:
         await get_redis_client().delete(_admin_key(tenant_id))
     except RedisError:
         logger.warning("Redis unavailable, could not clear admin-active cache for tenant %s", tenant_id)
+
+# Raw tenant.preferences JSON. Cleared whenever preferences are saved
+# (TenantPreferencesService.update); the TTL only bounds staleness if a clear is missed.
+PREFERENCES_TTL = 3600
+
+def _preferences_key(tenant_id: int) -> str:
+    return f"tenant:{tenant_id}:preferences"
+
+async def set_tenant_preferences(tenant_id: int, preferences: dict) -> None:
+    try:
+        await get_redis_client().set(_preferences_key(tenant_id), json.dumps(preferences), ex = PREFERENCES_TTL)
+    except RedisError:
+        logger.warning("Redis unavailable, skipping preferences cache write for tenant %s", tenant_id)
+
+async def get_tenant_preferences(tenant_id: int) -> dict | None:
+    try:
+        raw = await get_redis_client().get(_preferences_key(tenant_id))
+    except RedisError:
+        logger.warning("Redis unavailable, falling back to database for tenant %s preferences", tenant_id)
+        return None
+    return json.loads(raw) if raw is not None else None
+
+async def delete_tenant_preferences(tenant_id: int) -> None:
+    try:
+        await get_redis_client().delete(_preferences_key(tenant_id))
+    except RedisError:
+        logger.warning("Redis unavailable, could not clear preferences cache for tenant %s", tenant_id)

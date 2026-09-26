@@ -53,7 +53,9 @@ class Settings(BaseSettings):
     TELEGRAM_MINIAPP_BOT_TOKEN: str | None = None
     TELEGRAM_MINIAPP_ORIGIN: str | None = None # added to CORS allowed origins in production
     TELEGRAM_INIT_DATA_EXPIRE_SECONDS: int = 86400
-    MINIAPP_MAX_PENDING_REQUESTS_PER_TENANT: int = 3
+    # Platform-wide anti-spam cap: pending requests one Telegram client may have across all
+    # tenants at once. The per-tenant limit is the tenant's max_pending_booking_requests preference.
+    MINIAPP_MAX_PENDING_REQUESTS_TOTAL: int = 10
 
     @property
     def PRIVATE_KEY(self) -> str:

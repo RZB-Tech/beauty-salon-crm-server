@@ -28,12 +28,14 @@ class AppointmentRequestStatus(StrEnum):
 
 class AppointmentRequestCancelledReason(StrEnum):
     CLIENT_CANCELLED = "cancelled by client"
-    PAST_DUE = "automatically cancelled - past due time"
+    PAST_DUE = "automatically: time to make action passed"
 
 class AppointmentRequest(BaseFields):
     """
-    A client's request (from the Telegram mini app) to book an appointment at a tenant.
-    Becomes an Appointment (created_via = telegram) only when the tenant's staff confirms it.
+    A client's request (from the Telegram mini app) to book an appointment at a tenant:
+    services with quantities and a desired start time - the client sees no schedules.
+    Becomes an Appointment (created_via = telegram) only when the tenant's staff
+    confirms it, choosing the actual time, employees and services.
     """
     __tablename__ = "appointment_requests"
 
@@ -41,17 +43,20 @@ class AppointmentRequest(BaseFields):
         ForeignKey("global_clients.id", ondelete = "CASCADE"), index = True)
     global_client: Mapped["GlobalClient"] = relationship(lazy = "joined", innerjoin = True)
 
-    service_id: Mapped[int | None] = mapped_column(Integer, nullable = True)
-    # {"service_id", "name", "price", "estimated_time"} as the client saw it when requesting -
-    # survives the service being edited or deleted (service_id then becomes NULL)
-    service_snapshot: Mapped[dict] = mapped_column(JSONB)
+    # [{"service_id", "name", "price", "estimated_time", "quantity"}, ...] as the client saw
+    # them when requesting - survives the services being edited or deleted later
+    services: Mapped[list[dict]] = mapped_column(JSONB)
 
     start_time_est: Mapped[datetime] = mapped_column(DateTime(timezone = True))
+    # Estimate only: start + the services' durations x quantity. Staff set the real times on confirm.
     end_time_est: Mapped[datetime] = mapped_column(DateTime(timezone = True))
     comment: Mapped[str | None] = mapped_column(Text, nullable = True)
 
     status: Mapped[str] = mapped_column(String(50), default = AppointmentRequestStatus.PENDING)
     cancelled_reason: Mapped[str | None] = mapped_column(String(50), nullable = True)
+    # Optional free-text reason the client gives when cancelling
+    cancel_comment: Mapped[str | None] = mapped_column(Text, nullable = True)
+    # Required when staff decline; shown to the client
     decline_reason: Mapped[str | None] = mapped_column(Text, nullable = True)
 
     # Pending request is auto-cancelled after this moment (see appointmentRequest_task.py)
@@ -69,12 +74,6 @@ class AppointmentRequest(BaseFields):
     __table_args__ = (
         UniqueConstraint("id", "tenant_id", name = "uq_appointment_request_tenant"),
         ForeignKeyConstraint(
-            ["service_id", "tenant_id"],
-            ["services.id", "services.tenant_id"],
-            ondelete = "SET NULL (service_id)",
-            name = "fk_appointment_requests_service"
-        ),
-        ForeignKeyConstraint(
             ["appointment_id", "tenant_id"],
             ["appointments.id", "appointments.tenant_id"],
             ondelete = "SET NULL (appointment_id)",
@@ -90,4 +89,4 @@ class AppointmentRequest(BaseFields):
         Index("ix_appointment_requests_status_expires_at", "status", "expires_at"),
     )
 
-    ALLOWED_FILTERS = {"global_client_id", "service_id", "start_time_est", "end_time_est", "status", "expires_at", "archived"}
+    ALLOWED_FILTERS = {"global_client_id", "start_time_est", "end_time_est", "status", "expires_at", "archived"}

@@ -1,3 +1,4 @@
+from src.core.cache.tenant_cache import delete_tenant_preferences, get_tenant_preferences, set_tenant_preferences
 from src.core.dependencies.context import get_current_tenant_id
 from src.core.dependencies.uow import UnitOfWork
 from src.exceptions.general_exceptions import CannotUpdate
@@ -29,7 +30,13 @@ class TenantPreferencesService:
         )
         
         if updated_tenant is None: raise CannotUpdate(tenant.id, "tenants")
-            
+
+        # Commit, then clear the cache: FastAPI's own commit runs only after the
+        # response is sent, and clearing first would let a concurrent read re-cache
+        # the old preferences for the whole TTL.
+        await self.uow.db.commit()
+        await delete_tenant_preferences(tenant.id)
+
         return TenantPreferencesSchema(**updated_tenant.preferences)
 
     @staticmethod
@@ -39,3 +46,17 @@ class TenantPreferencesService:
         tenant = await self.uow.tenants.get(id=tenant_id)
         if tenant is None: raise TenantNotFound(tenant_id)
         return tenant
+
+async def load_tenant_preferences(uow: UnitOfWork, tenant_id: int) -> TenantPreferencesSchema | None:
+    """
+    Cache-first preferences of any tenant (not only the current one) - None if the
+    tenant doesn't exist. Used where preferences are read on every request, e.g.
+    the Telegram mini app's booking checks.
+    """
+    raw = await get_tenant_preferences(tenant_id)
+    if raw is None:
+        tenant = await uow.tenants.get(id = tenant_id)
+        if tenant is None: return None
+        raw = tenant.preferences or {}
+        await set_tenant_preferences(tenant_id, raw)
+    return TenantPreferencesSchema(**raw)

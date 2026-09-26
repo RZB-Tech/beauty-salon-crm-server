@@ -4,19 +4,18 @@ from src.repository.client.client_model import Sex
 
 class GlobalClientNestedResponseSchema(BaseModel):
     id: int
+    telegram_user_id: int
     telegram_username: str | None = None
-    contact_phone: str | None = None
+    telegram_phone: str
     call_phone: str | None = None
     firstname: str
-    lastname: str | None = None
+    lastname: str
     middlename: str | None = None
     birth_date: date | None = None
-    sex: Sex | None = None
+    sex: Sex
 
     model_config = ConfigDict(from_attributes = True)
 
 class GlobalClientResponseSchema(GlobalClientNestedResponseSchema):
-    telegram_user_id: int
-    is_profile_complete: bool
     created_at: datetime
     updated_at: datetime

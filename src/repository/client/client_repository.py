@@ -36,9 +36,17 @@ class ClientRepository(BaseRepository[Client]):
         )
         return result.scalar_one_or_none()
 
-    async def find_matching_global_client(self, global_client_id: int, phones: list[str]) -> list[Client]:
-        """Tenant clients already linked to the global client, or sharing one of its phones."""
-        condition = Client.global_client_id == global_client_id
+    async def get_by_telegram_user_id(self, telegram_user_id: int) -> Client | None:
+        result = await self.db.execute(
+            select(Client).where(Client.telegram_user_id == telegram_user_id)
+        )
+        return result.scalar_one_or_none()
+
+    async def find_matching_global_client(self, global_client_id: int, telegram_user_id: int,
+                                          phones: list[str]) -> list[Client]:
+        """Tenant clients already linked to the global client (by id or Telegram user id),
+        or sharing one of its phones."""
+        condition = (Client.global_client_id == global_client_id) | (Client.telegram_user_id == telegram_user_id)
         if phones: condition = condition | Client.phone.in_(phones)
         result = await self.db.execute(
             select(Client).where(condition).order_by(Client.id)

@@ -84,19 +84,3 @@ class AppointmentRecordsRepository(BaseRepository[AppointmentRecords]):
 
         result = await self.db.execute(stmt)
         return result.first() is not None
-
-    async def get_busy_intervals(self, employee_ids: list[int],
-                                 start: datetime, end: datetime) -> list[tuple[int, datetime, datetime]]:
-        """(employee_id, start, end) of these employees' non-cancelled appointments overlapping [start, end)."""
-        stmt = (
-            select(AppointmentRecords.employee_id, Appointment.start_time_est, Appointment.end_time_est)
-            .join(Appointment, AppointmentRecords.appointment_id == Appointment.id)
-            .where(
-                AppointmentRecords.employee_id.in_(employee_ids),
-                Appointment.status != AppointmentStatus.CANCELLED,
-                Appointment.start_time_est < end,
-                Appointment.end_time_est > start
-            )
-        )
-        result = await self.db.execute(stmt)
-        return [(row[0], row[1], row[2]) for row in result.all()]

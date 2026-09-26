@@ -9,7 +9,7 @@ class TenantPreferencesUpdateSchema(BaseUpdateSchema):
     cancel_payment_due: int | None = Field(None, ge = 0) # hours
     auto_pay_subscription: bool | None = None
     time_to_confirm_booking: int | None = Field(None, ge = 1) # minutes
-    booking_slot_step: int | None = Field(None, ge = 5, le = 240) # minutes
+    max_pending_booking_requests: int | None = Field(None, ge = 1, le = 50)
 
     model_config = ConfigDict(json_schema_extra = {
         "example": {
