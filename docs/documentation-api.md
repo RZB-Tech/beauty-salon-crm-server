@@ -43,7 +43,7 @@
 - GET `/tenants/{tenant_id}/services` — услуги для онлайн-записи -> `list[MiniAppServiceResponseSchema]` (`id`, `name`, `price`, `estimated_time` — минуты, `category_id`) (200). Сотрудники и их график клиенту не показываются.
 - POST `/appointment-requests` — создать заявку (`src/schemas/appointmentRequest/create.py::AppointmentRequestCreateSchema`: `tenant_id`, `services` — список `{service_id, quantity}` без повторов, `start_time_est` — любое будущее время, `comment`) -> `MiniAppAppointmentRequestResponseSchema` (201). Время окончания — оценка: начало + сумма `estimated_time × quantity`.
 - POST `/appointment-requests/get-all` — мои заявки во всех организациях (`PaginationSchema`) -> `PaginatedResponseSchema[MiniAppAppointmentRequestResponseSchema]` (200). Поле `appointment_status` — текущий статус посещения для подтвержденной заявки.
-- PATCH `/appointment-requests/cancel` — отменить заявку (`{"id": 1, "reason": "…"}`, `reason` — опционально) -> `MiniAppAppointmentRequestResponseSchema` (200).
+- PATCH `/appointment-requests/cancel` — отменить заявку (`{"id": 1, "reason": "…"}`, `reason` — опционально) -> `MiniAppAppointmentRequestResponseSchema` (200). Для подтвержденной заявки посещение отменяется автоматически (кроме завершенного, оплаченного или с активным чеком), затем уведомляются администраторы, сотрудники с `APPOINTMENT_REQUESTS_READ` и сотрудники, назначенные на посещение.
 
 `GlobalClientResponseSchema`: `id`, `telegram_user_id`, `telegram_username`, `telegram_phone`, `call_phone`, `firstname`, `lastname`, `middlename`, `birth_date`, `sex`, `created_at`, `updated_at`.
 

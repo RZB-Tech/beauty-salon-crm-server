@@ -15,12 +15,12 @@ from src.exceptions.appointmentRequest_exceptions import (
     ServiceNotBookable, TenantBookingUnavailable, TooManyPendingAppointmentRequests)
 from src.exceptions.auth_exceptions import TelegramAuthInvalid
 from src.exceptions.service_exceptions import ServiceIsArchived, ServiceNotFound
-from src.repository.appointment.appointment_model import AppointmentCancelledReason, AppointmentStatus
+from src.repository.appointment.appointment_model import Appointment, AppointmentCancelledReason, AppointmentStatus
 from src.repository.appointment.appointmentRequest_model import AppointmentRequest, AppointmentRequestCancelledReason, AppointmentRequestStatus
 from src.repository.globalClient.globalClient_model import GlobalClient
 from src.repository.notification.notification_model import Notification, NotificationType
 from src.repository.service.service_model import Service
-from src.repository.staff.staff_model import StaffType
+from src.repository.staff.staff_model import Staff, StaffType
 from src.repository.tenant.tenant_model import Tenant
 from src.schemas.appointment.update import AppointmentCancelSchema
 from src.schemas.appointmentRequest.create import AppointmentRequestCreateSchema
@@ -148,7 +148,7 @@ class MiniAppService:
                 comment = data.comment,
                 expires_at = min(now + timedelta(minutes = preferences.time_to_confirm_booking), start),
             ))
-            await self._notify_staff(request, client)
+            await self._notify_new_request(request, client)
 
         tenant = await self.uow.tenants.get(id = data.tenant_id)
         return self._to_response(request, tenant.name)
@@ -170,6 +170,9 @@ class MiniAppService:
             raise AppointmentRequestCannotBeCancelled(data.id, request.status)
 
         async with self._as_tenant(request.tenant_id):
+            # A confirmed request's appointment is cancelled automatically first (it stays in
+            # the schedule's history as cancelled) - and only then are staff notified
+            cancelled_appointment = None
             if request.status == AppointmentRequestStatus.CONFIRMED and request.appointment_id is not None:
                 appointment = await self.uow.appointments.get(request.appointment_id)
                 # Already cancelled by the organization - only the request is left to cancel
@@ -177,6 +180,7 @@ class MiniAppService:
                     if appointment.status == AppointmentStatus.FINISHED: raise AppointmentIsFinished(appointment.id)
                     await AppointmentService(self.uow).cancel(AppointmentCancelSchema(
                         id = appointment.id, reason = AppointmentCancelledReason.CLIENT_CANCELLED))
+                    cancelled_appointment = appointment
 
             request = await self.uow.appointmentRequests.update(
                 request.id,
@@ -185,6 +189,7 @@ class MiniAppService:
                 cancel_comment = data.reason,
                 decided_at = datetime.now(timezone.utc),
             )
+            await self._notify_cancelled(request, client, cancelled_appointment, data.reason)
 
         tenant = await self.uow.tenants.get(id = request.tenant_id)
         return self._to_response(request, tenant.name)
@@ -220,31 +225,87 @@ class MiniAppService:
         if service.estimated_time <= 0 or not has_employee: raise ServiceNotBookable(service.id, service.name)
         return service
 
-    async def _notify_staff(self, request: AppointmentRequest, client: GlobalClient) -> None:
-        """'Action required' notification to every active staff who can see appointment requests."""
-        recipients = [
+    async def _notify_new_request(self, request: AppointmentRequest, client: GlobalClient) -> None:
+        """'Action required' to everyone who handles appointment requests."""
+        await self._notify(
+            request,
+            title = "Новая заявка на запись (Telegram)",
+            body = (
+                f"Требуется действие: подтвердите или отклоните заявку на запись. Источник: Telegram.\n"
+                f"Клиент: {self._client_line(client)}\n"
+                f"Услуги: {self._services_line(request)}\n"
+                f"Желаемое время: {request.start_time_est:%d.%m.%Y %H:%M} (UTC)"
+            ),
+            recipients = await self._recipients(),
+        )
+
+    async def _notify_cancelled(self, request: AppointmentRequest, client: GlobalClient,
+                                cancelled_appointment: Appointment | None, reason: str | None) -> None:
+        """
+        The client cancelled a request. If that just cancelled its appointment, the employees
+        assigned to it are told too - it was their schedule. Otherwise (a pending request, or
+        one whose appointment the salon had already cancelled) only the request handlers are.
+        """
+        reason_line = f"\nПричина клиента: {reason}" if reason else ""
+        if cancelled_appointment is not None:
+            employees = [r.employee for r in cancelled_appointment.records if r.employee is not None]
+            employee_names = ", ".join(" ".join(p for p in (e.firstname, e.lastname) if p) for e in employees)
+            await self._notify(
+                request,
+                title = "Клиент отменил запись (Telegram)",
+                body = (
+                    f"Клиент отменил подтвержденную заявку в Telegram — запись в расписании отменена автоматически.\n"
+                    f"Клиент: {self._client_line(client)}\n"
+                    f"Время: {cancelled_appointment.start_time_est:%d.%m.%Y %H:%M} (UTC)"
+                    + (f"\nСотрудники: {employee_names}" if employee_names else "")
+                    + reason_line
+                ),
+                recipients = await self._recipients(employee_ids = {e.id for e in employees}),
+            )
+        else:
+            await self._notify(
+                request,
+                title = "Клиент отозвал заявку (Telegram)",
+                body = (
+                    f"Клиент отменил заявку на запись в Telegram — действий не требуется.\n"
+                    f"Клиент: {self._client_line(client)}\n"
+                    f"Услуги: {self._services_line(request)}\n"
+                    f"Желаемое время: {request.start_time_est:%d.%m.%Y %H:%M} (UTC)"
+                    + reason_line
+                ),
+                recipients = await self._recipients(),
+            )
+
+    async def _recipients(self, employee_ids: set[int] = frozenset()) -> list[Staff]:
+        """Active staff who handle appointment requests (admins, APPOINTMENT_REQUESTS_READ) plus
+        the staff accounts of `employee_ids` - each staff once."""
+        return [
             staff for staff in await self.uow.staffs.get_active_with_roles()
             if staff.staff_type == StaffType.ADMIN
             or has_permission(set(compute_effective_permissions(staff)), PermissionCode.APPOINTMENT_REQUESTS_READ)
+            or staff.employee_id in employee_ids
         ]
-        phones = ", ".join(phone for phone in (client.telegram_phone, client.call_phone) if phone)
-        services = "; ".join(f"{s['name']} × {s['quantity']}" for s in request.services)
-        body = (
-            f"Требуется действие: подтвердите или отклоните заявку на запись. Источник: Telegram.\n"
-            f"Клиент: {client.firstname} {client.lastname}, {phones}\n"
-            f"Услуги: {services}\n"
-            f"Желаемое время: {request.start_time_est:%d.%m.%Y %H:%M} (UTC)"
-        )
+
+    async def _notify(self, request: AppointmentRequest, title: str, body: str, recipients: list[Staff]) -> None:
         now = datetime.now(timezone.utc)
         for staff in recipients:
             await self.uow.notifications.create(Notification(
-                title = "Новая заявка на запись (Telegram)",
+                title = title,
                 body = body,
                 type = NotificationType.APPOINTMENT_REQUEST,
                 scheduled_at = now,
                 recipient_staff_id = staff.id,
                 appointment_request_id = request.id,
             ))
+
+    @staticmethod
+    def _client_line(client: GlobalClient) -> str:
+        phones = ", ".join(phone for phone in (client.telegram_phone, client.call_phone) if phone)
+        return f"{client.firstname} {client.lastname}, {phones}"
+
+    @staticmethod
+    def _services_line(request: AppointmentRequest) -> str:
+        return "; ".join(f"{s['name']} × {s['quantity']}" for s in request.services)
 
     @staticmethod
     def _to_response(request: AppointmentRequest, tenant_name: str) -> MiniAppAppointmentRequestResponseSchema:

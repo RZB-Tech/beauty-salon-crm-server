@@ -115,7 +115,7 @@ async def get_requests(data: PaginationSchema,
     response_model = MiniAppAppointmentRequestResponseSchema,
     status_code = status.HTTP_200_OK,
     summary = "Отменить заявку на запись",
-    description = "Отменяет заявку в статусе `pending` или `confirmed` с необязательной причиной (`reason`). Для подтвержденной заявки отменяется и посещение — кроме завершенного, оплаченного или с активным чеком."
+    description = "Отменяет заявку в статусе `pending` или `confirmed` с необязательной причиной (`reason`). Для подтвержденной заявки сначала автоматически отменяется посещение — кроме завершенного, оплаченного или с активным чеком, — затем уведомляются сотрудники: администраторы, сотрудники с правом `APPOINTMENT_REQUESTS_READ` и назначенные на это посещение."
 )
 async def cancel_request(data: AppointmentRequestClientCancelSchema,
                          client: GlobalClient = Depends(get_current_global_client),
