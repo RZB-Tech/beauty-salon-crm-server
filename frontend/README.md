@@ -68,6 +68,28 @@ server {
 Alternatively, build with `VITE_API_BASE_URL=https://api.osipovich.uz` and set
 `TELEGRAM_MINIAPP_ORIGIN=https://miniapp.osipovich.uz` on the backend, so CORS allows it.
 
+### Or under the existing CRM domain (no new subdomain)
+
+Serve it at `https://crm.osipovich.uz/miniapp/`. The CRM's server block already proxies `/api/v1`,
+so the app reaches the API on its own origin - no CORS setup either.
+
+```bash
+VITE_BASE_PATH=/miniapp/ npm run build    # assets then load from /miniapp/assets/...
+sudo mkdir -p /var/www/miniapp && sudo cp -r dist/* /var/www/miniapp/
+```
+
+Add to the existing `crm.osipovich.uz` server block (nginx picks the longest matching prefix, so
+this wins over the CRM's `location /`; the CRM itself is untouched):
+
+```nginx
+location /miniapp/ {
+    alias /var/www/miniapp/;
+    try_files $uri $uri/ /miniapp/index.html;
+}
+```
+
+BotFather URL: `https://crm.osipovich.uz/miniapp/`.
+
 ## Connect it to the bot
 
 In @BotFather: `/mybots` → the bot → **Bot Settings → Menu Button** (or **Configure Mini App**)

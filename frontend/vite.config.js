@@ -4,6 +4,8 @@ import react from '@vitejs/plugin-react'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   return {
+    // Path the app is served under: "/" on its own domain, "/miniapp/" under crm.osipovich.uz
+    base: env.VITE_BASE_PATH || '/',
     plugins: [react()],
     server: {
       host: true,
