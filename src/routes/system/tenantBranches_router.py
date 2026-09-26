@@ -26,7 +26,7 @@ get_tenant_branches_service = make_service_dependency(TenantBranchesService)
     response_model = TenantBranchCreateResponseSchema,
     status_code = status.HTTP_201_CREATED,
     summary = "Создать филиал",
-    description = "Создает новый филиал (дочернюю организацию) и его администратора. Доступно только головной организации — у филиала создавать свои филиалы нельзя.",
+    description = "Создает новый филиал (дочернюю организацию) и его администратора. Доступно только головной организации — у филиала создавать свои филиалы нельзя. Тариф организации должен разрешать создание филиалов (can_create_branches), количество не ограничено. У нового филиала своя подписка — он оплачивает её сам.",
     dependencies = [
         Depends(require_parent_tenant),
         Depends(require_permission([PermissionCode.TENANT_BRANCH_CREATE]))

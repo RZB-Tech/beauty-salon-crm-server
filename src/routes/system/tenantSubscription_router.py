@@ -32,7 +32,7 @@ async def get_current(service: TenantSubscriptionService = Depends(get_tenantSub
     response_model = TenantLimitsSchema,
     status_code = 200,
     summary = "Лимиты тарифа и их использование",
-    description = "Для каждого лимита (max_users, max_clients): сколько даёт тариф (plan), сколько добавили аддоны (addons), итоговый лимит (allowed), сколько занято (used) и сколько осталось (remaining). null в plan/allowed/remaining означает «без ограничений». Лимиты свои у каждой организации: у головной и у каждого филиала своя подписка, аддоны и лимиты. Архивные и неактивные сотрудники и клиенты тоже занимают место.",
+    description = "Для каждого лимита (max_users, max_clients): сколько даёт тариф (plan), сколько добавили аддоны (addons), итоговый лимит (allowed), сколько занято (used) и сколько осталось (remaining). null в plan/allowed/remaining означает «без ограничений». can_create_branches — разрешает ли тариф создавать филиалы (без ограничения количества). Лимиты свои у каждой организации: у головной и у каждого филиала своя подписка, аддоны и лимиты. Архивные и неактивные сотрудники и клиенты тоже занимают место.",
     dependencies = [Depends(require_permission([PermissionCode.SUBSCRIPTION_PAYMENT_READ]))]
 )
 async def get_limits(service: TenantSubscriptionService = Depends(get_tenantSubscription_service)):

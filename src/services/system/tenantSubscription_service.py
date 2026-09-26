@@ -59,9 +59,10 @@ class TenantSubscriptionService:
         tenantID = get_current_tenant_id()
         if tenantID is None: raise AuthTenantContextEmpty()
 
-        plan_id, usages = await get_limits_usage(self.uow, tenantID)
+        plan, usages = await get_limits_usage(self.uow, tenantID)
         return TenantLimitsSchema(
-            plan_id = plan_id,
+            plan_id = plan.id if plan else None,
+            can_create_branches = plan is not None and plan.can_create_branches,
             limits = [
                 TenantLimitUsageSchema(
                     limit_key = u.limit.value,

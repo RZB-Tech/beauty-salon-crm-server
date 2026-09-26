@@ -35,6 +35,8 @@ class SubscriptionPlan(Base):
     max_users: Mapped[int] = mapped_column(Integer, nullable = True, default = 3)
     max_clients: Mapped[int] = mapped_column(Integer, nullable = True, default = 500)
 
+    can_create_branches: Mapped[bool] = mapped_column(Boolean, default = False, server_default = text("false"))
+
     is_visible: Mapped[bool] = mapped_column(Boolean, default = False)
     archived: Mapped[bool] = mapped_column(Boolean, default = False, server_default = text("false"))
 

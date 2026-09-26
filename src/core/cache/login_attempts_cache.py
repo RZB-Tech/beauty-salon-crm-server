@@ -39,19 +39,26 @@ async def _blocked_until(blocked_key: str) -> datetime | None:
 async def _get_ttl(label: Literal["ip", "login"]) -> int:
     return settings.LOGIN_BLOCK_TTL if label == "login" else settings.IP_BLOCK_TTL
 
-async def _register_failure(attempts_key: str, 
+async def _register_failure(attempts_key: str,
         blocked_key: str,
-        label: Literal["ip", "login"], 
-        identifier: str) -> int:
+        label: str,
+        identifier: str,
+        max_attempts: int,
+        window_ttl: int,
+        ttl: int) -> int:
+    """
+    Counts a failure in a `window_ttl` window; on the `max_attempts`-th one sets
+    `blocked_key` for `ttl` seconds. Shared by the staff login (below) and the
+    SQLAdmin login (admin_login_cache), each with its own keys and limits.
+    """
     try:
         client = get_redis_client()
         attempts = await client.incr(attempts_key)
         if attempts == 1:
-            await client.expire(attempts_key, settings.ATTEMPTS_WINDOW_TTL)
-        ttl = await _get_ttl(label)
+            await client.expire(attempts_key, window_ttl)
         logger.warning("Failed login attempt (%s): %s attempt #%d", label, identifier, attempts)
 
-        if attempts >= settings.LOGIN_MAX_FAILED_ATTEMPTS:
+        if attempts >= max_attempts:
             await client.set(blocked_key, 1, ex = ttl)
             await client.delete(attempts_key)
             logger.warning("Blocked login (%s): %s for %d seconds after %d failed attempts", label, identifier, ttl, attempts)
@@ -76,7 +83,10 @@ async def ip_blocked_until(ip: str) -> datetime | None:
     return await _blocked_until(_ip_blocked_key(ip))
 
 async def register_failed_ip_login(ip: str) -> int:
-    return await _register_failure(_ip_attempts_key(ip), _ip_blocked_key(ip), "ip", ip)
+    return await _register_failure(
+        _ip_attempts_key(ip), _ip_blocked_key(ip), "ip", ip,
+        settings.LOGIN_MAX_FAILED_ATTEMPTS, settings.ATTEMPTS_WINDOW_TTL, await _get_ttl("ip"),
+    )
 
 async def reset_failed_ip_login(ip: str) -> None:
     await _reset(_ip_attempts_key(ip), _ip_blocked_key(ip))
@@ -88,7 +98,10 @@ async def account_blocked_until(login: str) -> datetime | None:
     return await _blocked_until(_account_blocked_key(login))
 
 async def register_failed_account_login(login: str) -> int:
-    return await _register_failure(_account_attempts_key(login), _account_blocked_key(login), "login", login)
+    return await _register_failure(
+        _account_attempts_key(login), _account_blocked_key(login), "login", login,
+        settings.LOGIN_MAX_FAILED_ATTEMPTS, settings.ATTEMPTS_WINDOW_TTL, await _get_ttl("login"),
+    )
 
 async def reset_failed_account_login(login: str) -> None:
     await _reset(_account_attempts_key(login), _account_blocked_key(login))

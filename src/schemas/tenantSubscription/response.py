@@ -41,4 +41,5 @@ class TenantLimitUsageSchema(BaseModel):
 
 class TenantLimitsSchema(BaseModel):
     plan_id: int | None
+    can_create_branches: bool
     limits: list[TenantLimitUsageSchema]

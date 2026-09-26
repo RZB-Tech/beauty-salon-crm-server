@@ -29,7 +29,7 @@ from src.schemas.tenant.response import (
 )
 from src.schemas.tenant.update import UpdateBranchAdminPassword, UpdateBranchAdminSchema, UpdateBranchSchema
 from src.services.system.tenant_service import provision_tenant
-from src.services.system.tenantLimits_service import TenantLimit, ensure_tenant_capacity
+from src.services.system.tenantLimits_service import TenantLimit, ensure_can_create_branches, ensure_tenant_capacity
 from sqlalchemy import func, select, update
 
 REPORT_COUNT_FIELDS: list[tuple[str, type]] = [
@@ -49,9 +49,11 @@ class TenantBranchesService:
         tenant = await get_current_tenant_or_raise(self.uow)
         creator_actor_id = get_current_actor_id()
 
-        # No limit check: branches are unlimited, and the new branch's first
-        # admin belongs to the branch, which has its own (not yet bought)
-        # subscription. That admin is how the branch logs in to pay for one.
+        # Creating branches is a plan feature, not a counted limit: once the plan
+        # allows it, any number of branches. No user-limit check either - the new
+        # branch's first admin belongs to the branch, which has its own (not yet
+        # bought) subscription. That admin is how the branch logs in to pay for one.
+        await ensure_can_create_branches(self.uow, tenant.id)
 
         # provision_tenant writes rows tagged with the new branch's tenant_id, which the
         # request's tenant-scoped session (self.uow.db) would reject as cross-tenant data

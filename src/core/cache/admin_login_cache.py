@@ -1,31 +1,38 @@
-import logging
+"""
+Failed SQLAdmin login tracking - same mechanism as the staff login
+(login_attempts_cache), with its own keys and stricter limits from settings:
+a login is blocked after ADMIN_LOGIN_MAX_FAILED_ATTEMPTS from any IP, an IP
+after ADMIN_IP_MAX_FAILED_ATTEMPTS across any logins. Blocks expire on their own.
+If Redis is down, nothing is counted or blocked (same as the staff login).
+"""
+from src.core.cache.login_attempts_cache import _is_blocked, _register_failure, _reset
+from src.core.config import settings
 
-from redis.exceptions import RedisError
+def _ip_attempts_key(ip: str) -> str:
+    return f"admin_login_ip:{ip}:attempts"
 
-from src.core.cache.permission_cache import get_redis_client
+def _ip_blocked_key(ip: str) -> str:
+    return f"admin_login_ip:{ip}:blocked"
 
-logger = logging.getLogger(__name__)
+def _account_attempts_key(login: str) -> str:
+    return f"admin_login_account:{login}:attempts"
 
-MAX_FAILED_ATTEMPTS = 3
-FAILED_ATTEMPTS_TTL = 900
+def _account_blocked_key(login: str) -> str:
+    return f"admin_login_account:{login}:blocked"
 
-def _key(login: str) -> str:
-    return f"admin_login:{login}:failed_attempts"
+async def is_admin_login_blocked(ip: str, login: str) -> bool:
+    return await _is_blocked(_ip_blocked_key(ip)) or await _is_blocked(_account_blocked_key(login))
 
-async def register_failed_login(login: str) -> int:
-    try:
-        client = get_redis_client()
-        key = _key(login)
-        attempts = await client.incr(key)
-        if attempts == 1:
-            await client.expire(key, FAILED_ATTEMPTS_TTL)
-        return attempts
-    except RedisError:
-        logger.warning("Redis unavailable, could not track failed login attempts for %s", login)
-        return 0
+async def register_failed_admin_login(ip: str, login: str) -> None:
+    await _register_failure(
+        _ip_attempts_key(ip), _ip_blocked_key(ip), "admin ip", ip,
+        settings.ADMIN_IP_MAX_FAILED_ATTEMPTS, settings.ADMIN_ATTEMPTS_WINDOW_TTL, settings.ADMIN_IP_BLOCK_TTL,
+    )
+    await _register_failure(
+        _account_attempts_key(login), _account_blocked_key(login), "admin login", login,
+        settings.ADMIN_LOGIN_MAX_FAILED_ATTEMPTS, settings.ADMIN_ATTEMPTS_WINDOW_TTL, settings.ADMIN_LOGIN_BLOCK_TTL,
+    )
 
-async def reset_failed_login(login: str) -> None:
-    try:
-        await get_redis_client().delete(_key(login))
-    except RedisError:
-        logger.warning("Redis unavailable, could not reset failed login attempts for %s", login)
+async def reset_failed_admin_login(ip: str, login: str) -> None:
+    await _reset(_ip_attempts_key(ip), _ip_blocked_key(ip))
+    await _reset(_account_attempts_key(login), _account_blocked_key(login))

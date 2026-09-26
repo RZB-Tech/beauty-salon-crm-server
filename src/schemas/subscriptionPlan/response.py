@@ -1,8 +1,5 @@
 from datetime import datetime
-
 from pydantic import BaseModel
-
-from src.repository.transaction.transaction_model import TransactionCategory, TransactionMethod, TransactionType
 from src.schemas.base import MoneyResponse
 
 class SubscriptionPlanResponseSchema(BaseModel):
@@ -11,9 +8,9 @@ class SubscriptionPlanResponseSchema(BaseModel):
     description: str | None
     price: MoneyResponse
     duration_days: int
-    # None = unlimited
     max_users: int | None
     max_clients: int | None
+    can_create_branches: bool
     is_visible: bool
 
     created_at: datetime

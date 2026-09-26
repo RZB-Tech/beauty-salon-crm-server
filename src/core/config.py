@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     LOGIN_BLOCK_TTL: int = 3600 # in seconds
     IP_BLOCK_TTL: int = 86400 # in seconds
 
+    # SQLAdmin login - counted separately from the staff login above
+    ADMIN_LOGIN_MAX_FAILED_ATTEMPTS: int = 3   # per login, from any IP
+    ADMIN_IP_MAX_FAILED_ATTEMPTS: int = 10     # per IP, across all logins
+    ADMIN_ATTEMPTS_WINDOW_TTL: int = 900 # in seconds
+    ADMIN_LOGIN_BLOCK_TTL: int = 3600 # in seconds
+    ADMIN_IP_BLOCK_TTL: int = 86400 # in seconds
+
     ERROR_ALERTS_BOT_TOKEN: str | None = None
     ERROR_ALERTS_CHAT_ID: str | None = None
 

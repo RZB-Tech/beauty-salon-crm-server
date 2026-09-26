@@ -101,3 +101,14 @@ class ClickCheckoutAmountInUse(BaseAppException):
             errorCode = self.errorCode,
             amount = amount
         )
+
+
+class TenantBranchesNotAllowed(BaseAppException):
+    statusCode = 403
+    errorCode = "SUBSCRIPTION_BRANCHES_NOT_ALLOWED"
+    def __init__(self, tenant_id: int):
+        super().__init__(
+            detail = "The organization's subscription plan doesn't allow creating branches",
+            errorCode = self.errorCode,
+            tenant_id = tenant_id
+        )

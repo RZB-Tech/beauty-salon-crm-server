@@ -4,9 +4,10 @@ from enum import StrEnum
 from sqlalchemy import func, select
 
 from src.core.dependencies.uow import UnitOfWork
-from src.exceptions.tenant_exceptions import TenantLimitExceeded
+from src.exceptions.tenant_exceptions import TenantBranchesNotAllowed, TenantLimitExceeded
 from src.repository.client.client_model import Client
 from src.repository.staff.staff_model import Staff
+from src.repository.tenant.subscription.subscriptionPlan_model import SubscriptionPlan
 
 
 class TenantLimit(StrEnum):
@@ -46,16 +47,20 @@ async def _get_plan(uow: UnitOfWork, tenant_id: int):
     return await uow.subscriptionsPlans.get(subscription.plan_id) if subscription else None
 
 
-async def get_limits_usage(uow: UnitOfWork, tenant_id: int) -> tuple[int | None, list[LimitUsage]]:
+async def get_limits_usage(uow: UnitOfWork, tenant_id: int) -> tuple[SubscriptionPlan | None, list[LimitUsage]]:
     """
-    (plan_id, usage of every limit) for `tenant_id` - the same numbers
+    (tenant's plan, usage of every limit) for `tenant_id` - the same numbers
     ensure_tenant_capacity enforces. Read-only, takes no locks.
     """
     plan = await _get_plan(uow, tenant_id)
-    return (
-        plan.id if plan else None,
-        [await _usage(uow, tenant_id, plan, limit) for limit in TenantLimit],
-    )
+    return plan, [await _usage(uow, tenant_id, plan, limit) for limit in TenantLimit]
+
+
+async def ensure_can_create_branches(uow: UnitOfWork, tenant_id: int) -> None:
+    """Raises TenantBranchesNotAllowed unless the tenant's own plan allows creating branches."""
+    plan = await _get_plan(uow, tenant_id)
+    if plan is None or not plan.can_create_branches:
+        raise TenantBranchesNotAllowed(tenant_id)
 
 
 async def ensure_tenant_capacity(uow: UnitOfWork, tenant_id: int, required: dict[TenantLimit, int]) -> None:
